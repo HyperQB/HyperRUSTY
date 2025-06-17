@@ -1,0 +1,3 @@
+
+
+Forall A. Exists B. X(~(high[A] = high[B])) & G(low[A] = low[B])

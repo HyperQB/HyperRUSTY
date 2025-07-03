@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 z3 = "0.12"
-unroller = { path = "./unroller" }
 parser = { path = "./parser" }
 ir = { path = "./ir" }
 encoder = { path = "./encoder" }
+enchelper = { path = "./enchelper" }

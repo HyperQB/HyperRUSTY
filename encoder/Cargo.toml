@@ -7,4 +7,6 @@ edition = "2024"
 z3 = "0.12"
 ir = { path = "../ir" }
 parser = { path = "../parser" }
-unroller = { path = "../unroller" }
+enchelper = { path = "../enchelper" }
+hltlunroller = { path = "../hltlunroller" }
+ahltlunroller = { path = "../ahltlunroller" }

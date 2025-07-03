@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use ir::*;
+use enchelper::{Semantics, create_path_mapping};
 use z3::{Context,
     ast::{
         Ast, Dynamic, Bool,
@@ -9,14 +10,6 @@ use parser::{
     UnaryOperator, BinOperator,
     AstNode,
 };
-
-#[derive(Debug, Clone)]
-pub enum Semantics {
-    Pes,
-    Opt,
-    Hpes,
-    HOpt,
-}
 
 enum UnrollingReturn<'ctx> {
     Bool(Bool<'ctx>),
@@ -32,27 +25,9 @@ impl<'ctx> UnrollingReturn<'ctx> {
     }
 }
 
-// Creates a mapping of the quantified path variables to their corresponding
-// index in the state set.
-pub fn create_hltl_mapping(formula: &AstNode, k: usize) -> HashMap<&str, usize> {
-    let mut mapping = HashMap::<&str, usize>::new();
-    match formula {
-        AstNode::HAQuantifier{identifier, form} |
-        AstNode::HEQuantifier{identifier, form} => {
-            // Recursively map inner quantifiers.
-            mapping.extend(create_hltl_mapping(form, k + 1));
-            // Update mapping
-            mapping.insert(identifier, k);
-            // Return the result
-            mapping
-        }
-        _ => mapping
-    }
-}
-
 pub fn unroll_hltl_formula<'ctx>(ctx: &'ctx Context, formula: &AstNode, paths: &Vec<&Vec<EnvState<'ctx>>>, sem: &Semantics) -> Bool<'ctx> {
     // Create a mapping from path quantifiers to the relevent state
-    let mapping = create_hltl_mapping(formula, 0);
+    let mapping = create_path_mapping(formula, 0);
     // Sanity check
     if paths.len() != mapping.keys().len() {
         panic!("Number of path quantifiers and provided paths must match");

@@ -6,8 +6,10 @@ use z3::{
     },
     Context,
 };
+use enchelper::{Semantics, create_path_mapping};
 use ir::*;
-use unroller::*;
+use hltlunroller::*;
+use ahltlunroller::*;
 use parser::*;
 
 // Combines the LTL encoding of the formula with valid path conditions
@@ -65,7 +67,7 @@ pub fn generate_hltl_encoding<'ctx>(ctx: &'ctx Context, formula: &AstNode, paths
     // Construct the inner encoding
     let inner = generate_inner_encoding(ctx, formula, path_encodings, inner_ltl.clone(), 0);
     // Get the mapping
-    let mapping = create_hltl_mapping(formula, 0);
+    let mapping = create_path_mapping(formula, 0);
     // Build the complete encoding
     generate_quantified_encoding(ctx, formula, paths, path_encodings, &mapping, inner.clone())
 

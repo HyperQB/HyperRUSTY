@@ -106,7 +106,7 @@ pub fn get_z3_encoding<'env, 'ctx>(env: &'env SMVEnv<'ctx>, formula: &'ctx AstNo
         let ahltl_obj = AHLTLObject::new(
             env,
             formula,
-            path_names,
+            path_names.clone(),
             traj_names,
             mapping,
             positions,
@@ -116,6 +116,20 @@ pub fn get_z3_encoding<'env, 'ctx>(env: &'env SMVEnv<'ctx>, formula: &'ctx AstNo
             m,
             sem,
         );
+
+        println!("{:?}", ahltl_obj.flatten_off());
+
+        // Get the A-HLTL pos /\ enc(phi) encoding
+        let inner_ltl = ahltl_obj.build_inner();
+        // Get valid path encodings
+        let mut constraints: Vec<Bool<'env>> = Vec::new();
+        for &name in &path_names {
+            let (_, new_constraint) = env.generate_symbolic_path(k, Some(name));
+            constraints.push(new_constraint);
+        }
+        // Include valid path conditions
+        let inner_with_paths = generate_inner_encoding(env.ctx, formula, &constraints, inner_ltl, 0);
+
         Bool::new_const(env.ctx, "test")
     }
 }
@@ -196,8 +210,4 @@ fn generate_hltl_encoding<'ctx>(ctx: &'ctx Context, formula: &AstNode, paths: Ve
 
 fn generate_ahltl_encoding<'ctx>(env: &'ctx SMVEnv<'ctx>, formula: &AstNode, ahltl_enc: AHLTLObject, paths: Vec<Vec<EnvState<'ctx>>>) -> Bool<'ctx> {
     test1(env)
-}
-
-fn test1<'ctx>(env: &'ctx SMVEnv<'ctx>) -> Bool<'ctx> {
-    Bool::new_const(env.ctx, "test")
 }

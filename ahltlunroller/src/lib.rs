@@ -62,6 +62,32 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
         }
     }
 
+    pub fn flatten_pos(& self) -> Vec<&Bool<'ctx>> {
+        self.positions
+        .values()
+        .flat_map(|path_map| path_map.values())
+        .flat_map(|ij_map| ij_map.values())
+        .collect()
+    }
+    pub fn flatten_traj(& self) -> HashMap<&'ctx str, Vec<&Bool<'ctx>>> {
+        let mut hash_out = HashMap::with_capacity(self.trajectories.len());
+        for (&traj_key, path_map) in &self.trajectories {
+            let mut flat = Vec::new();
+            for vec_bool in path_map.values() {
+                flat.extend(vec_bool.iter());
+            }
+            hash_out.insert(traj_key, flat);
+        }
+        hash_out
+    }
+    pub fn flatten_off(& self) -> Vec<&Bool<'ctx>> {
+        self.offs
+        .values()
+        .flat_map(|path_map| path_map.values())
+        .flat_map(|v| v.iter())
+        .collect()
+    }
+
     fn setpos(& self, path_name: &str, traj_name: &str, i: usize, j: usize) -> Bool<'ctx> {
         let idx = format!("{}_{}", i, j);
         let pos = &self.positions[traj_name][path_name][&idx];
@@ -352,11 +378,11 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
         }
     }
 
-    fn build_inner(& self) -> Bool<'ctx> {
+    pub fn build_inner(& self) -> Bool<'ctx> {
         self.pos() & self.enc()
     }
 
-    pub fn shared_semantics(& self, formula: &AstNode, j: usize) -> Bool<'ctx> {
+    fn shared_semantics(& self, formula: &AstNode, j: usize) -> Bool<'ctx> {
         match formula {
             AstNode::Constant {value} => {
                 if value == "TRUE" {

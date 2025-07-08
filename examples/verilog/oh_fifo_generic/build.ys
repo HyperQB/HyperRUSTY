@@ -1,0 +1,17 @@
+# build.ys
+# This example is async, so expect some auto variables in the smt output
+
+read_verilog -pwires ./oh_bin2gray.v \
+               ./oh_fifo_generic.v \
+               ./oh_dsync.v \
+               ./oh_memory_dp.v \
+               ./oh_gray2bin.v \
+               ./oh_rsync.v \
+               ./oh_memory_ram.v
+hierarchy -check -top oh_fifo_generic
+proc
+flatten
+async2sync
+dffunmap
+opt_clean -purge
+write_smt2 -stdt -wires MULTI_TEST.txt

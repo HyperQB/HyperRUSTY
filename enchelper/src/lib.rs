@@ -9,7 +9,7 @@ pub enum Semantics {
     Pes,
     Opt,
     Hpes,
-    HOpt,
+    Hopt,
 }
 
 // Creates a mapping of the quantified path variables to their corresponding

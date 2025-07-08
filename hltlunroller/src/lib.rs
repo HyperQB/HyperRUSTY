@@ -62,6 +62,13 @@ fn is_halted<'ctx>(ctx: &'ctx Context, paths: &Vec<Vec<EnvState<'ctx>>>) -> Bool
 fn unroll_ltl_formula<'ctx>(ctx: &'ctx Context, formula: &AstNode, paths: &Vec<Vec<EnvState<'ctx>>>, mapping: &HashMap<&str, usize>, k: usize, sem: &Semantics) -> UnrollingReturn<'ctx> {
     let bound = paths[0].len() - 1;
     match formula {
+        AstNode::Constant {value} => {
+            if value == "TRUE" {
+                UnrollingReturn::Bool(Bool::from_bool(ctx, true))
+            }else {
+                UnrollingReturn::Bool(Bool::from_bool(ctx, false))
+            }
+        }
         AstNode::UnOp {operator, operand} => {
             match operator {
                 UnaryOperator::Negation => {
@@ -96,7 +103,7 @@ fn unroll_ltl_formula<'ctx>(ctx: &'ctx Context, formula: &AstNode, paths: &Vec<V
                                 let eval_result = unroll_ltl_formula(ctx, operand, paths, mapping, k, sem).unwrap_bool();
                                 UnrollingReturn::Bool(Bool::and(ctx, &[&halted, &eval_result]))
                             }
-                            Semantics::HOpt => {
+                            Semantics::Hopt => {
                                 let not_halted = is_halted(ctx, paths).not();
                                 let eval_result = unroll_ltl_formula(ctx, operand, paths, mapping, k, sem).unwrap_bool();
                                 UnrollingReturn::Bool(Bool::or(ctx, &[&not_halted, &eval_result]))
@@ -128,6 +135,56 @@ fn unroll_ltl_formula<'ctx>(ctx: &'ctx Context, formula: &AstNode, paths: &Vec<V
                     let lhs_bool = unroll_ltl_formula(ctx, lhs, paths, mapping, k, sem).unwrap_bool();
                     let rhs_bool = unroll_ltl_formula(ctx, rhs, paths, mapping, k, sem).unwrap_bool();
                     UnrollingReturn::Bool(Bool::and(ctx, &[&lhs_bool, &rhs_bool]))
+                }
+                BinOperator::Until => {
+                    let rhs_bool = unroll_ltl_formula(ctx, rhs, paths, mapping, k, sem).unwrap_bool();
+                    if k != bound {
+                        let lhs_bool = unroll_ltl_formula(ctx, lhs, paths, mapping, k, sem).unwrap_bool();
+                        // Build the recurrsive part
+                        let rec_until = unroll_ltl_formula(ctx, formula, paths, mapping, k + 1, sem).unwrap_bool();
+                        let rhs = lhs_bool & rec_until;
+                        UnrollingReturn::Bool(Bool::or(ctx, &[&rhs_bool, &rhs]))
+                    }else {
+                        match sem {
+                            Semantics::Pes | Semantics::Hpes => UnrollingReturn::Bool(rhs_bool),
+                            Semantics::Opt => {
+                                let lhs_bool = unroll_ltl_formula(ctx, lhs, paths, mapping, k, sem).unwrap_bool();
+                                UnrollingReturn::Bool(Bool::or(ctx, &[&lhs_bool, &rhs_bool]))
+                            }
+                            Semantics::Hopt => {
+                                let lhs_bool = unroll_ltl_formula(ctx, lhs, paths, mapping, k, sem).unwrap_bool();
+                                let halted = is_halted(ctx, paths);
+                                let rhs = halted & lhs_bool;
+                                UnrollingReturn::Bool(Bool::or(ctx, &[&rhs_bool, &rhs]))
+                            }
+                        }
+                    }
+                }
+                BinOperator::Release => {
+                    let rhs_bool = unroll_ltl_formula(ctx, rhs, paths, mapping, k, sem).unwrap_bool();
+                    if k != bound {
+                        let lhs_bool = unroll_ltl_formula(ctx, lhs, paths, mapping, k, sem).unwrap_bool();
+                        let rhs_bool = unroll_ltl_formula(ctx, rhs, paths, mapping, k, sem).unwrap_bool();
+                        // Build the recurrsive part
+                        let rec_until = unroll_ltl_formula(ctx, formula, paths, mapping, k + 1, sem).unwrap_bool();
+                        let rhs = lhs_bool | rec_until;
+                        UnrollingReturn::Bool(Bool::and(ctx, &[&rhs_bool, &rhs]))
+                    }else {
+                        match sem {
+                            Semantics::Opt | Semantics::Hopt => UnrollingReturn::Bool(rhs_bool),
+                            Semantics::Pes => {
+                                let lhs_bool = unroll_ltl_formula(ctx, lhs, paths, mapping, k, sem).unwrap_bool();
+                                UnrollingReturn::Bool(Bool::and(ctx, &[&lhs_bool, &rhs_bool]))
+                            }
+                            Semantics::Hpes => {
+                                let lhs_bool = unroll_ltl_formula(ctx, lhs, paths, mapping, k, sem).unwrap_bool();
+                                let halted = is_halted(ctx, paths);
+                                let rhs = halted & rhs_bool.clone();
+                                let lhs = lhs_bool & rhs_bool;
+                                UnrollingReturn::Bool(Bool::or(ctx, &[&lhs, &rhs]))
+                            }
+                        }
+                    }
                 }
                 BinOperator::Disjunction => {
                     let lhs_bool = unroll_ltl_formula(ctx, lhs, paths, mapping, k, sem).unwrap_bool();

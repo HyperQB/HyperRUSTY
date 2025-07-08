@@ -12,6 +12,8 @@ pub enum BinOperator {
     Conjunction,
     Disjunction,
     Implication,
+    Until,
+    Release,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
@@ -58,6 +60,9 @@ pub enum AstNode {
         path_identifier: String,
         traj_identifier: String,
     },
+    Constant {
+        value: String,
+    }
 }
 
 pub fn parse(source: &str) -> Result<AstNode, Error<Rule>> {
@@ -202,10 +207,10 @@ fn build_ast_from_conj(pair: pest::iterators::Pair<Rule>) -> AstNode {
 
     // Check the length of the iterator
     match pairs.len() {
-        1 => build_ast_from_factor(pairs.next().unwrap()),
+        1 => build_ast_from_until(pairs.next().unwrap()),
         2 => {
             let lhs = pairs.next().unwrap(); // This is factor
-            let lhs_ast = build_ast_from_factor(lhs);
+            let lhs_ast = build_ast_from_until(lhs);
             let rhs = pairs.next().unwrap(); // This is conj
             let rhs_ast = build_ast_from_conj(rhs);
             AstNode::BinOp {
@@ -217,6 +222,52 @@ fn build_ast_from_conj(pair: pest::iterators::Pair<Rule>) -> AstNode {
         _ => unreachable!(),
     }
 }
+
+fn build_ast_from_until(pair: pest::iterators::Pair<Rule>) -> AstNode {
+    // We always reach here with an 'hconj/aconj' node in the parser. Skip it.
+    let mut pairs = pair.into_inner();
+
+    // Check the length of the iterator
+    match pairs.len() {
+        1 => build_ast_from_release(pairs.next().unwrap()),
+        2 => {
+            let lhs = pairs.next().unwrap(); // This is factor
+            let lhs_ast = build_ast_from_release(lhs);
+            let rhs = pairs.next().unwrap(); // This is conj
+            let rhs_ast = build_ast_from_until(rhs);
+            AstNode::BinOp {
+                operator: BinOperator::Until,
+                lhs: Box::new(lhs_ast),
+                rhs: Box::new(rhs_ast),
+            }
+        },
+        _ => unreachable!(),
+    }
+}
+
+fn build_ast_from_release(pair: pest::iterators::Pair<Rule>) -> AstNode {
+    // We always reach here with an 'hconj/aconj' node in the parser. Skip it.
+    let mut pairs = pair.into_inner();
+
+    // Check the length of the iterator
+    match pairs.len() {
+        1 => build_ast_from_factor(pairs.next().unwrap()),
+        2 => {
+            let lhs = pairs.next().unwrap(); // This is factor
+            let lhs_ast = build_ast_from_factor(lhs);
+            let rhs = pairs.next().unwrap(); // This is conj
+            let rhs_ast = build_ast_from_release(rhs);
+            AstNode::BinOp {
+                operator: BinOperator::Release,
+                lhs: Box::new(lhs_ast),
+                rhs: Box::new(rhs_ast),
+            }
+        },
+        _ => unreachable!(),
+    }
+}
+
+
 
 fn build_ast_from_factor(pair: pest::iterators::Pair<Rule>) -> AstNode {
     // We always reach here with an 'hfactor/afactor' node in the parser. Skip it.
@@ -260,27 +311,43 @@ fn build_ast_from_factor(pair: pest::iterators::Pair<Rule>) -> AstNode {
 fn build_ast_from_hprop(pair: pest::iterators::Pair<Rule>) -> AstNode {
     // We always reach here with an 'hltl-atom' node in the parser. Skip it.
     let mut pairs = pair.into_inner();
-    
-    let prop = pairs.next().unwrap();
-    let path = pairs.next().unwrap();
 
-    AstNode::HIndexedProp {
-        proposition: String::from(prop.as_str()),
-        path_identifier: String::from(path.as_str()),
+    // Its either a constant or a proposition
+    // We need to peek inside to find out.
+    let inner = pairs.next().unwrap();
+
+    match inner.as_rule() {
+        Rule::constant => AstNode::Constant{value: String::from(inner.as_str())},
+        Rule::ident => {
+            let path = pairs.next().unwrap();
+            AstNode::HIndexedProp {
+                proposition: String::from(inner.as_str()),
+                path_identifier: String::from(path.as_str()),
+            }
+        }
+        _ => unreachable!(),
     }
 }
 
 fn build_ast_from_aprop(pair: pest::iterators::Pair<Rule>) -> AstNode {
     // We always reach here with an 'altl-atom' node in the parser. Skip it.
     let mut pairs = pair.into_inner();
-    
-    let prop = pairs.next().unwrap();
-    let path = pairs.next().unwrap();
-    let traj = pairs.next().unwrap();
 
-    AstNode::AIndexedProp {
-        proposition: String::from(prop.as_str()),
-        path_identifier: String::from(path.as_str()),
-        traj_identifier: String::from(traj.as_str()),
+    // Its either a constant or a proposition
+    // We need to peek inside to find out.
+    let inner = pairs.next().unwrap();
+
+    match inner.as_rule() {
+        Rule::constant => AstNode::Constant{value: String::from(inner.as_str())},
+        Rule::ident => {
+            let path = pairs.next().unwrap();
+            let traj = pairs.next().unwrap();
+            AstNode::AIndexedProp {
+                proposition: String::from(inner.as_str()),
+                path_identifier: String::from(path.as_str()),
+                traj_identifier: String::from(traj.as_str()),
+            }
+        }
+        _ => unreachable!(),
     }
 }

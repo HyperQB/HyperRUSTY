@@ -274,11 +274,11 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
         lhs | rhs
     }
 
-    fn shared_semantics(& self, form: &AstNode, j: usize) -> Bool<'ctx> {
-        match formula {
-            
-        }
-    }
+    // fn shared_semantics(& self, form: &AstNode, j: usize) -> Bool<'ctx> {
+    //     match formula {
+
+    //     }
+    // }
 
 
 

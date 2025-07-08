@@ -11,20 +11,26 @@ inner_altl = { aequal }
 hequal = { himpl ~ ("=" ~ hequal)? }
 himpl = { hdisj ~ ("->" ~ himpl)? }
 hdisj = { hconj ~ ("|" ~ hdisj)? }
-hconj = { hfactor ~ ("&" ~ hconj)? }
+hconj = { huntl ~ ("&" ~ hconj)? }
+huntl = { hrels ~ ("U" ~ huntl)? }
+hrels = { hfactor ~ ("R" ~ hrels)? }
 hfactor = { unop ~ hfactor | "(" ~ inner_hltl ~ ")" | hltl_atom }
-hltl_atom = { ident ~ "[" ~ ident ~ "]" }
+hltl_atom = { ident ~ "[" ~ ident ~ "]" | constant }
+
 
 aequal = { aimpl ~ ("=" ~ aequal)? }
 aimpl = { adisj ~ ("->" ~ aimpl)? }
 adisj = { aconj ~ ("|" ~ adisj)? }
-aconj = { afactor ~ ("&" ~ aconj)? }
+aconj = { auntl ~ ("&" ~ aconj)? }
+auntl = { arels ~ ("U" ~ auntl)? }
+arels = { afactor ~ ("R" ~ arels)? }
 afactor = { aunop ~ afactor | "(" ~ inner_altl ~ ")" | altl_atom }
-altl_atom = { ident ~ "[" ~ ident ~ "]" ~ "[" ~ ident ~ "]" }
+altl_atom = { ident ~ "[" ~ ident ~ "]" ~ "[" ~ ident ~ "]" | constant }
 
 aunop = { "G" | "F" | "~" }
 unop = { "G" | "F" | "X" | "~" }
 ident = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+constant = {"TRUE" | "FALSE"}
 
 // Entry point for the parser
 formula = _{ SOI ~ path_formula ~ EOI }

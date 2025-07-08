@@ -23,75 +23,78 @@ fn main() {
 
     let ast_node = parse(&source).expect("Input parsing failed");
 
-    let mut cfg = Config::new();
-    cfg.set_model_generation(true);
-    let ctx = Context::new(&cfg);
-    let solver = Solver::new(&ctx);
+    println!("{:?}", ast_node);
 
-    let mut env = SMVEnv::new(&ctx);
 
-    env.register_variable("high", VarType::Bool {init: Some(vec![false])});
-    env.register_variable("low", VarType::Bool {init: Some(vec![false])});
-    env.register_variable("halt", VarType::Bool {init: Some(vec![false])});
-    env.register_variable("pc", VarType::Int {init: Some(vec![1]), lower: Some(1), upper: Some(5)});
+    // let mut cfg = Config::new();
+    // cfg.set_model_generation(true);
+    // let ctx = Context::new(&cfg);
+    // let solver = Solver::new(&ctx);
 
-    // Transitions
-    env.register_transition("high",
-    |_env, _ctx, _state| exact!(Node, int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 1))),
-    |_env, _ctx, _state| choice!(Bool, true, false)
-    );
+    // let mut env = SMVEnv::new(&ctx);
 
-    env.register_transition("low",
-    |_env, _ctx, _state| exact!(Node, int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 2))),
-    |_env, _ctx, _state| exact!(Bool, false)
-    );
-    env.register_transition("low",
-    |_env, _ctx, _state| exact!(Node, int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 4))),
-    |_env, _ctx, _state| exact!(Bool, true)
-    );
+    // env.register_variable("high", VarType::Bool {init: Some(vec![false])});
+    // env.register_variable("low", VarType::Bool {init: Some(vec![false])});
+    // env.register_variable("halt", VarType::Bool {init: Some(vec![false])});
+    // env.register_variable("pc", VarType::Int {init: Some(vec![1]), lower: Some(1), upper: Some(5)});
 
-    env.register_transition("pc",
-    |_env, _ctx, _state| exact!(Node, int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 1))),
-    |_env, _ctx, _state| exact!(Int, 2)
-    );
-    env.register_transition("pc",
-    |_env, _ctx, _state| exact!(Node, int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 2))),
-    |_env, _ctx, _state| exact!(Int, 3)
-    );
-    env.register_transition("pc",
-    |_env, _ctx, _state| exact!(Node, bool_var!(_state, "high") & int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 3))),
-    |_env, _ctx, _state| exact!(Int, 4)
-    );
-    env.register_transition("pc",
-    |_env, _ctx, _state| exact!(Node, !bool_var!(_state, "high") & int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 3))),
-    |_env, _ctx, _state| exact!(Int, 5)
-    );
-    env.register_transition("pc",
-    |_env, _ctx, _state| exact!(Node, int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 5))),
-    |_env, _ctx, _state| exact!(Int, 5)
-    );
+    // // Transitions
+    // env.register_transition("high",
+    // |_env, _ctx, _state| exact!(Node, int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 1))),
+    // |_env, _ctx, _state| choice!(Bool, true, false)
+    // );
 
-    env.register_transition("halt",
-    |_env, _ctx, _state| exact!(Node, int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 5))),
-    |_env, _ctx, _state| exact!(Bool, true)
-    );
+    // env.register_transition("low",
+    // |_env, _ctx, _state| exact!(Node, int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 2))),
+    // |_env, _ctx, _state| exact!(Bool, false)
+    // );
+    // env.register_transition("low",
+    // |_env, _ctx, _state| exact!(Node, int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 4))),
+    // |_env, _ctx, _state| exact!(Bool, true)
+    // );
 
-    env.register_transition("halt",
-    |_env, _ctx, _state| exact!(Node, predicate!("halt", _env, _ctx, _state)),
-    |_env, _ctx, _state| exact!(Bool, true)
-    );
+    // env.register_transition("pc",
+    // |_env, _ctx, _state| exact!(Node, int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 1))),
+    // |_env, _ctx, _state| exact!(Int, 2)
+    // );
+    // env.register_transition("pc",
+    // |_env, _ctx, _state| exact!(Node, int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 2))),
+    // |_env, _ctx, _state| exact!(Int, 3)
+    // );
+    // env.register_transition("pc",
+    // |_env, _ctx, _state| exact!(Node, bool_var!(_state, "high") & int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 3))),
+    // |_env, _ctx, _state| exact!(Int, 4)
+    // );
+    // env.register_transition("pc",
+    // |_env, _ctx, _state| exact!(Node, !bool_var!(_state, "high") & int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 3))),
+    // |_env, _ctx, _state| exact!(Int, 5)
+    // );
+    // env.register_transition("pc",
+    // |_env, _ctx, _state| exact!(Node, int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 5))),
+    // |_env, _ctx, _state| exact!(Int, 5)
+    // );
 
-    env.register_predicate("halt",
-    |_env, _ctx, _state| int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 5))
-    );
+    // env.register_transition("halt",
+    // |_env, _ctx, _state| exact!(Node, int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 5))),
+    // |_env, _ctx, _state| exact!(Bool, true)
+    // );
 
-    let K: usize = 5;
-    let M: usize = 5;
+    // env.register_transition("halt",
+    // |_env, _ctx, _state| exact!(Node, predicate!("halt", _env, _ctx, _state)),
+    // |_env, _ctx, _state| exact!(Bool, true)
+    // );
 
-    let (states_a, sym_path_a) = env.generate_symbolic_path(K, Some("A"));
-    let (states_b, sym_path_b) = env.generate_symbolic_path(K, Some("B"));
+    // env.register_predicate("halt",
+    // |_env, _ctx, _state| int_var!(_state, "pc")._eq(&Int::from_i64(_ctx, 5))
+    // );
 
-    let form = get_z3_encoding(&env, &ast_node, K, Some(M), Semantics::Hpes);
+    // let K: usize = 5;
+    // let M: usize = 5;
+
+    // let (states_a, sym_path_a) = env.generate_symbolic_path(K, Some("A"));
+    // let (states_b, sym_path_b) = env.generate_symbolic_path(K, Some("B"));
+
+    // let form = get_z3_encoding(&env, &ast_node, K, Some(M), Semantics::Hpes);
 
     // let form = generate_hltl_encoding(&ctx, &ast_node, vec![states_a, states_b], vec![sym_path_a, sym_path_b], Semantics::Pes);
 

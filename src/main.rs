@@ -1,5 +1,7 @@
 #![allow(warnings)]
 use std::fs;
+use std::io::{self, Write};
+use std::process;
 use std::path::PathBuf;
 use ir::*;
 use parser::*;
@@ -147,6 +149,24 @@ fn main() {
 
         if *matches.get_one::<bool>("qbf_solver").unwrap() {
             gen_qcir(&model_paths, &String::from(formula_path.to_str().unwrap()), &env, *unrolling_bound as i32, false, semantics_as_str);
+            let output = process::Command::new("/Users/milad/Desktop/rust_tutorial/HyperRUSTY/quabs")
+                .arg("outputs/HQ.qcir")
+                .stdout(process::Stdio::piped())
+                .spawn()
+                .expect("QuAbs can not be executed")
+                .wait_with_output().expect("QuAbs output is problematic.");
+            
+            // Convert stdout and stderr from bytes to string
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+
+            // Print based on success or failure
+            if !stdout.trim().is_empty() {
+                println!("{}", stdout);
+            }
+            if !stderr.trim().is_empty() {
+                println!("{}", stderr);
+            }
         }else {
             let form = get_z3_encoding(&env, &ast_node, *unrolling_bound, None, semantics);
 

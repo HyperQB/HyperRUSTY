@@ -5,6 +5,8 @@ use ir::*;
 use parser::*;
 use enchelper::*;
 use encoder::*;
+use parser_nusmv::*;
+use unroller_qbf::*;
 use z3::{
     ast::{
         Ast, Dynamic, Int, Bool,
@@ -100,8 +102,9 @@ fn main() {
     let formula_path = matches
         .get_one::<PathBuf>("formula").unwrap();
 
-    let semantics = match matches
-        .get_one::<String>("semantics").unwrap().as_str() {
+    let semantics_as_str = matches.get_one::<String>("semantics").unwrap().as_str();
+
+    let semantics = match semantics_as_str {
             "pes" => Semantics::Pes,
             "opt" => Semantics::Opt,
             "hpes" => Semantics::Hopt,
@@ -120,10 +123,52 @@ fn main() {
             })
             .collect();
         
-            let trajectory_bound = matches
-                .get_one::<usize>("trajectory_bound");
+        let trajectory_bound = matches
+            .get_one::<usize>("trajectory_bound");
+
+        // To be replaced with the formula path
+        let formula = fs::read_to_string(formula_path).expect("Failed to read the formula");
+        let ast_node = parse(&formula).expect("Failed parsing the formula");
+
+        let mut cfg = Config::new();
+        cfg.set_model_generation(true);
+        let ctx = Context::new(&cfg);
+        let solver = Solver::new(&ctx);
+
+        // here we get an SMVEnv from the arguments
+        let env = parse_smv(
+            &ctx,
+            model_paths[0],
+            Some("output.txt".to_string()),
+            false,
+            "model",
+            "ir",
+        );
+
+        if *matches.get_one::<bool>("qbf_solver").unwrap() {
+            gen_qcir(&model_paths, &String::from(formula_path.to_str().unwrap()), &env, *unrolling_bound as i32, false, semantics_as_str);
+        }else {
+            let form = get_z3_encoding(&env, &ast_node, *unrolling_bound, None, semantics);
+
+            solver.assert(&form);
+
+            match solver.check() {
+                SatResult::Sat => {
+                    println!("result: sat.");
+                },
+                SatResult::Unsat => {
+                    println!("result: unsat.");
+                },
+                SatResult::Unknown => {
+                    println!("result: unknown.");
+                }
+            };
+        }
+
+        
     }else {
         // Verilog Path
+        panic!("I Shouldn't be here! -Said verilog");
         let build_path = matches
             .get_one::<PathBuf>("verilog").unwrap();
 
@@ -133,33 +178,6 @@ fn main() {
         let top_module = matches
             .get_one::<String>("top").unwrap();
     }
-
-
-
-
-
-    // To be replaced with the formula path
-    let formula = fs::read_to_string("formula.hq").expect("Failed to read the formula");
-    let ast_node = parse(&formula).expect("Failed parsing the formula");
-
-    let mut cfg = Config::new();
-    cfg.set_model_generation(true);
-    let ctx = Context::new(&cfg);
-    let solver = Solver::new(&ctx);
-
-    // here we get an SMVEnv from the arguments
-    // let env = parse_smv(
-    //     input_path,
-    //     output_path,
-    //     bit_encode,
-    //     input_format,
-    //     output_format,
-    // );
-
-    // Replace this with the value of K
-    let K: usize = 5;
-
-    // Get the type of semantics based on the string
 
 
     // // Get identifier names to create unrolled paths
@@ -179,24 +197,5 @@ fn main() {
     //         env.generate_symbolic_path(K, Some(path_identifiers[i]))
     //     );
     // }
-
-    // let (states_a, sym_path_a) = env.generate_symbolic_path(K, Some("A"));
-    // let (states_b, sym_path_b) = env.generate_symbolic_path(K, Some("B"));
-
-    // let form = get_z3_encoding(&env, &ast_node, K, Some(M), Semantics::Hpes);
-
-    // solver.assert(&form);
-
-    // match solver.check() {
-    //     SatResult::Sat => {
-    //         println!("result: sat.");
-    //     },
-    //     SatResult::Unsat => {
-    //         println!("result: unsat.");
-    //     },
-    //     SatResult::Unknown => {
-    //         println!("result: unknown.");
-    //     }
-    // };
 
 }

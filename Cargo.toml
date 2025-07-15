@@ -10,3 +10,5 @@ parser = { path = "./parser" }
 ir = { path = "./ir" }
 encoder = { path = "./encoder" }
 enchelper = { path = "./enchelper" }
+parser_nusmv = { path = "./parser_nusmv" }
+unroller_qbf = { path = "./unroller_qbf" }

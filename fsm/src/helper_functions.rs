@@ -28,7 +28,7 @@ pub fn create_file() -> File {
     // try to create a file at currentdir/outputs/{file}. assume outputs folder already exists
     let path = env::current_dir();
     let mut path = path.expect("REASON");
-    while !path.ends_with("HyperRust"){ // NOTE!!!! This is a hack to get the path to the root of the project, ROOT MUST BE HyperRust!
+    while path.ends_with("HyperRust"){ // NOTE!!!! This is a hack to get the path to the root of the project, ROOT MUST BE HyperRust!
         path = PathBuf::from(path.parent().expect("Should have a parent"));
     }
 
@@ -179,7 +179,7 @@ pub fn get_output_string(model_map: &Vec<(String, i32)>,max_gate_number: i32, lo
             temp = 0-temp
         }
 
-        if quantifier == "exists" {
+        if quantifier == "Exists" {
             if debug{
                 last_and.push_str(&format!("g{} = and(g{},g{})\n", quantifier_output_gate, model_output_gate, temp));
             } else{
@@ -187,7 +187,7 @@ pub fn get_output_string(model_map: &Vec<(String, i32)>,max_gate_number: i32, lo
                 // THH: patch: avoid forward referencing
                 bmc = (&format!("{} = and({},{})\n", quantifier_output_gate, model_output_gate, temp)).to_owned() + &bmc;
             }
-        } else if quantifier == "forall"  {
+        } else if quantifier == "Forall"  {
             if debug{
                 last_and.push_str(&format!("g{} = or(-g{},g{})\n", quantifier_output_gate, model_output_gate, temp));
             } else{
@@ -286,7 +286,7 @@ pub fn get_output_string_encoding_version(model_map: &Vec<(String, i32)>,max_gat
             temp = 0-temp
         }
 
-        if quantifier == "exists" {
+        if quantifier == "Exists" {
             if debug{
                 last_and.push_str(&format!("g{} = and(g{},g{})\n", quantifier_output_gate, model_output_gate, temp));
             } else{
@@ -407,10 +407,10 @@ fn get_string_quantifiers_and_ends_encoding_version(model_map: &Vec<(String, i32
         logger.log(&*format!("Layer 1 constants: {}", layer1_constants.to_string().trim_end_matches(",").to_string()), 1);
         final_ands.push(layer1_constants.to_string().trim_end_matches(",").to_string());
         output_string.push_str(&format!("{}({})\n", semantic,map_string.trim_end_matches(",")));
-        if semantic == "forall"{
-            output_string.push_str(&format!("{}({})\n", "exists",helper_map_string.trim_end_matches(",")));
+        if semantic == "Forall"{
+            output_string.push_str(&format!("{}({})\n", "Exists",helper_map_string.trim_end_matches(",")));
         } else {
-            output_string.push_str(&format!("{}({})\n", "forall",helper_map_string.trim_end_matches(",")));
+            output_string.push_str(&format!("{}({})\n", "Forall",helper_map_string.trim_end_matches(",")));
         }
         counter += 1;
 
@@ -503,7 +503,7 @@ pub fn get_output_string_unified(model_map: &Vec<(String, i32)>, mut max_gate_nu
             temp = 0-temp
         }
 
-        if quantifier == "exists" {
+        if quantifier == "Exists" {
             if debug{
                 last_and.push_str(&format!("g{} = and(g{},g{})\n", quantifier_output_gate, model_output_gate, temp));
             } else{
@@ -640,10 +640,10 @@ fn get_string_quantifiers_and_ends_unified(model_map: &Vec<(String, i32)>, quant
             truth = model_bool & (counter == *symbol_map.get_model_number_from_name(model_flag));
         }
         if truth {
-            if semantic == "forall"{
-                output_string.push_str(&format!("{}({})\n", "exists",helper_map_string.trim_end_matches(",")));
+            if semantic == "Forall"{
+                output_string.push_str(&format!("{}({})\n", "Exists",helper_map_string.trim_end_matches(",")));
             } else {
-                output_string.push_str(&format!("{}({})\n", "forall",helper_map_string.trim_end_matches(",")));
+                output_string.push_str(&format!("{}({})\n", "Forall",helper_map_string.trim_end_matches(",")));
             }
         }
 

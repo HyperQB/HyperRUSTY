@@ -1,3 +1,3 @@
-pub mod parser_nusmv; // or whatever your module file is
+pub mod main; // or whatever your module file is
 
-pub use parser_nusmv::parse_smv; // <- this line makes `parse_model` accessible from the root
+pub use main::parse_smv; // <- this line makes `parse_model` accessible from the root

@@ -124,10 +124,10 @@ pub enum LogicOpT {
     LetOp,
 }
 
-pub const TRUE_SYM:         &str = "true";
-pub const FALSE_SYM:        &str = "false";
-pub const AND_SYM:          &str = "/\\";
-pub const OR_SYM:           &str = "\\/";
+pub const TRUE_SYM:         &str = "TRUE";
+pub const FALSE_SYM:        &str = "FALSE";
+pub const AND_SYM:          &str = "&";
+pub const OR_SYM:           &str = "|";
 pub const NEG_SYM:          &str = "~";
 pub const IMPL_SYM:         &str = "->";  // becomes not(expr1) \/ expr2
 pub const IFF_SYM:          &str = "<->"; // becomes (expr1 -> expr2) /\ (expr2 -> expr1)

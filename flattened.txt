@@ -1,0 +1,23 @@
+-- Flattened FSM model generated from ./mini.smv
+-- Dumped layers are: model 
+
+MODULE main
+-- Input variables from layer 'model'
+-- State variables from layer 'model'
+VAR
+x : boolean;
+
+-- Frozen variables from layer 'model'
+-- Functions from layer 'model'
+-- Defines from layer 'model'
+-- Assignments from layer 'model'
+ASSIGN
+init(x) := FALSE;
+next(x) := x;
+
+
+
+
+
+
+

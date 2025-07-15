@@ -10,3 +10,4 @@ ir = { path = "../ir" }
 expressions = { path = "../expressions" }
 fsm = { path = "../fsm" }
 flags = { path = "../flags" }
+logging = { path = "../logging" }

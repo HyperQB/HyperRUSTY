@@ -179,7 +179,7 @@ impl<'ctx> SMVEnv<'ctx> {
         constraints
     }
 
-    fn generate_initial_constraints(& self, states: &Vec<EnvState<'ctx>>) -> Vec<Bool> {
+    pub fn generate_initial_constraints(& self, states: &Vec<EnvState<'ctx>>) -> Vec<Bool> {
         let mut constraints = Vec::<Bool>::new();
 
         for (name, variable) in self.variables.iter() {
@@ -421,5 +421,49 @@ impl<'ctx> SMVEnv<'ctx> {
         let refs: Vec<&Bool> = constraints.iter().collect();
         let sym_path = Bool::and(self.ctx, &refs);
         (states, sym_path)
+    }
+
+    pub fn get_transitions(&self) -> &HashMap<&'ctx str, Vec<(Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> ReturnType<'ctx>>, Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> ReturnType<'ctx>>)>> {
+        &self.transitions
+    }
+    pub fn make_dummy_state(&self, ctx: &'ctx z3::Context) -> EnvState<'ctx> {
+        let mut state: EnvState<'ctx> = HashMap::new();
+ 
+        for (name, var) in &self.variables {
+            let val = match &var.sort {
+                VarType::Bool { .. } => {
+                    let ast = z3::ast::Bool::fresh_const(ctx, name);
+                    Dynamic::from_ast(&ast)
+                }
+                VarType::Int { .. } => {
+                    let ast = z3::ast::Int::fresh_const(ctx, name);
+                    Dynamic::from_ast(&ast)
+                }
+                VarType::BVector { width, .. } => {
+                    let ast = z3::ast::BV::fresh_const(ctx, name, *width);
+                    Dynamic::from_ast(&ast)
+                }
+            };
+            state.insert(*name, val);
+        }
+ 
+        state
+    }
+ 
+    pub fn get_context(&self) -> &'ctx z3::Context {
+        self.ctx
+    }
+ 
+    pub fn get_variables(&self) -> &HashMap<&'ctx str, Variable> {
+        &self.variables
+    }
+ 
+    pub fn get_variable_mut(&mut self, name: &str) -> Option<&mut Variable> {
+        self.variables.get_mut(name)
+    }
+ 
+    pub fn get_variable_type(&self, name: &str) -> Option<&VarType> {
+        println!("Looking up variable type for: {}", name);
+        self.variables.get(name).map(|var| &var.sort)
     }
 }

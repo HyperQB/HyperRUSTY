@@ -1,5 +1,6 @@
 #![allow(warnings)]
 use std::fs;
+use std::path::PathBuf;
 use ir::*;
 use parser::*;
 use enchelper::*;
@@ -16,32 +17,67 @@ use clap::{arg, value_parser, ArgGroup, Command};
 fn main() {
 
     //clap setup
-    let cli = Command::new("hqb-verilog")
+    let cli = Command::new("hyperqb")
         .arg(
             arg!(
-                -v --verilog <FILE> "Input file"
+                -v --verilog <FILE> "Yosys build file"
             )
             .required(false)
             .value_parser(value_parser!(PathBuf)),
         )
         .arg(
             arg!(
-                -n --nusmv <FILE> "Input file"
+                -n --nusmv <FILE> "NuSMV"
             )
             .required(false)
+            .num_args(1..)
             .value_parser(value_parser!(PathBuf)),
+        )
+        .arg(
+            arg!(
+                -f --formula <FILE> "Hyperproperty formula"
+            )
+            .required(true)
+            .value_parser(value_parser!(PathBuf)),
+        )
+        .arg(
+            arg!(
+                -k --unrolling_bound <FILE> "Unrolling bound"
+            )
+            .required(true)
+            .value_parser(value_parser!(usize)),
+        )
+        .arg(
+            arg!(
+                -s --semantics <FILE> "Choice of semantics"
+            )
+            .required(true)
+            .value_parser(value_parser!(String)),
+        )
+        .arg(
+            arg!(
+                -m --trajectory_bound <FILE> "Trajectory bound"
+            )
+            .required(false)
+            .value_parser(value_parser!(usize)),
+        )
+        .arg(
+            arg!(
+                -q --qbf_solver "Use QBF solver (default is Z3)"
+            )
+            .required(false)
         )
         .arg(
             arg!(
                 -t --top <TOP_MODULE> "Top module name (default: main)"
             )
-            .required(true)
+            .required(false)
             .default_value("main")
             .value_parser(value_parser!(String)),
         )
         .arg(
             arg!(
-                -s --smt2_path <SMT2_FILE> "Location of SMT2 file if using a build file"
+                -o --yosys_output <SMT2_FILE> "Location of SMT2 file if using a build file"
             )
             .required(false)
             .value_parser(value_parser!(PathBuf)),
@@ -53,24 +89,20 @@ fn main() {
             .required(false)
             .value_parser(value_parser!(PathBuf)),
         )
-        .arg(
-            arg!(
-                -u --unroll <BOUND> "Unroll the design directly from the smt2 file up to bound"
-            )
-            .value_parser(value_parser!(u32))
-            .required(true)  
-        )
-        .arg(
-            arg!(
-                -i --trace_id <TRACE_ID> "Trace ID for unrolling"
-            )
-            .value_parser(value_parser!(String))
-            .required(true)
-        )
         .group(ArgGroup::new("input")
-            .args(["verilog", "build"])
+            .args(["verilog", "nusmv"])
             .required(true)
+            .multiple(false)
         );
+
+        let matches = cli.get_matches();
+
+        let paths: Vec<PathBuf> = matches
+            .get_many::<PathBuf>("nusmv").unwrap().cloned().collect();
+
+        for path in paths {
+            println!("{:?}", path);
+        }
 
 
 

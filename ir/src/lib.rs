@@ -466,4 +466,135 @@ impl<'ctx> SMVEnv<'ctx> {
         println!("Looking up variable type for: {}", name);
         self.variables.get(name).map(|var| &var.sort)
     }
+
+
+    pub fn generate_all_symbolic_states(&self, suffix: Option<&'ctx str>) -> Vec<EnvState<'ctx>> {
+        let mut total_states = 1;
+
+        // Step 1: Compute total number of possible states
+        for (_, var) in self.variables.iter() {
+            let domain_size = match &var.sort {
+                VarType::Bool { .. } => 2,
+                VarType::Int { lower, upper, .. } => {
+                    match (lower, upper) {
+                        (Some(lo), Some(hi)) => (hi - lo + 1).max(0),
+                        _ => panic!("Int vars must have both lower and upper bounds for full state space generation."),
+                    } 
+                }
+                VarType::BVector { lower, upper, .. } => {
+                    match (lower, upper) {
+                        (Some(lo), Some(hi)) => (hi - lo + 1).max(0),
+                        _ => panic!("BV vars must have both lower and upper bounds for full state space generation."),
+                    }
+                }
+            };
+            total_states *= domain_size;
+        }
+
+        // Step 2: Use previous logic to generate symbolic variables
+        let mut states = Vec::new();
+
+        for k in 0..total_states {
+            let mut state = EnvState::<'ctx>::new();
+
+            for (name, variable) in self.variables.iter() {
+                let state_name = match suffix {
+                    Some(s) => format!("{}_{}_{}", name, k, s),
+                    None => format!("{}_{}", name, k),
+                };
+
+                let node = match variable.sort {
+                    VarType::Bool {init: _} => {
+                        Dynamic::from_ast(&Bool::new_const(self.ctx, state_name))
+                    }
+                    VarType::Int {init: _, lower: _, upper: _} => {
+                        Dynamic::from_ast(&Int::new_const(self.ctx, state_name))
+                    }
+                    VarType::BVector {width, lower: _, upper: _, init: _} => {
+                        Dynamic::from_ast(&BV::new_const(self.ctx, state_name, width))
+                    }
+                };
+
+                state.insert(name, node);
+            }
+
+            states.push(state);
+        }
+
+        states
+    }
+
+
+    pub fn generate_scope_constraints_for_state(&self, state: &EnvState<'ctx>) -> Vec<Bool<'ctx>> {
+        let mut constraints = Vec::<Bool<'ctx>>::new();
+
+        // Iterate through each variable and generate its bound condition for this one state
+        for (name, variable) in self.variables.iter() {
+            let constraint = match &variable.sort {
+                VarType::Bool { .. } => None,
+                VarType::Int { lower, upper, .. } => {
+                    let mut per_var = Vec::new();
+                    let v = int_var!(state, name);
+                    if let Some(lo) = lower {
+                        per_var.push(v.ge(&Int::from_i64(self.ctx, *lo)));
+                    }
+                    if let Some(hi) = upper {
+                        per_var.push(v.le(&Int::from_i64(self.ctx, *hi)));
+                    }
+                    // Conjunct all per‐variable constraints (if any)
+                    let refs: Vec<&Bool<'ctx>> = per_var.iter().collect();
+                    Some(Bool::and(self.ctx, &refs))
+                }
+                VarType::BVector { lower, upper, width, .. } => {
+                    let mut per_var = Vec::new();
+                    let v = bv_var!(state, name);
+                    if let Some(lo) = lower {
+                        per_var.push(v.bvsge(&BV::from_i64(self.ctx, *lo, *width)));
+                    }
+                    if let Some(hi) = upper {
+                        per_var.push(v.bvsle(&BV::from_i64(self.ctx, *hi, *width)));
+                    }
+                    let refs: Vec<&Bool<'ctx>> = per_var.iter().collect();
+                    Some(Bool::and(self.ctx, &refs))
+                }
+            };
+
+            if let Some(c) = constraint {
+                constraints.push(c);
+            }
+        }
+
+        constraints
+    }
+
+
+
+    pub fn generate_symbolic_loop_path(&self, suffix: Option<&'ctx str>) -> (Vec<EnvState<'ctx>>, Bool) {
+        let states = self.generate_all_symbolic_states(suffix);
+
+        //let mut constraints = self.generate_initial_constraints(&states);
+
+        for state in &states {
+            let scope_constraints = self.generate_scope_constraints_for_state(&state);
+            constraints.extend(scope_constraints);
+        }
+
+        for k in 0..states.len() - 1 {
+            let curr_state = &states[k];
+            let next_state = &states[k + 1];
+            let step_constraint = self.generate_transition_relation(curr_state, next_state);
+            constraints.extend(step_constraint);
+        }
+
+        let refs: Vec<&Bool> = constraints.iter().collect();
+        let path_formula = Bool::and(self.ctx, &refs);
+        (states, path_formula)
+    }
+
+
+
+   
 }
+
+
+

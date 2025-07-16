@@ -739,7 +739,7 @@ pub fn generate_smv_env_from_parsed<'ctx>(
 
         let vtype = match &var.sort {
             ParsedVarType::Bool { .. } => {
-                println!("DEBUG vars: {}", var.name);
+                // println!("DEBUG vars: {}", var.name);
                 let init = match init_val {
                     Some(v) => {
                         let upper = v.to_ascii_uppercase();
@@ -778,19 +778,19 @@ pub fn generate_smv_env_from_parsed<'ctx>(
         env.register_variable(name_ref, vtype);
     }
     // DEBUG
-    println!("Registered variables:");
+    // println!("Registered variables:");
     for (name, var) in env.get_variables() {
-        println!("  {} -> {:?}", name, var.sort);
+        // println!("  {} -> {:?}", name, var.sort);
     }
 
 
     // 1.2 Register predicates (might be used in transitions)
-    println!("Registered predicates:");
+    // println!("Registered predicates:");
     for (name, expr_str) in parsed.predicates.clone() {
         let name_ref: &'ctx str = Box::leak(name.clone().into_boxed_str());
         interned_names.push(name.clone());
 
-        println!("  {} := {}", name, expr_str); // debug
+        // println!("  {} := {}", name, expr_str); // debug
 
         let expr = expr_str.clone();
         let var_name = name.clone();
@@ -813,12 +813,12 @@ pub fn generate_smv_env_from_parsed<'ctx>(
 
 
     // 2. Register transitions
-    println!("Registered transitions:");
+    // println!("Registered transitions:");
     for (name, guard, update) in parsed.transitions.clone() {
         let name_ref: &'ctx str = Box::leak(name.clone().into_boxed_str());
         interned_names.push(name.clone());
 
-        println!("  {} : {} -> {}", name, guard, update); // debug
+        // println!("  {} : {} -> {}", name, guard, update); // debug
         env.register_transition(
             name_ref,
             {
@@ -1128,7 +1128,7 @@ pub fn parse_smv<'ctx>(
     output_format: &str,
 ) -> SMVEnv<'ctx>  {
     
-    println!("\n\nNOW parsing: {}\n", input_path);
+    println!("Parsing: {}\n", input_path);
 
     let commands = vec![
         format!("read_model -i {}", input_path),

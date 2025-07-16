@@ -77,8 +77,8 @@ MODULE main
 				(p1_line=0) : {0,1};  -- stay, or proceed
 				-- (p1_line=2 & !(TOKEN=1)) : {2}; -- draw ticket
 				(p1_line=1) : {2}; -- draw ticket
-				(p1_line=2 & !p1-TOKEN) : {2}; -- check TOKEN
-				(p1_line=2 & p1-TOKEN) : {3}; -- check TOKEN
+				(p1_line=2 & !p1_TOKEN) : {2}; -- check TOKEN
+				(p1_line=2 & p1_TOKEN) : {3}; -- check TOKEN
 				(p1_line=3) : {4}; -- stay in critical section, or leave
 				(p1_line=4) : {0}; -- back to starting point
 				TRUE: p1_line;
@@ -96,8 +96,8 @@ MODULE main
 			case
 				(p2_line=0) : {0,1};  -- stay, or proceed
 				(p2_line=1) : {2};
-				(p2_line=2 & !p2-TOKEN): {2}; -- check TOKEN
-				(p2_line=2 & p2-TOKEN): {3}; -- check TOKEN
+				(p2_line=2 & !p2_TOKEN): {2}; -- check TOKEN
+				(p2_line=2 & p2_TOKEN): {3}; -- check TOKEN
 				(p2_line=3) : {4}; -- stay in critical section, or leave
 				(p2_line=4) : {0}; -- back to starting point
 				TRUE: p2_line;
@@ -115,8 +115,8 @@ MODULE main
 			case
 				(p3_line=0) : {0};  -- stay, or proceed
 				(p3_line=1) : {2};
-				(p3_line=2 & !p3-TOKEN) : 2 ; -- check TOKEN
-				(p3_line=2 & p3-TOKEN) : 3 ; -- check TOKEN
+				(p3_line=2 & !p3_TOKEN) : 2 ; -- check TOKEN
+				(p3_line=2 & p3_TOKEN) : 3 ; -- check TOKEN
 				(p3_line=3) : {4}; -- stay in critical section, or leave
 				(p3_line=4) : {0}; -- back to starting point
 				TRUE: p3_line;

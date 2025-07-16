@@ -33,9 +33,12 @@
 
 MODULE main
 VAR
+
 	-- ##############################################################################
-	RightHat: 0..2; -- could be DUNNY, x, y, or z
-	LeftHat: 0..2; -- could be DUMMY, x, y, or z
+	RightHat: 0..2; 
+	-- could be DUNNY, x, y, or z
+	LeftHat: 0..2; 
+	-- could be DUMMY, x, y, or z
 
 	AllNodes[0][0]: 0..2;
 	AllNodes[0][1]: 0..2;
@@ -63,13 +66,24 @@ VAR
 
 	-- ##############################################################################
 	-- Queue Var 
-	newnode : 0..2; -- for push right
+	newnode : 0..2; 
+	-- for push right
 	popRightFAIL: boolean;
 	temp_popRightFAIL:  boolean;
+
+	BOTH_MODIFYING : boolean;
+
+
 	-- ##############################################################################
 
 	ASSIGN
 
+		init(BOTH_MODIFYING): FALSE;
+		next(BOTH_MODIFYING):
+			case
+				(proc1.modifying & proc2.modifying) : TRUE;
+				TRUE: BOTH_MODIFYING;
+			esac;
 		-- ##############################################################################
 		-- Global ASSIGN
 		init(First_ProcID) 	:= 1;
@@ -188,8 +202,6 @@ VAR
 				-- pushRight
 				-- popLeft
 				((proc1.line=7) & (RightHat = 1)) : 2;
-
-
 				-- popRight
 				((proc2.line=1) & (LeftHat = 1)) : 0;
 				-- pushRight
@@ -229,7 +241,6 @@ VAR
 					((proc1.line=1) & (RightHat=2)): 2;
 					((proc1.line=4) & (RightHat=1)): 1;
 					((proc1.line=7) & (LeftHat=1)) : 0;
-
 					((proc2.line=1) & (RightHat=2)): 2;
 					((proc2.line=4) & (RightHat=1)): 1;
 					((proc2.line=7) & (LeftHat=1)) : 0;
@@ -273,5 +284,5 @@ VAR
 
 		-- ##############################################################################
 		-- Queue DEFINE
-		BOTH_MODIFYING := (proc1.modifying & proc2.modifying);
+		-- BOTH_MODIFYING := (proc1.modifying & proc2.modifying);
 		-- ##############################################################################

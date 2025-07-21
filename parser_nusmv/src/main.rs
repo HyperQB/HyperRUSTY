@@ -19,6 +19,10 @@ use std::ops::Add;
 
 use ir::int_var;
 use ir::bool_var;
+use ir::to_dyn;
+use ir::choice_from_vec;
+use ir::choice;
+use ir::choice_int_to_dyn;
 
 use std::ops::Sub;
 
@@ -830,13 +834,80 @@ pub fn generate_smv_env_from_parsed<'ctx>(
         let name_update = name.clone();
 
         let guard_fn = parse_condition(&env, &guard_str, &name_guard, &var_type);
+
         let update_fn = parse_condition(&env, &update_str, &name_update, &var_type);
 
-        env.register_transition(
-            name_ref,
-            move |_env, ctx, state| ReturnType::DynAst(guard_fn(_env, ctx, state)),
-            move |_env, ctx, state| ReturnType::DynAst(update_fn(_env, ctx, state)),
-        );
+        // env.register_transition(
+        //     name_ref,
+        //     move |_env, ctx, state| ReturnType::DynAst(guard_fn(_env, ctx, state)),
+        //     move |_env, ctx, state| ReturnType::DynAst(update_fn(_env, ctx, state)),
+        // );
+
+        // let update_fn: Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> ReturnType<'ctx>> = 
+        //     if update_str.trim_start().starts_with('{') && update_str.trim_end().ends_with('}') {
+        //         let nondet_choice = parse_nondet(&update_str, &name_update, &var_type);
+        //         Box::new(move |_env, _ctx, _state| {
+        //             nondet_choice.clone()
+        //         })
+        //     } else if let Ok(int_val) = update_str.trim().parse::<i64>() {
+        //         Box::new(move |_env, _ctx, _state| {
+        //             ReturnType::Int(vec![int_val])
+        //         })
+        //     } else if update_str.trim() == "TRUE" || update_str.trim() == "FALSE" {
+        //         let b = update_str.trim() == "TRUE";
+        //         Box::new(move |_env, _ctx, _state| {
+        //             ReturnType::Bool(vec![b])
+        //         })
+        //     } else {
+        //         let cond_fn = parse_condition(&env, &update_str, &name_update, &var_type);
+        //         Box::new(move |env, _ctx, state| {
+        //             // let ctx1 = env.get_context();
+        //             ReturnType::DynAst(cond_fn(env, _ctx, state))
+        //         })
+        //     };
+
+        if update_str.trim_start().starts_with('{') && update_str.trim_end().ends_with('}') {
+            let nondet_choice = match var_type {
+                ParsedVarType::Int { .. } => {
+                    let vals: Vec<i64> = parse_braced_values(&update_str); // e.g., "{1, 2}"
+                    choice_from_vec!(Int, vals)
+                }
+                ParsedVarType::Bool { .. } => {
+                    let vals: Vec<bool> = parse_bool_braced_values(&update_str); // e.g., "{TRUE, FALSE}"
+                    choice_from_vec!(Bool, vals)
+                }
+                // ParsedVarType::BVector { .. } => {
+                //     unimplemented!("Non-det BVector not yet supported")
+                // }
+            };
+            env.register_transition(
+                name_ref,
+                move |_env, _ctx, _state| ReturnType::DynAst(guard_fn(_env, _ctx, _state)),
+                // move |_env, _ctx, _state| (update_fn(_env, _ctx, _state)),
+                // move |_env, _ctx, _state| nondet_choice.clone(),
+                move |_env, _ctx, _state| choice!(Int, 1, 2),
+            );
+            
+        }else {
+            env.register_transition(
+                name_ref,
+                move |_env, _ctx, _state| ReturnType::DynAst(guard_fn(_env, _ctx, _state)),
+                move |_env, _ctx, _state| ReturnType::DynAst(update_fn(_env, _ctx, _state)),
+            );
+        }   
+        
+        // env.register_transition(
+        //     name_ref,
+        //     move |_env, _ctx_unused, state| {
+        //         let ctx = _env.get_context();
+        //         ReturnType::DynAst(guard_fn(_env, ctx, state))
+        //     },
+        //     move |_env, _ctx_unused, state| {
+        //         let ctx = _env.get_context();
+        //         update_fn(_env, ctx, state)
+        //     },
+        // );
+
     }
 
     
@@ -875,25 +946,81 @@ pub fn generate_smv_env_from_parsed<'ctx>(
                 ReturnType::DynAst(ast) => println!("    Guard : {}", ast.to_string()),
                 _ => println!("    Guard : <non-AST value>"),
             }
-            match update {
-                ReturnType::DynAst(ast) => println!("    Update: {}", ast.to_string()),
-                _ => println!("    Update: <non-AST value>"),
-            }
+            println!{"UPDATE: {:?}", update};
+            // match update {
+            //     ReturnType::DynAst(ast) => println!("    Update: {}", ast.to_string()),
+            //     ReturnType::Int(ast) => println!("    Update: {}", ast.to_string()),
+            //     _ => println!("    Update: <non-AST value>"),
+            // }
         }
     }
 
     env
 }
 
-fn preprocess_nodet_expr(s: &str) -> String {
+fn parse_nondet<'ctx>(
+    raw: &'ctx str,
+    var_name: &'ctx str,
+    var_type: &'ctx ParsedVarType
+) -> ReturnType<'ctx> {
+    match var_type {
+        ParsedVarType::Int { .. } => {
+            let vals: Vec<i64> = parse_braced_values(raw); // e.g., "{1, 2}"
+            choice_from_vec!(Int, vals)
+        }
+        ParsedVarType::Bool { .. } => {
+            let vals: Vec<bool> = parse_bool_braced_values(raw); // e.g., "{TRUE, FALSE}"
+            choice_from_vec!(Bool, vals)
+        }
+        // ParsedVarType::BVector { .. } => {
+        //     unimplemented!("Non-det BVector not yet supported")
+        // }
+    }
+}
+
+pub fn parse_braced_values(raw: &str) -> Vec<i64> {
+    raw.trim_matches(|c| c == '{' || c == '}')
+        .split(',')
+        .map(|s| s.trim().parse::<i64>().expect("Invalid integer in brace list"))
+        .collect()
+}
+
+pub fn parse_bool_braced_values(raw: &str) -> Vec<bool> {
+    raw.trim_matches(|c| c == '{' || c == '}')
+        .split(',')
+        .map(|s| match s.trim() {
+            "TRUE" => true,
+            "FALSE" => false,
+            _ => panic!("Invalid boolean: {}", s),
+        })
+        .collect()
+}
+
+
+
+fn preprocess_nondet_expr(var: &str, s: &str) -> String {
     let set_expr_re = regex::Regex::new(r"\{([^}]+)\}").unwrap();
     set_expr_re.replace_all(s, |caps: &regex::Captures| {
-        let disjuncts = caps[1].split(',').map(str::trim).collect::<Vec<_>>();
+        let disjuncts = caps[1]
+            .split(',')
+            .map(str::trim)
+            .map(|val| format!("({} = {})", var, val))
+            .collect::<Vec<_>>();
         format!("({})", disjuncts.join(" | "))
     }).to_string()
 }
 
-// // Return a closure, given the condition (guard) string 
+
+#[derive(Debug, Clone)]
+enum Choice {
+    Bool(Vec<bool>),
+    Int(Vec<i64>),
+    None,
+}
+
+
+// // Return a dynamic node, given the condition (guard) string 
+
 pub fn parse_condition<'ctx>(
     smv_env: &SMVEnv<'ctx>,
     cond_str: &str,
@@ -901,11 +1028,28 @@ pub fn parse_condition<'ctx>(
     var_type: &ParsedVarType,
 ) -> impl Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> Dynamic<'ctx> + 'static {
 
-    let raw = cond_str.trim().to_owned();
-    let vtype = var_type.clone(); // Move into closure
+    let raw = preprocess_nondet_expr(var_name, cond_str.trim()); // preprocess once
+    // let raw = cond_str.trim().to_owned();
     let var_name = var_name.to_owned();
 
+    // let choice_result = if raw.starts_with('{') && raw.ends_with('}') {
+    //     let inner = &raw[1..raw.len() - 1];
+    //     let items: Vec<&str> = inner.split(',').map(str::trim).collect();
 
+    //     let all_bool = items.iter().all(|s| *s == "TRUE" || *s == "FALSE");
+    //     let all_int = items.iter().all(|s| s.parse::<i64>().is_ok());
+
+    //     if all_bool {
+    //         Some(Choice::Bool(items.iter().map(|s| *s == "TRUE").collect()))
+    //     } else if all_int {
+    //         Some(Choice::Int(items.iter().map(|s| s.parse::<i64>().unwrap()).collect()))
+    //     } else {
+    //         eprintln!("Warning: inconsistent choice types: {:?}", items);
+    //         None
+    //     }
+    // } else {
+    //     None
+    // };
 
     fn strip_outer_parens(s: &str) -> &str {
         let s = s.trim();
@@ -931,18 +1075,17 @@ pub fn parse_condition<'ctx>(
     move |smv_env: &SMVEnv<'ctx>, ctx: &'ctx Context, state: &EnvState<'ctx>| {
         fn recurse<'ctx>(
             smv_env: &SMVEnv<'ctx>,
+            var_name: &str,
             s: &str,
             ctx: &'ctx Context,
             state: &EnvState<'ctx>,
         ) -> Dynamic<'ctx> {
-            let s = preprocess_nodet_expr(s);
             let s = strip_outer_parens(s.trim());
 
-            // DEBUG
-            // println!("Curr expr {}: ", s);
+            // println!("EXPR: {}", s);
 
             if let Some(inner) = s.strip_prefix('!') {
-                let inner_expr = recurse(smv_env, inner.trim(), ctx, state);
+                let inner_expr = recurse(smv_env, var_name, inner.trim(), ctx, state);
                 let b = inner_expr.as_bool().unwrap_or_else(|| {
                     panic!("Expected boolean after '!': {}", inner);
                 });
@@ -958,85 +1101,60 @@ pub fn parse_condition<'ctx>(
             }
 
             let precedence = vec!["!=", ">=", "<=", "=", ">", "<", "&", "|", "+", "-"];
-
             for op in &precedence {
                 let mut depth = 0;
                 let mut split_idx = None;
 
-                // Iterate from right to left, trying to match `op`
-                let mut i = s.len();
-                while i >= op.len() {
-                    i -= 1;
-
-                    if s[i..].starts_with(op) {
-                        // Check for top-level operator (not inside parentheses)
-                        let mut depth_check = 0;
-                        for c in s[..i].chars() {
-                            match c {
-                                '(' => depth_check += 1,
-                                ')' => depth_check -= 1,
-                                _ => {}
-                            }
+                // iterate from left to right to respect nesting correctly
+                for (i, _) in s.match_indices(op) {
+                    for c in s[..i].chars() {
+                        match c {
+                            '(' => depth += 1,
+                            ')' => depth -= 1,
+                            _ => {}
                         }
-
-                        if depth_check == 0 {
-                            split_idx = Some(i);
-                            break;
-                        }
+                    }
+                    if depth == 0 {
+                        split_idx = Some(i);
+                        break;
                     }
                 }
 
                 if let Some(i) = split_idx {
                     let lhs = s[..i].trim();
                     let rhs = s[i + op.len()..].trim();
-
-                    let lhs_expr = recurse(smv_env, lhs, ctx, state);
-                    let rhs_expr = recurse(smv_env, rhs, ctx, state);
+                    let lhs_expr = recurse(smv_env, var_name, lhs, ctx, state);
+                    let rhs_expr = recurse(smv_env, var_name, rhs, ctx, state);
 
                     return match *op {
-                        "+" => lhs_expr.as_int().unwrap().add(&rhs_expr.as_int().unwrap()).into(),
-                        "-" => lhs_expr.as_int().unwrap().sub(&rhs_expr.as_int().unwrap()).into(),
+                        "+"  => lhs_expr.as_int().unwrap().add(&rhs_expr.as_int().unwrap()).into(),
+                        "-"  => lhs_expr.as_int().unwrap().sub(&rhs_expr.as_int().unwrap()).into(),
                         "!=" => lhs_expr._eq(&rhs_expr).not().into(),
-                        "=" => lhs_expr._eq(&rhs_expr).into(),
-                        ">" => lhs_expr.as_int().unwrap().gt(&rhs_expr.as_int().unwrap()).into(),
-                        "<" => lhs_expr.as_int().unwrap().lt(&rhs_expr.as_int().unwrap()).into(),
+                        "="  => lhs_expr._eq(&rhs_expr).into(),
+                        ">"  => lhs_expr.as_int().unwrap().gt(&rhs_expr.as_int().unwrap()).into(),
+                        "<"  => lhs_expr.as_int().unwrap().lt(&rhs_expr.as_int().unwrap()).into(),
                         ">=" => lhs_expr.as_int().unwrap().ge(&rhs_expr.as_int().unwrap()).into(),
                         "<=" => lhs_expr.as_int().unwrap().le(&rhs_expr.as_int().unwrap()).into(),
-                        "&" => {
-                            let l = lhs_expr.as_bool().unwrap_or_else(|| {
-                                panic!("Expected bool lhs in '&': {}", lhs);
-                            });
-                            let r = rhs_expr.as_bool().unwrap_or_else(|| {
-                                panic!("Expected bool rhs in '&': {}", rhs);
-                            });
+                        "&"  => {
+                            let l = lhs_expr.as_bool().unwrap();
+                            let r = rhs_expr.as_bool().unwrap();
                             Bool::and(ctx, &[&l, &r]).into()
                         }
                         "|" => {
-                            // Try boolean OR first
-                            if let (Some(l_bool), Some(r_bool)) = (lhs_expr.as_bool(), rhs_expr.as_bool()) {
-                                Bool::or(ctx, &[&l_bool, &r_bool]).into()
-                            } else if let (Some(l_int), Some(r_int)) = (lhs_expr.as_int(), rhs_expr.as_int()) {
-                                // Bool::or(ctx, &[&l_int, &r_int]).into() ???
-                                let l_bool = l_int._eq(&Int::from_i64(ctx, 1));
-                                let r_bool = r_int._eq(&Int::from_i64(ctx, 1));
-                                Bool::or(ctx, &[&l_bool, &r_bool]).into()
-                            } else {
-                                panic!(
-                                    "Unsupported or mismatched operand types for '|': lhs = {:?}, rhs = {:?}",
-                                    lhs_expr, rhs_expr
-                                );
-                            }
+                            let l = lhs_expr.as_bool().unwrap_or_else(|| {
+                                panic!("Expected boolean lhs in '|': got {:?}", lhs_expr);
+                            });
+                            let r = rhs_expr.as_bool().unwrap_or_else(|| {
+                                panic!("Expected boolean rhs in '|': got {:?}", rhs_expr);
+                            });
+                            Bool::or(ctx, &[&l, &r]).into()
                         }
                         _ => unreachable!(),
                     };
                 }
             }
 
-            
-            let dummy_state = smv_env.make_dummy_state(ctx); // <-- this is important
-
-            // DEBUG
-            // println!("Available state keys: {:?}", dummy_state.keys().collect::<Vec<_>>());
+            let dummy_state = smv_env.make_dummy_state(ctx);
             if let Some(dyn_val) = dummy_state.get(s) {
                 dyn_val.clone()
             } else if let Some(pred_fn) = smv_env.predicates.get(s) {
@@ -1045,9 +1163,29 @@ pub fn parse_condition<'ctx>(
                 panic!("Variable or predicate '{}' not found!", s);
             }
         }
-        recurse(smv_env, &raw, ctx, state)
+
+        recurse(smv_env, &var_name, &raw, ctx, state)
+        // match &choice_result {
+        //     Some(Choice::Int(ints)) => {
+        //         choice_from_vec!(Int, &ints)
+        //         // choice_int_to_dyn!(ctx, state, var_name.as_str(), ints)
+        //     }
+        //     Some(Choice::Bool(bools)) => {
+        //         let sym = bool_var!(state, var_name.as_str());
+        //         Dynamic::from_ast(&sym)
+        //     }
+        //     Some(Choice::None) | None => {
+        //         recurse(smv_env, &var_name, &raw, ctx, state)
+        //     }
+        // }
+         
     }
 }
+
+// Attempt to build choice! // Failed :/
+
+
+
 
 
 

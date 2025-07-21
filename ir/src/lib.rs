@@ -276,7 +276,7 @@ impl<'ctx> SMVEnv<'ctx> {
         constraints
     }
 
-    fn generate_transition_relation(& self, curr_state: &EnvState<'ctx>, next_state: &EnvState<'ctx>) -> Vec<Bool> {
+    pub fn generate_transition_relation(& self, curr_state: &EnvState<'ctx>, next_state: &EnvState<'ctx>) -> Vec<Bool> {
         let mut constraints = Vec::new();
 
         for (name, variable) in self.variables.iter() {

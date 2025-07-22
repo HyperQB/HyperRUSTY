@@ -64,7 +64,7 @@
 
 
 # echo "nrp incorrect"
-# cargo run --release -- -n benchmarks/4_nrp/NRP_incorrect.smv benchmarks/4_nrp/NRP_incorrect.smv -f benchmarks/4_nrp/NRP_formula.hq -k 15 -s hpes
+cargo run --release -- -n benchmarks/4_nrp/NRP_incorrect.smv benchmarks/4_nrp/NRP_incorrect.smv -f benchmarks/4_nrp/NRP_formula.hq -k 15 -s hpes
 
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/4_nrp/NRP_incorrect.smv benchmarks/AH_formulas/4.hq
 
@@ -72,7 +72,7 @@
 
 
 #=== Planning ===#
-time cargo run --release -- -n benchmarks/5_planning/robotic_robustness_100.smv benchmarks/5_planning/robotic_robustness_100.smv -f benchmarks/5_planning/robotic_robustness_formula.hq -k 16 -s hpes
+# time cargo run --release -- -n benchmarks/5_planning/robotic_robustness_100.smv benchmarks/5_planning/robotic_robustness_100.smv -f benchmarks/5_planning/robotic_robustness_formula.hq -k 16 -s hpes
 
 
 

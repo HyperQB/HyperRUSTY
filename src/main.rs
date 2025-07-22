@@ -134,6 +134,8 @@ fn main() {
         let formula = fs::read_to_string(formula_path).expect("Failed to read the formula");
         let ast_node = parse(&formula).expect("Failed parsing the formula");
 
+        println!("{:?}", ast_node);
+
         let mut cfg = Config::new();
         cfg.set_model_generation(true);
         let ctx = Context::new(&cfg);

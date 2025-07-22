@@ -11,17 +11,17 @@ use hltlunroller::*;
 use parser::AstNode;
 
 
-pub struct LoopCondition<'ctx> {
+pub struct LoopCondition<'env, 'ctx> {
     pub ctx: &'ctx Context,
-    pub model1: SMVEnv<'ctx>,
-    pub model2: SMVEnv<'ctx>,
+    pub model1:&'env SMVEnv<'ctx>,
+    pub model2:&'env SMVEnv<'ctx>,
     pub symstates1: Vec<EnvState<'ctx>>,
     pub symstates2: Vec<EnvState<'ctx>>,
     pub sim_i_j: Vec<Bool<'ctx>>,
 }
 
-impl<'ctx> LoopCondition<'ctx> {
-    pub fn new(ctx: &'ctx Context, model1: SMVEnv<'ctx>, model2: SMVEnv<'ctx>) -> Self {
+impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
+    pub fn new(ctx: &'ctx Context, model1: &'env SMVEnv<'ctx>, model2: &'env SMVEnv<'ctx>) -> Self {
         let symstates1 = model1.generate_all_symbolic_states(Some("m1"));
         let symstates2 = model2.generate_all_symbolic_states(Some("m2"));
 
@@ -54,7 +54,8 @@ impl<'ctx> LoopCondition<'ctx> {
             let constraints = self.model2.generate_scope_constraints_for_state(symstate);
             valid_states.extend(constraints);
         }
-
+        println!("Valid state constrain:");
+        println!("{:?}", valid_states);
         valid_states
     }
 
@@ -88,6 +89,8 @@ impl<'ctx> LoopCondition<'ctx> {
                 constraints.push(and_expr.implies(&distinct));
             }
         }
+        println!("Exhaustive exploration constraints:");
+        println!("{:?}", constraints);
         constraints
     }
 
@@ -100,6 +103,8 @@ impl<'ctx> LoopCondition<'ctx> {
             let initial_and = Bool::and(self.ctx, &initial_constraints_2.iter().collect::<Vec<_>>());
             constraints.push(initial_and.implies(&self.sim_i_j[j]));
         }
+        println!("Initial state simulation constraints for EA:");
+        println!("{:?}", constraints);
         constraints
     }
 
@@ -119,6 +124,8 @@ impl<'ctx> LoopCondition<'ctx> {
             let inner_or = Bool::or(self.ctx, &inner_formula.iter().collect::<Vec<_>>());
             constraints.push(init_constraint_m1_and.implies(&inner_or));
         }
+        println!("Initial state simulation constraints for AE:");
+        println!("{:?}", constraints);
         constraints
     }
 
@@ -144,6 +151,8 @@ impl<'ctx> LoopCondition<'ctx> {
             transition.push(self.succ_t(i, i + 1));
             constraints.extend(transition);
         }
+        println!("Valid path constraints for EA:");
+        println!("{:?}", constraints);
         constraints
     }
 
@@ -158,6 +167,8 @@ impl<'ctx> LoopCondition<'ctx> {
             inner_formula.push(self.succ_t(n, i));
             constraints.push(Bool::and(self.ctx, &inner_formula.iter().collect::<Vec<_>>()));
         }
+        println!("Loop back constraints for EA: (will have or between elements)");
+        println!("{:?}", constraints);
         Bool::or(self.ctx, &constraints.iter().collect::<Vec<&Bool>>())
     }
 
@@ -187,6 +198,8 @@ impl<'ctx> LoopCondition<'ctx> {
                 constraints.push(transition_x_constraint.implies(&inner_implication));
             }
         }
+        println!("Simulation pairs constraints:");
+        println!("{:?}", constraints);
         constraints
     }
 
@@ -209,6 +222,8 @@ impl<'ctx> LoopCondition<'ctx> {
                 constraints.push(self.sim_i_j[i * self.symstates2.len() + j].implies(&relation_pred));
             }
         }
+        println!("Relation predicate constraints:");
+        println!("{:?}", constraints);
         constraints
     }
 

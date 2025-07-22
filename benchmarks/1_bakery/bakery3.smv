@@ -17,41 +17,41 @@ MODULE main
 		p2_line: 0..4;
 		p3_line: 0..4;
 
-		STARTED : boolean;
-		p1_TOKEN : boolean;
-		p2_TOKEN : boolean;
-		p3_TOKEN : boolean;
+		-- STARTED : boolean;
+		-- p1_TOKEN : boolean;
+		-- p2_TOKEN : boolean;
+		-- p3_TOKEN : boolean;
 
 
 	ASSIGN
 
-		init(STARTED) := FALSE;
-		next(STARTED) :=
-			case
-				((p1_line != 0) | (p2_line != 0) | (p3_line != 0)) : TRUE;
-				TRUE : FALSE;
-			esac;
+		-- init(STARTED) := FALSE;
+		-- next(STARTED) :=
+		-- 	case
+		-- 		((p1_line != 0) | (p2_line != 0) | (p3_line != 0)) : TRUE;
+		-- 		TRUE : FALSE;
+		-- 	esac;
 
-		init(p1_TOKEN) := FALSE;
-		next(p1_TOKEN) :=
-			case
-				STARTED & (p1_line = 2) & ((p1_ticket < p2_ticket) & (p1_ticket < p3_ticket)) : TRUE;
-				TRUE : FALSE;
-			esac;
+		-- init(p1_TOKEN) := FALSE;
+		-- next(p1_TOKEN) :=
+		-- 	case
+		-- 		STARTED & (p1_line = 2) & ((p1_ticket < p2_ticket) & (p1_ticket < p3_ticket)) : TRUE;
+		-- 		TRUE : FALSE;
+		-- 	esac;
 
-		init(p2_TOKEN) := FALSE;
-		next(p2_TOKEN) :=
-			case
-				STARTED & (p2_line = 2) & (((p2_ticket < p1_ticket) & (p2_ticket < p3_ticket)) | !p1_TOKEN) : TRUE;
-				TRUE : FALSE;
-			esac;
+		-- init(p2_TOKEN) := FALSE;
+		-- next(p2_TOKEN) :=
+		-- 	case
+		-- 		STARTED & (p2_line = 2) & (((p2_ticket < p1_ticket) & (p2_ticket < p3_ticket)) | !p1_TOKEN) : TRUE;
+		-- 		TRUE : FALSE;
+		-- 	esac;
 
-		init(p3_TOKEN) := FALSE;
-		next(p3_TOKEN) :=
-			case
-				STARTED & (p3_line = 2) & (((p3_ticket < p1_ticket) & (p3_ticket < p2_ticket)) | ((!p1_TOKEN) & (!p2_TOKEN))) : TRUE;
-				TRUE : FALSE;
-			esac;
+		-- init(p3_TOKEN) := FALSE;
+		-- next(p3_TOKEN) :=
+		-- 	case
+		-- 		STARTED & (p3_line = 2) & (((p3_ticket < p1_ticket) & (p3_ticket < p2_ticket)) | ((!p1_TOKEN) & (!p2_TOKEN))) : TRUE;
+		-- 		TRUE : FALSE;
+		-- 	esac;
 
 			-- case
 			-- 	(TOKEN=1) : {2,3};
@@ -158,9 +158,9 @@ MODULE main
 
 		p1_TOKEN := (STARTED) & (p1_line=2) & (p1_ticket <= p2_ticket) & (p1_ticket <= p3_ticket);
 
-		p2_TOKEN := STARTED & (p2_line=2) & (((p2_ticket <= p1_ticket) & (p2_ticket <= p3_ticket)) | (!p1_TOKEN));
+		p2_TOKEN := (STARTED) & (p2_line=2) & (((p2_ticket <= p1_ticket) & (p2_ticket <= p3_ticket)) | (!p1_TOKEN));
 
-		p3_TOKEN := STARTED & (p3_line=2) & (((p3_ticket <= p1_ticket) & (p3_ticket <= p2_ticket)) | ((!p1_TOKEN) & (!p2_TOKEN)));
+		p3_TOKEN := (STARTED) & (p3_line=2) & (((p3_ticket <= p1_ticket) & (p3_ticket <= p2_ticket)) | ((!p1_TOKEN) & (!p2_TOKEN)));
 
 
 

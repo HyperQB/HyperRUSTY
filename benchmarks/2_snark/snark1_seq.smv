@@ -192,8 +192,8 @@ VAR
 				TRUE : proc1.modifying;
 			esac;
 
-		init(BOTH_MODIFYING): FALSE;
-		next(BOTH_MODIFYING):
+		init(BOTH_MODIFYING):= FALSE;
+		next(BOTH_MODIFYING):=
 			case
 				(proc1.modifying & proc2.modifying) : TRUE;
 				TRUE: BOTH_MODIFYING;

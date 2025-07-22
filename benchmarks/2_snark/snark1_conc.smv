@@ -122,8 +122,7 @@ ASSIGN
 			BOTH_MODIFYING : TRUE;
 			TRUE: fAIL;
 		esac;
-
-
+	
 	init(BOTH_MODIFYING) := FALSE;
 	next(BOTH_MODIFYING) :=
 		case

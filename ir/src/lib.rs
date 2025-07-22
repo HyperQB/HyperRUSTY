@@ -398,7 +398,6 @@ impl<'ctx> SMVEnv<'ctx> {
                                 }
                                 VarType::Int {..} => {
                                     let next_var = int_var!(next_state, name);
-                                    println!("Check node: {}", node);
                                     next_var._eq(&node.as_int().unwrap())
                                 }
                                 VarType::BVector {..} => {

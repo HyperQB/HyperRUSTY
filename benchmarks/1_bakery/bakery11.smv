@@ -61,7 +61,7 @@ MODULE main
 		next(MAX_ticket):=
 			case
 				(MAX_ticket=11): 0; --reset
-				(p1_line=1 | p2_line=1 | p3_line=1 | p4_line=1 | p5_line=1 | p6_line=1 | p7_line=1 | p8_line=1 | p9_line=1 | p10_line=1 | p11_line=1): MAX_ticket+1;
+				((p1_line=1) | (p2_line=1) | (p3_line=1) | (p4_line=1) | (p5_line=1) | (p6_line=1) | (p7_line=1) | (p8_line=1) | (p9_line=1) | (p10_line=1) | (p11_line=1)): MAX_ticket+1;
 				TRUE: MAX_ticket;
 			esac;
 

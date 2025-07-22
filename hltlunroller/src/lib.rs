@@ -3,7 +3,7 @@ use ir::*;
 use enchelper::{Semantics, create_path_mapping, inner_ltl};
 use z3::{Context,
     ast::{
-        Ast, Dynamic, Bool,
+        Ast, Dynamic, Bool, Int,
     }
 };
 use parser::{
@@ -63,6 +63,10 @@ fn unroll_ltl_formula<'ctx>(ctx: &'ctx Context, formula: &AstNode, paths: &Vec<V
     let bound = paths[0].len() - 1;
     match formula {
         AstNode::Constant {value} => {
+            if value.parse::<i64>().is_ok() {
+                let number = value.parse::<i64>().unwrap();
+                return UnrollingReturn::Var(Int::from_i64(ctx, number).into());
+            }
             if value == "TRUE" {
                 UnrollingReturn::Bool(Bool::from_bool(ctx, true))
             }else {

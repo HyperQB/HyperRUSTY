@@ -15,7 +15,7 @@ hconj = { huntl ~ ("&" ~ hconj)? }
 huntl = { hrels ~ ("U" ~ huntl)? }
 hrels = { hfactor ~ ("R" ~ hrels)? }
 hfactor = { unop ~ hfactor | "(" ~ inner_hltl ~ ")" | hltl_atom }
-hltl_atom = { ident ~ "[" ~ ident ~ "]" | constant }
+hltl_atom = { ident ~ "[" ~ ident ~ "]" | constant | number }
 
 
 aequal = { aimpl ~ ("=" ~ aequal)? }
@@ -25,12 +25,13 @@ aconj = { auntl ~ ("&" ~ aconj)? }
 auntl = { arels ~ ("U" ~ auntl)? }
 arels = { afactor ~ ("R" ~ arels)? }
 afactor = { aunop ~ afactor | "(" ~ inner_altl ~ ")" | altl_atom }
-altl_atom = { ident ~ "[" ~ ident ~ "]" ~ "[" ~ ident ~ "]" | constant }
+altl_atom = { ident ~ "[" ~ ident ~ "]" ~ "[" ~ ident ~ "]" | constant | number}
 
 aunop = { "G" | "F" | "~" }
 unop = { "G" | "F" | "X" | "~" }
 ident = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_" | ".")* }
 constant = {"TRUE" | "FALSE"}
+number = { ASCII_DIGIT+ }
 
 // Entry point for the parser
 formula = _{ SOI ~ path_formula ~ EOI }

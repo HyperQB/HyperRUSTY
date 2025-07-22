@@ -808,10 +808,10 @@ pub fn generate_smv_env_from_parsed<'ctx>(
                 let expr_str = expr_owned.to_owned();
                 let type_copy = var_type.clone();
                 let name_copy = var_name.to_string();
+                let dyn_fn = parse_condition(&env, &expr_str, &name_copy, &type_copy);
 
-                move |env_arg, ctx, state| {
-                    let dyn_val = parse_condition(env_arg, &expr_str, &name_copy, &type_copy)(env_arg, ctx, state);
-                    dyn_val
+                move |_env, ctx, state| {
+                    dyn_fn(_env, ctx, state)
                         .as_bool()
                         .unwrap_or_else(|| panic!("Predicate '{}' must return Bool", name_copy))
                 }
@@ -819,6 +819,9 @@ pub fn generate_smv_env_from_parsed<'ctx>(
         );
     }
 
+    for (name, _) in &env.predicates {
+        println!("Predicate: {}", name);
+    }
 
 
     // Step 3: Register transitions
@@ -838,35 +841,6 @@ pub fn generate_smv_env_from_parsed<'ctx>(
 
         let update_fn = parse_condition(&env, &update_str, &name_update, &var_type);
 
-        // env.register_transition(
-        //     name_ref,
-        //     move |_env, ctx, state| ReturnType::DynAst(guard_fn(_env, ctx, state)),
-        //     move |_env, ctx, state| ReturnType::DynAst(update_fn(_env, ctx, state)),
-        // );
-
-        // let update_fn: Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> ReturnType<'ctx>> = 
-        //     if update_str.trim_start().starts_with('{') && update_str.trim_end().ends_with('}') {
-        //         let nondet_choice = parse_nondet(&update_str, &name_update, &var_type);
-        //         Box::new(move |_env, _ctx, _state| {
-        //             nondet_choice.clone()
-        //         })
-        //     } else if let Ok(int_val) = update_str.trim().parse::<i64>() {
-        //         Box::new(move |_env, _ctx, _state| {
-        //             ReturnType::Int(vec![int_val])
-        //         })
-        //     } else if update_str.trim() == "TRUE" || update_str.trim() == "FALSE" {
-        //         let b = update_str.trim() == "TRUE";
-        //         Box::new(move |_env, _ctx, _state| {
-        //             ReturnType::Bool(vec![b])
-        //         })
-        //     } else {
-        //         let cond_fn = parse_condition(&env, &update_str, &name_update, &var_type);
-        //         Box::new(move |env, _ctx, state| {
-        //             // let ctx1 = env.get_context();
-        //             ReturnType::DynAst(cond_fn(env, _ctx, state))
-        //         })
-        //     };
-
         if update_str.trim_start().starts_with('{') && update_str.trim_end().ends_with('}') {
             let nondet_choice = match var_type {
                 ParsedVarType::Int { .. } => {
@@ -884,8 +858,6 @@ pub fn generate_smv_env_from_parsed<'ctx>(
             env.register_transition(
                 name_ref,
                 move |_env, _ctx, state| ReturnType::DynAst(guard_fn(_env, _ctx, state)),
-                // move |_env, _ctx, _state| (update_fn(_env, _ctx, _state)),
-                // move |_env, _ctx, _state| nondet_choice.clone(),
                 move |_env, _ctx, state|   nondet_choice.clone(),
             );
             
@@ -897,17 +869,6 @@ pub fn generate_smv_env_from_parsed<'ctx>(
             );
         }   
         
-        // env.register_transition(
-        //     name_ref,
-        //     move |_env, _ctx_unused, state| {
-        //         let ctx = _env.get_context();
-        //         ReturnType::DynAst(guard_fn(_env, ctx, state))
-        //     },
-        //     move |_env, _ctx_unused, state| {
-        //         let ctx = _env.get_context();
-        //         update_fn(_env, ctx, state)
-        //     },
-        // );
 
     }
 
@@ -930,18 +891,17 @@ pub fn generate_smv_env_from_parsed<'ctx>(
     //         }
     //     }
     // }
-    // let dummy_state: EnvState<'ctx> = HashMap::new();
     // println!("\nRegistered predicates:");
     // for (name, func) in &env.predicates {
-    //     let result = func(&env, ctx, &dummy_state);
+    //     let result = func(&env, ctx, state);
     //     println!("{:<8} := {:?}", name, result);
     // }
     // println!("\nRegistered transitions:");
     // for (var, transitions) in env.get_transitions() {
     //     println!("Transitions for variable '{}':", var);
     //     for (i, (guard_fn, update_fn)) in transitions.iter().enumerate() {
-    //         let guard = guard_fn(&env, ctx, &dummy_state);
-    //         let update = update_fn(&env, ctx, &dummy_state);
+    //         let guard = guard_fn(&env, ctx, state);
+    //         let update = update_fn(&env, ctx, state);
     //         println!("  # {}:", i);
     //         match guard {
     //             ReturnType::DynAst(ast) => println!("    Guard : {}", ast.to_string()),
@@ -1032,25 +992,6 @@ pub fn parse_condition<'ctx>(
     let raw = preprocess_nondet_expr(var_name, cond_str.trim()); // preprocess once
     // let raw = cond_str.trim().to_owned();
     let var_name = var_name.to_owned();
-
-    // let choice_result = if raw.starts_with('{') && raw.ends_with('}') {
-    //     let inner = &raw[1..raw.len() - 1];
-    //     let items: Vec<&str> = inner.split(',').map(str::trim).collect();
-
-    //     let all_bool = items.iter().all(|s| *s == "TRUE" || *s == "FALSE");
-    //     let all_int = items.iter().all(|s| s.parse::<i64>().is_ok());
-
-    //     if all_bool {
-    //         Some(Choice::Bool(items.iter().map(|s| *s == "TRUE").collect()))
-    //     } else if all_int {
-    //         Some(Choice::Int(items.iter().map(|s| s.parse::<i64>().unwrap()).collect()))
-    //     } else {
-    //         eprintln!("Warning: inconsistent choice types: {:?}", items);
-    //         None
-    //     }
-    // } else {
-    //     None
-    // };
 
     fn strip_outer_parens(s: &str) -> &str {
         let s = s.trim();
@@ -1155,6 +1096,8 @@ pub fn parse_condition<'ctx>(
                 }
             }
 
+
+
             if let Some(dyn_val) = smv_env.variables.get(s) {
                 match dyn_val.sort {
                     VarType::Bool {..} => to_dyn!(bool_var!(state, s)),
@@ -1162,26 +1105,13 @@ pub fn parse_condition<'ctx>(
                     VarType::BVector  {..} => to_dyn!(bv_var!(state, s)),
                 }
             } else if let Some(pred_fn) = smv_env.predicates.get(s) {
-                Dynamic::from(pred_fn(smv_env, ctx, state))
+                Dynamic::from(pred_fn(&smv_env, ctx, state))
             } else {
                 panic!("Variable or predicate '{}' not found!", s);
             }
         }
 
         recurse(smv_env, &var_name, &raw, ctx, state)
-        // match &choice_result {
-        //     Some(Choice::Int(ints)) => {
-        //         choice_from_vec!(Int, &ints)
-        //         // choice_int_to_dyn!(ctx, state, var_name.as_str(), ints)
-        //     }
-        //     Some(Choice::Bool(bools)) => {
-        //         let sym = bool_var!(state, var_name.as_str());
-        //         Dynamic::from_ast(&sym)
-        //     }
-        //     Some(Choice::None) | None => {
-        //         recurse(smv_env, &var_name, &raw, ctx, state)
-        //     }
-        // }
          
     }
 }

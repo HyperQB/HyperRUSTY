@@ -3,6 +3,7 @@ use std::fs;
 use std::io::{self, Write};
 use std::process;
 use std::path::PathBuf;
+use std::time::Instant;
 use ir::*;
 use parser::*;
 use enchelper::*;
@@ -15,6 +16,7 @@ use z3::{
         BV,
     },
     Config, Context, Solver, SatResult,
+    StatisticsValue,
 };
 use clap::{arg, value_parser, ArgGroup, Command};
 
@@ -132,6 +134,8 @@ fn main() {
         let formula = fs::read_to_string(formula_path).expect("Failed to read the formula");
         let ast_node = parse(&formula).expect("Failed parsing the formula");
 
+        println!("{:?}", ast_node);
+
         let mut cfg = Config::new();
         cfg.set_model_generation(true);
         let ctx = Context::new(&cfg);
@@ -164,6 +168,9 @@ fn main() {
                 panic!("ERROR: number of provided models and number of path quantifiers do not match!");
             }
 
+            // Start the timer for model parsing
+            let start = Instant::now();
+
             for i in 0..path_identifiers.len() {
                 // parse the smv for this model
                 let env = parse_smv(
@@ -176,7 +183,17 @@ fn main() {
                 );
                 envs.push(env);
             }
+            let duration = start.elapsed();
+            let secs = duration.as_secs_f64();
+            println!("Model Creation Time: {}", secs);
+
+            // Start the timer for encoding
+            let start = Instant::now();
             let form = get_z3_encoding(&envs, &ast_node, *unrolling_bound, None, semantics);
+            let duration = start.elapsed();
+            let secs = duration.as_secs_f64();
+            println!("Encoding Time: {}", secs);
+
 
             // Create a new solver
             let solver = Solver::new(&ctx);
@@ -193,6 +210,13 @@ fn main() {
                     println!("result: unknown.");
                 }
             };
+            // grab the statistics of the solver
+            let stats = solver.get_statistics();
+            let val_str = match stats.value("time").unwrap() {
+                StatisticsValue::UInt(u)   => u.to_string(),
+                StatisticsValue::Double(d) => d.to_string(),
+            };
+            println!("Solve Time: {}", val_str);
         }
 
         

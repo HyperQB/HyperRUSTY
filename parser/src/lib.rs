@@ -318,6 +318,7 @@ fn build_ast_from_hprop(pair: pest::iterators::Pair<Rule>) -> AstNode {
 
     match inner.as_rule() {
         Rule::constant => AstNode::Constant{value: String::from(inner.as_str())},
+        Rule::number => AstNode::Constant{value: String::from(inner.as_str())},
         Rule::ident => {
             let path = pairs.next().unwrap();
             AstNode::HIndexedProp {

@@ -8,7 +8,7 @@ use z3::{
 };
 
 #[macro_use]
-mod macros;
+pub mod macros;
 
 #[derive(Debug, Clone)]
 pub enum VarType {
@@ -50,6 +50,32 @@ pub struct SMVEnv<'ctx> {
     pub variables: HashMap<&'ctx str, Variable>,
     pub predicates: HashMap<&'ctx str, Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> Bool<'ctx>>>,
     pub transitions: HashMap<&'ctx str, Vec<(Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> ReturnType<'ctx>>, Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> ReturnType<'ctx>>)>>,
+}
+
+// Milad: I need this (???)
+impl<'ctx> ReturnType<'ctx> {
+    pub fn into_dynamic(self, ctx: &'ctx z3::Context, env: &SMVEnv<'ctx>, state: &EnvState<'ctx>, var_name: &str) -> Dynamic<'ctx> {
+        match self {
+            ReturnType::Int(vals) => {
+                let sym = int_var!(state, var_name);
+                let disjuncts: Vec<_> = vals.iter()
+                    .map(|val| sym._eq(&z3::ast::Int::from_i64(ctx, *val)))
+                    .collect();
+                z3::ast::Bool::or(ctx, &disjuncts.iter().collect::<Vec<_>>()).into()
+            }
+            ReturnType::Bool(vals) => {
+                let sym = bool_var!(state, var_name);
+                let disjuncts: Vec<_> = vals.iter()
+                    .map(|val| sym._eq(&z3::ast::Bool::from_bool(ctx, *val)))
+                    .collect();
+                z3::ast::Bool::or(ctx, &disjuncts.iter().collect::<Vec<_>>()).into()
+            }
+            ReturnType::BVector(_) => {
+                panic!("into_dynamic not implemented for BVector")
+            }
+            ReturnType::DynAst(ast) => ast,
+        }
+    }
 }
 
 impl<'ctx> SMVEnv<'ctx> {
@@ -426,6 +452,7 @@ impl<'ctx> SMVEnv<'ctx> {
     pub fn get_transitions(&self) -> &HashMap<&'ctx str, Vec<(Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> ReturnType<'ctx>>, Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> ReturnType<'ctx>>)>> {
         &self.transitions
     }
+
     pub fn make_dummy_state(&self, ctx: &'ctx z3::Context) -> EnvState<'ctx> {
         let mut state: EnvState<'ctx> = HashMap::new();
  
@@ -466,7 +493,6 @@ impl<'ctx> SMVEnv<'ctx> {
         println!("Looking up variable type for: {}", name);
         self.variables.get(name).map(|var| &var.sort)
     }
-
 
     pub fn generate_all_symbolic_states(&self, suffix: Option<&'ctx str>) -> Vec<EnvState<'ctx>> {
         let mut total_states = 1;
@@ -566,7 +592,10 @@ impl<'ctx> SMVEnv<'ctx> {
 
         constraints
     }
+
+
+
+   pub fn get_predicates(&self) -> &HashMap<&'ctx str, Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> Bool<'ctx>>> {
+        &self.predicates
+   }
 }
-
-
-

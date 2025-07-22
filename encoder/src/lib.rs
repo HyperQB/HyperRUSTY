@@ -30,6 +30,8 @@ pub fn get_z3_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, formula: &'ctx
         constraints.push(new_constraint);
     }
 
+    // println!("{:?}", constraints[0]);
+
     // detect the type of formula
     if is_hltl(formula) {
         // Last, call the encoding generator

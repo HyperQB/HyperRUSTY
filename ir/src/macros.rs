@@ -71,7 +71,34 @@ macro_rules! choice {
             ReturnType::BVector(tmp_vec)
         }
     };
+    
 }
+
+// Milad: I'm trying to make choice take vector as input
+#[macro_export]
+macro_rules! choice_from_vec {
+    (Bool, $vec:expr) => {
+        ReturnType::Bool($vec.to_vec())
+    };
+    (Int, $vec:expr) => {
+        ReturnType::Int($vec.to_vec())
+    };
+    (BVector, $vec:expr) => {
+        ReturnType::BVector($vec.to_vec())
+    };
+}
+
+
+#[macro_export]
+macro_rules! choice_int_to_dyn {
+    ($ctx:expr, $state:expr, $var_name:expr, $vec:expr) => {{
+        let sym = int_var!($state, $var_name); // symbolic variable, e.g., y!3
+        Dynamic::from_ast(&sym)
+    }};
+}
+
+
+
 
 #[macro_export]
 macro_rules! exact {

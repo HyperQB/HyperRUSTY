@@ -1,1 +1,1 @@
-Exists A. Forall B. ~(G(x[A] & x[B]))
+Exists A . Forall B . G(p2_TOKEN[A])

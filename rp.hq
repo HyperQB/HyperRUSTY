@@ -1,0 +1,4 @@
+exists P. forall Q.
+G(
+    (*a_state[P]=9*)\/(*a_state[P]=1*)\/!(*a_state[P]=b_state[Q]*)
+)

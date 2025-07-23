@@ -214,34 +214,34 @@ fn check_EA_rec(formula: &AstNode) -> bool {
 }
 
 pub fn detect_quantifier_order(formula: &AstNode) -> u8 {
-    // collect only the path quantifiers (AA -> 'A', AE -> 'E')
     let mut seq = Vec::new();
     let mut current = formula;
 
     loop {
         match current {
-            AstNode::AAQuantifier { form, .. } => {
+            AstNode::HAQuantifier { form, .. } => {
                 seq.push('A');
                 current = form;
             }
-            AstNode::AEQuantifier { form, .. } => {
+            AstNode::HEQuantifier { form, .. } => {
                 seq.push('E');
                 current = form;
             }
             // skip over hyper quantifiers
-            AstNode::HAQuantifier { form, .. }
-            | AstNode::HEQuantifier { form, .. } => {
+            AstNode::AAQuantifier { form, .. }
+            | AstNode::AEQuantifier { form, .. } => {
                 current = form;
             }
             // once we hit anything else, stop
             _ => break,
         }
     }
-
+    println!("{:?}", seq);
+    // Check for the patterns we're interested in
     match seq.as_slice() {
-        ['A', 'E'] => 1,
-        ['E', 'A'] => 2,
-        _ => 0,
+        ['A', 'E'] => 1,  // AE pattern
+        ['E', 'A'] => 2,  // EA pattern
+        _ => 0  // Other patterns not supported
     }
 }
 

@@ -1,0 +1,11 @@
+MODULE main 
+VAR
+  s : 1..1;
+
+ASSIGN
+  init(s) := 1;
+  next(s) := 1;
+
+
+
+

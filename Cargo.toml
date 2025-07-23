@@ -12,3 +12,4 @@ encoder = { path = "./encoder" }
 enchelper = { path = "./enchelper" }
 parser_nusmv = { path = "./parser_nusmv" }
 unroller_qbf = { path = "./unroller_qbf" }
+loop_conditions = { path = "./loop_conditions" }

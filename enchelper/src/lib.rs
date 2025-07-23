@@ -212,3 +212,76 @@ fn check_EA_rec(formula: &AstNode) -> bool {
         _ => true
     }
 }
+
+pub fn detect_quantifier_order(formula: &AstNode) -> u8 {
+    // collect only the path quantifiers (AA -> 'A', AE -> 'E')
+    let mut seq = Vec::new();
+    let mut current = formula;
+
+    loop {
+        match current {
+            AstNode::AAQuantifier { form, .. } => {
+                seq.push('A');
+                current = form;
+            }
+            AstNode::AEQuantifier { form, .. } => {
+                seq.push('E');
+                current = form;
+            }
+            // skip over hyper quantifiers
+            AstNode::HAQuantifier { form, .. }
+            | AstNode::HEQuantifier { form, .. } => {
+                current = form;
+            }
+            // once we hit anything else, stop
+            _ => break,
+        }
+    }
+
+    match seq.as_slice() {
+        ['A', 'E'] => 1,
+        ['E', 'A'] => 2,
+        _ => 0,
+    }
+}
+
+
+pub fn starts_with_g_or_f(formula: &AstNode) -> bool {
+    let inner_formula = inner_ltl(formula);
+    match inner_formula {
+        AstNode::UnOp { operator, .. } => {
+            matches!(operator, UnaryOperator::Globally | UnaryOperator::Eventually)
+        }
+        _ => false,
+    }
+}
+
+
+pub fn has_no_until_or_release(formula: &AstNode) -> bool {
+    match formula {
+        AstNode::BinOp { operator, lhs, rhs } => {
+            match operator {
+                BinOperator::Until | BinOperator::Release => false,
+                _ => {
+                    has_no_until_or_release(lhs) && has_no_until_or_release(rhs)
+                }
+            }
+        }
+        
+        AstNode::UnOp { operand, .. } => {
+            has_no_until_or_release(operand)
+        }
+        
+        AstNode::HAQuantifier { form, .. } |
+        AstNode::HEQuantifier { form, .. } |
+        AstNode::AAQuantifier { form, .. } |
+        AstNode::AEQuantifier { form, .. } => {
+            has_no_until_or_release(form)
+        }
+        
+
+        AstNode::HIndexedProp { .. } |
+        AstNode::AIndexedProp { .. } |
+        AstNode::Constant { .. } => true,
+    }
+}

@@ -1,0 +1,12 @@
+[package]
+name = "loop_conditions"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+z3 = "0.12"
+ir = { path = "../ir" }
+enchelper = { path = "../enchelper" }
+hltlunroller = { path = "../hltlunroller" }
+parser = { path = "../parser" }
+    

@@ -1,0 +1,11 @@
+Forall A. Exists B. G(
+  (S_send_p0[A] = S_send_p0[B]) &
+  (R_recv_p0[A] = R_recv_p0[B]) &
+  (R_send_a0[A] = R_send_a0[B]) &
+  (packet_loss[A] = packet_loss[B]) &
+  (timeout[A] = timeout[B]) &
+  (R_recv_p1[A] = R_recv_p1[B]) &
+  (R_send_a1[A] = R_send_a1[B]) &
+  (ack_loss[A] = ack_loss[B]) &
+  (S_recv_a1[A] = S_recv_a1[B])
+)

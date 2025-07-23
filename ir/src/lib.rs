@@ -302,6 +302,117 @@ impl<'ctx> SMVEnv<'ctx> {
         constraints
     }
 
+    // SHIT CODE, but we didnt want ro resolve dependencies (I WAS FORCED HERE)
+    pub fn generate_initial_constraints_for_state(& self, states: &Vec<EnvState<'ctx>>, i: usize) -> Vec<Bool> {
+        let mut constraints = Vec::<Bool>::new();
+
+        for (name, variable) in self.variables.iter() {
+            let constraint = match &variable.sort {
+                VarType::Bool {init} => {
+                    // Handle Initial values
+                    let constraint = if let Some(values) = init {
+                        
+                        // Get initial state's variable for this name
+                        let var = states[i].get(name).unwrap(); // It definitely exists
+                        // Given the Bool as the type, we can cast it to a Boolean
+                        let var = var.as_bool().unwrap(); // It is definitely a Boolean
+                        
+                        // If the length of the 'value' is 1, set the constraint manually
+                        if values.len() > 1 {
+                            let mut comparisons = Vec::new();
+                            for val in values {
+                                let ast_val = Bool::from_bool(self.ctx, *val);
+                                comparisons.push(var._eq(&ast_val));
+                            }
+                            // Build a disjunction
+                            let refs: Vec<&Bool> = comparisons.iter().collect();
+                            Some(Bool::or(self.ctx, &refs))
+                        }else {
+                            let ast_val = Bool::from_bool(self.ctx, values[0]);
+                            Some(var._eq(&ast_val))
+                        }
+                    }else {
+                        None
+                    };
+                    constraint
+                }
+                VarType::Int{init, lower: _, upper: _} => {
+                    let constraint = if let Some(values) = init {
+                        
+                        // Get initial state's variable for this name
+                        let var = states[i].get(name).unwrap(); // It definitely exists
+                        // Given the Int as the type, we can cast it to an Integer
+                        let var = var.as_int().unwrap(); // It is definitely an Integer
+                        
+                        // If the length of the 'value' is 1, set the constraint manually
+                        if values.len() > 1 {
+                            let mut comparisons = Vec::new();
+                            for val in values {
+                                let ast_val = Int::from_i64(self.ctx, *val);
+                                comparisons.push(var._eq(&ast_val));
+                            }
+                            // Build a disjunction
+                            let refs: Vec<&Bool> = comparisons.iter().collect();
+                            Some(Bool::or(self.ctx, &refs))
+                        }else {
+                            let ast_val = Int::from_i64(self.ctx, values[0]);
+                            Some(var._eq(&ast_val))
+                        }
+                    }else {
+                        None
+                    };
+                    constraint
+                }
+                VarType::BVector{width, lower: _, upper: _, init} => {
+                    let constraint = if let Some(values) = init {
+                        
+                        // Get initial state's variable for this name
+                        let var = states[i].get(name).unwrap(); // It definitely exists
+                        // Given the BV as the type, we can cast it to a BV
+                        let var = var.as_bv().unwrap(); // It is definitely a BV
+                        
+                        // If the length of the 'value' is 1, set the constraint manually
+                        if values.len() > 1 {
+                            let mut comparisons = Vec::new();
+                            for val in values {
+                                let ast_val = BV::from_i64(self.ctx, *val, *width);
+                                comparisons.push(var._eq(&ast_val));
+                            }
+                            // Build a disjunction
+                            let refs: Vec<&Bool> = comparisons.iter().collect();
+                            Some(Bool::or(self.ctx, &refs))
+                        }else {
+                            let ast_val = BV::from_i64(self.ctx, values[0], *width);
+                            Some(var._eq(&ast_val))
+                        }
+                    }else {
+                        None
+                    };
+                    constraint
+                }
+            };
+
+            match constraint {
+                Some(b) => constraints.push(b),
+                None => (),
+            };
+        }
+        constraints
+    }
+
+    
+       
+
+
+
+
+
+
+
+
+
+
+
     pub fn generate_transition_relation(& self, curr_state: &EnvState<'ctx>, next_state: &EnvState<'ctx>) -> Vec<Bool> {
         let mut constraints = Vec::new();
 

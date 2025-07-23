@@ -10,7 +10,7 @@ use z3::{
 use ir::*;
 use enchelper::*;
 use hltlunroller::*;
-use parser::AstNode;
+use parser::*;
 
 
 pub struct LoopCondition<'env, 'ctx> {
@@ -56,6 +56,8 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             let constraints = self.model2.generate_scope_constraints_for_state(symstate);
             valid_states.extend(constraints);
         }
+        valid_states.extend(self.model1.generate_initial_constraints(&self.symstates1));
+        valid_states.extend(self.model2.generate_initial_constraints(&self.symstates2));
         // println!("Valid state constrain:");
         // println!("{:?}", valid_states);
         valid_states
@@ -91,8 +93,8 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
                 constraints.push(and_expr.implies(&distinct));
             }
         }
-        println!("Exhaustive exploration constraints:");
-        //println!("{:?}", constraints);
+        // println!("Exhaustive exploration constraints:");
+        // println!("{:?}", constraints);
         constraints
     }
 
@@ -100,13 +102,13 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
     pub fn initial_state_sim_EA(&self) -> Vec<Bool> {
         let mut constraints = Vec::new();
         constraints.extend(self.model1.generate_initial_constraints(&self.symstates1));
-        for j in 0..self.symstates2.len() {
-            let initial_constraints_2 = self.model2.generate_initial_constraints(&self.symstates2);
+        for j in 0..(self.symstates2.len()) {
+            let initial_constraints_2 = self.model2.generate_initial_constraints_for_state(&self.symstates2, j);
             let initial_and = Bool::and(self.ctx, &initial_constraints_2.iter().collect::<Vec<_>>());
             constraints.push(initial_and.implies(&self.sim_i_j[j]));
         }
-        println!("Initial state simulation constraints for EA:");
-        //println!("{:?}", constraints);
+        // println!("Initial state simulation constraints for EA:");
+        // println!("{:?}", constraints);
         constraints
     }
 
@@ -126,8 +128,8 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             let inner_or = Bool::or(self.ctx, &inner_formula.iter().collect::<Vec<_>>());
             constraints.push(init_constraint_m1_and.implies(&inner_or));
         }
-        println!("Initial state simulation constraints for AE:");
-        //println!("{:?}", constraints);
+        // println!("Initial state simulation constraints for AE:");
+        // println!("{:?}", constraints);
         constraints
     }
 
@@ -145,13 +147,16 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             let inner_implication = Bool::and(self.ctx, &inner_implication.iter().collect::<Vec<_>>());
             constraints.push(self.sim_i_j[x * m + y].implies(&inner_implication));
         }
+        println!("The succ_t");
         //println!("{:?}", constraints);
         Bool::and(self.ctx, &constraints.iter().collect::<Vec<&Bool>>())
     }
 
     pub fn valid_path_EA(&self) -> Vec<Bool> {
         let mut constraints = Vec::new();
-        for i in 0..(self.symstates1.len() - 1) {
+        //let n = self.symstates1.len() - 1;
+        let n = 3;
+        for i in 0..(n - 1) {
             let mut transition = self.model1.generate_transition_relation(&self.symstates1[i], &self.symstates1[i + 1]);
             transition.push(self.succ_t(i, i + 1));
             constraints.extend(transition);
@@ -163,7 +168,8 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
 
     pub fn loop_back_EA(&self) -> Bool {
         let mut constraints = Vec::new();
-        let n = self.symstates1.len();
+        //let n = self.symstates1.len();
+        let n = 3;
         for i in 0..(n) {
             let transition = self.model1.generate_transition_relation(&self.symstates1[n - 1], &self.symstates1[i]);
             let transition_constraint = Bool::and(self.ctx, &transition.iter().collect::<Vec<_>>());
@@ -209,25 +215,78 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
     }
 
     // Expects the inner formula
-    pub fn predicate(& self, formula: &AstNode, i: usize, j: usize, mapping: &HashMap<&str, usize>) -> UnrollingReturn<'ctx> {
+    pub fn predicate(&self, formula: &AstNode, i: usize, j: usize, mapping: &HashMap<&str, usize>) -> UnrollingReturn<'ctx> {
         match formula {
+            AstNode::Constant {value} => {
+                if value.parse::<i64>().is_ok() {
+                    let number = value.parse::<i64>().unwrap();
+                    return UnrollingReturn::Var(Int::from_i64(self.ctx, number).into());
+                }
+                if value == "TRUE" {
+                    UnrollingReturn::Bool(Bool::from_bool(self.ctx, true))
+                }else {
+                    UnrollingReturn::Bool(Bool::from_bool(self.ctx, false))
+                }
+            }
+            AstNode::UnOp {operator, operand} => {
+                match operator {
+                        UnaryOperator::Negation => {
+                            UnrollingReturn::Bool(self.predicate(operand, i, j, mapping).unwrap_bool().not())
+                        }
+                        UnaryOperator::Globally => {
+                            UnrollingReturn::Bool(self.predicate(operand, i, j, mapping).unwrap_bool())
+                        }
+                        _=> panic!("The UnOP in the formula is not supported")
+                    }
+            }
             AstNode::BinOp { operator, lhs, rhs } => {
                 match operator {
-                    parser::BinOperator::Equality => {
-                        let lhs_bool = self.predicate(lhs, i, j, mapping);
-                        let rhs_bool = self.predicate(rhs, i, j, mapping);
-                        lhs_bool._eq(&rhs_bool)
+                    parser::BinOperator::Equality =>  match (
+                        self.predicate(lhs, i, j, mapping),
+                        self.predicate(rhs, i, j, mapping),
+                    ) {
+                        (UnrollingReturn::Bool(b1), UnrollingReturn::Bool(b2)) => UnrollingReturn::Bool(b1._eq(&b2)),
+                        (UnrollingReturn::Var(v1), UnrollingReturn::Var(v2)) => match (v1.as_int(), v2.as_int()) {
+                            (Some(i1), Some(i2)) => UnrollingReturn::Bool(i1._eq(&i2)),
+                            _ => match (v1.as_bv(), v2.as_bv()) {
+                                (Some(bv1), Some(bv2)) => UnrollingReturn::Bool(bv1._eq(&bv2)),
+                                _ => match (v1.as_bool(), v2.as_bool()) {
+                                    (Some(varb1), Some(varb2)) => UnrollingReturn::Bool(varb1._eq(&varb2)),
+                                    _ =>panic!("Invalid comparison"),
+                                }
+                            }
+                        },
+                        _ => panic!("Invalid comparison")
                     }
+                    BinOperator::Conjunction => {
+                        let lhs_bool = self.predicate(lhs, i, j, mapping).unwrap_bool();
+                        let rhs_bool = self.predicate(rhs, i, j, mapping).unwrap_bool();
+                        UnrollingReturn::Bool(Bool::and(self.ctx, &[&lhs_bool, &rhs_bool]))
+                    }
+                    BinOperator::Disjunction => {
+                        let lhs_bool = self.predicate(lhs, i, j, mapping).unwrap_bool();
+                        let rhs_bool = self.predicate(rhs, i, j, mapping).unwrap_bool();
+                        UnrollingReturn::Bool(Bool::or(self.ctx, &[&lhs_bool, &rhs_bool]))
+                    }
+                    BinOperator::Implication => {
+                        let lhs_bool = self.predicate(lhs, i, j, mapping).unwrap_bool();
+                        let rhs_bool = self.predicate(rhs, i, j, mapping).unwrap_bool();
+                        UnrollingReturn::Bool(lhs_bool.implies(&rhs_bool))
+                    }
+                _=> panic!("The BinOp in the fomrula is not supported")
                 }
+
             }
             AstNode::HIndexedProp { proposition, path_identifier } => {
-                if mapping.get(path_identifier).unwrap() == 0 {
-                    // First Model
-                    (self.symstates1[i][proposition])
-                }else {
-                    // Second model
+                let idx: &usize = mapping.get(path_identifier as &str).unwrap();
+                match idx {
+                    0 => UnrollingReturn::Var(self.symstates1[i][proposition as &str].clone()),
+                    1 => UnrollingReturn::Var(self.symstates2[j][proposition as & str].clone()),
+                    _ => panic!("wrong mapping")
                 }
             }
+
+        _ => unreachable!()
         }
     }
 
@@ -242,12 +301,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
                     self.symstates2.clone(),
                 ];
                 let mapping = create_path_mapping(formula, 0);
-                let relation_pred = self.predicate(
-                    self.ctx, 
-                    formula, 
-                    &paths, 
-                    &Semantics::Opt,
-                );
+                let relation_pred = self.predicate(inner_ltl(formula), i, j, &mapping).unwrap_bool();
                 constraints.push(self.sim_i_j[i * self.symstates2.len() + j].implies(&relation_pred));
             }
         }

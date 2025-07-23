@@ -1,8 +1,12 @@
 MODULE main 
 VAR
-  s : 1..2;
+  y : 1..2;
 
 ASSIGN
-  init(s) := 1;
-  next(s) := 3 - s;
+  init(y) := 1;
+  next(y) := case
+    y = 1 : 2;
+    y = 2 : 1;
+    TRUE  : y;
+  esac;
 

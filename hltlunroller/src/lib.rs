@@ -11,7 +11,7 @@ use parser::{
     AstNode,
 };
 
-enum UnrollingReturn<'ctx> {
+pub enum UnrollingReturn<'ctx> {
     Bool(Bool<'ctx>),
     Var(Dynamic<'ctx>),
 }

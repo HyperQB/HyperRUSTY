@@ -451,6 +451,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "loop_conditions"
+version = "0.1.0"
+dependencies = [
+ "enchelper",
+ "hltlunroller",
+ "ir",
+ "parser",
+ "z3",
+]
+
+[[package]]
 name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -692,6 +703,7 @@ dependencies = [
  "enchelper",
  "encoder",
  "ir",
+ "loop_conditions",
  "parser",
  "parser_nusmv",
  "unroller_qbf",

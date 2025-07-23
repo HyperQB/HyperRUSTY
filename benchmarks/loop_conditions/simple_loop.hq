@@ -1,1 +1,1 @@
-Forall A . Exists B . G(f[A] != f[B])
+Exists A . Forall B . G(s[A] = s[B])

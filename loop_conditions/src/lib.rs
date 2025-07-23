@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use z3::{
     ast::{
         Ast, Bool, Dynamic, 
@@ -30,7 +32,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             for j in 0..symstates2.len() {
                 sim_i_j.push(Bool::new_const(&ctx, format!("sim_{}_{}", i, j)));
             }
-        }        
+        }       
         Self {
             ctx,
             model1,
@@ -54,8 +56,8 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             let constraints = self.model2.generate_scope_constraints_for_state(symstate);
             valid_states.extend(constraints);
         }
-        println!("Valid state constrain:");
-        println!("{:?}", valid_states);
+        // println!("Valid state constrain:");
+        // println!("{:?}", valid_states);
         valid_states
     }
 
@@ -90,7 +92,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             }
         }
         println!("Exhaustive exploration constraints:");
-        println!("{:?}", constraints);
+        //println!("{:?}", constraints);
         constraints
     }
 
@@ -104,7 +106,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             constraints.push(initial_and.implies(&self.sim_i_j[j]));
         }
         println!("Initial state simulation constraints for EA:");
-        println!("{:?}", constraints);
+        //println!("{:?}", constraints);
         constraints
     }
 
@@ -125,7 +127,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             constraints.push(init_constraint_m1_and.implies(&inner_or));
         }
         println!("Initial state simulation constraints for AE:");
-        println!("{:?}", constraints);
+        //println!("{:?}", constraints);
         constraints
     }
 
@@ -134,13 +136,16 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
         let mut constraints = Vec::new();
         let m = self.symstates2.len();
         for y in 0..m {
+            let mut inner_implication = Vec::new();
             for y_pr in 0..m {
                 let transition = self.model2.generate_transition_relation(&self.symstates2[y], &self.symstates2[y_pr]);
-                let transition_constraint = Bool::and(self.ctx, &transition.iter().collect::<Vec<_>>());
-                let inner_implication = transition_constraint.implies(&self.sim_i_j[x_pr * m + y_pr]);
-                constraints.push(self.sim_i_j[x * m + y].implies(&inner_implication));
+                let transition_constraint: Bool<'_> = Bool::and(self.ctx, &transition.iter().collect::<Vec<_>>());
+                inner_implication.push(transition_constraint.implies(&self.sim_i_j[x_pr * m + y_pr]));
             }
+            let inner_implication = Bool::and(self.ctx, &inner_implication.iter().collect::<Vec<_>>());
+            constraints.push(self.sim_i_j[x * m + y].implies(&inner_implication));
         }
+        //println!("{:?}", constraints);
         Bool::and(self.ctx, &constraints.iter().collect::<Vec<&Bool>>())
     }
 
@@ -152,7 +157,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             constraints.extend(transition);
         }
         println!("Valid path constraints for EA:");
-        println!("{:?}", constraints);
+        //println!("{:?}", constraints);
         constraints
     }
 
@@ -160,15 +165,15 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
         let mut constraints = Vec::new();
         let n = self.symstates1.len();
         for i in 0..(n) {
-            let transition = self.model1.generate_transition_relation(&self.symstates1[n], &self.symstates1[i]);
+            let transition = self.model1.generate_transition_relation(&self.symstates1[n - 1], &self.symstates1[i]);
             let transition_constraint = Bool::and(self.ctx, &transition.iter().collect::<Vec<_>>());
             let mut inner_formula = Vec::new();
             inner_formula.push(transition_constraint);
-            inner_formula.push(self.succ_t(n, i));
+            inner_formula.push(self.succ_t(n - 1, i));
             constraints.push(Bool::and(self.ctx, &inner_formula.iter().collect::<Vec<_>>()));
         }
         println!("Loop back constraints for EA: (will have or between elements)");
-        println!("{:?}", constraints);
+        //println!("{:?}", constraints);
         Bool::or(self.ctx, &constraints.iter().collect::<Vec<&Bool>>())
     }
 
@@ -199,8 +204,31 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             }
         }
         println!("Simulation pairs constraints:");
-        println!("{:?}", constraints);
+        //println!("{:?}", constraints);
         constraints
+    }
+
+    // Expects the inner formula
+    pub fn predicate(& self, formula: &AstNode, i: usize, j: usize, mapping: &HashMap<&str, usize>) -> UnrollingReturn<'ctx> {
+        match formula {
+            AstNode::BinOp { operator, lhs, rhs } => {
+                match operator {
+                    parser::BinOperator::Equality => {
+                        let lhs_bool = self.predicate(lhs, i, j, mapping);
+                        let rhs_bool = self.predicate(rhs, i, j, mapping);
+                        lhs_bool._eq(&rhs_bool)
+                    }
+                }
+            }
+            AstNode::HIndexedProp { proposition, path_identifier } => {
+                if mapping.get(path_identifier).unwrap() == 0 {
+                    // First Model
+                    (self.symstates1[i][proposition])
+                }else {
+                    // Second model
+                }
+            }
+        }
     }
 
 
@@ -213,7 +241,8 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
                     self.symstates1.clone(),
                     self.symstates2.clone(),
                 ];
-                let relation_pred = unroll_hltl_formula(
+                let mapping = create_path_mapping(formula, 0);
+                let relation_pred = self.predicate(
                     self.ctx, 
                     formula, 
                     &paths, 
@@ -229,6 +258,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
 
     pub fn build_loop_condition(&self, formula: &AstNode) -> Bool {
         // Check if formula starts with G/F
+        // TODO : logic for F is on halt for now
         if !starts_with_g_or_f(formula) {
             panic!("The formula must start with G or F");
         }

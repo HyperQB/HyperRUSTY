@@ -1,9 +1,13 @@
 #!/bin/bash
 
-# cargo run --release -- -n mini.smv mini.smv -f mini.hq -k 3 -s pes
+#cargo run --release -- -n mini.smv mini.smv -f mini.hq -k 3 -s pes 
 
 # AutoHyper/app/AutoHyper --nusmv mini.smv auto_mini.hq
 
+
+#=== LOOP CONDITIONS EXAMPLES ===#
+
+cargo run --release -- -n benchmarks/loop_conditions/rs1.smv benchmarks/loop_conditions/rs2.smv -f benchmarks/loop_conditions/simple_loop.hq -k 10000000 -s pes
 
 
 #=== BAKERY ===#
@@ -64,7 +68,7 @@
 
 
 # echo "nrp incorrect"
-cargo run --release -- -n benchmarks/4_nrp/NRP_incorrect.smv benchmarks/4_nrp/NRP_incorrect.smv -f benchmarks/4_nrp/NRP_formula.hq -k 15 -s hpes
+#cargo run --release -- -n benchmarks/4_nrp/NRP_incorrect.smv benchmarks/4_nrp/NRP_incorrect.smv -f benchmarks/4_nrp/NRP_formula.hq -k 15 -s hpes
 
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/4_nrp/NRP_incorrect.smv benchmarks/AH_formulas/4.hq
 

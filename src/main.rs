@@ -199,6 +199,11 @@ fn main() {
             let solver = Solver::new(&ctx);
             solver.assert(&form);
 
+            // SMT-LIB encoding
+            let smtlib = solver.to_smt2();
+
+            fs::write("input.smt2", smtlib).expect("Failed to write file");
+
             match solver.check() {
                 SatResult::Sat => {
                     println!("result: sat.");
@@ -212,6 +217,7 @@ fn main() {
             };
             // grab the statistics of the solver
             let stats = solver.get_statistics();
+            println!("{:#?}", stats);
             let val_str = match stats.value("time").unwrap() {
                 StatisticsValue::UInt(u)   => u.to_string(),
                 StatisticsValue::Double(d) => d.to_string(),

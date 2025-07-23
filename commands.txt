@@ -1,4 +1,4 @@
-read_model -i benchmarks/4_nrp/NRP_incorrect.smv
+read_model -i benchmarks/2_snark/snark1_seq.smv
 flatten_hierarchy
 build_flat_model
 write_flat_model -o flattened.txt

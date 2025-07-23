@@ -5,5 +5,6 @@ edition = "2024"
 
 [dependencies]
 z3 = "0.13"
+indexmap = "2.10.0"
 parser = { path = "../parser" }
 enchelper = { path = "../enchelper" }

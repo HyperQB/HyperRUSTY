@@ -1,6 +1,7 @@
 extern crate regex;
 
-use std::collections::HashMap;
+// use std::collections::HashMap;
+use indexmap::IndexMap;
 use z3::{Config, Context};
 use z3::ast::{Bool, Int};
 use z3::ast::Ast; // needed for `.eq()` etc.
@@ -29,8 +30,8 @@ use std::ops::Sub;
 
 #[derive(Debug)]
 struct Transition {
-    curr: HashMap<String, String>,
-    next: HashMap<String, String>,
+    curr: IndexMap<String, String>,
+    next: IndexMap<String, String>,
     cond: Option<String>,
 }
 
@@ -114,8 +115,8 @@ pub fn parse_args() -> Args {
 pub fn parse_block(lines: &[String]) -> Transition {
     let assign_re = Regex::new(r"^(\w+)\s*=\s*(TRUE|FALSE|\d+)$").unwrap();
     let next_re = Regex::new(r"^next\((\w+)\)\s*=\s*(TRUE|FALSE|\d+)$").unwrap();
-    let mut curr = HashMap::new();
-    let mut next = HashMap::new();
+    let mut curr = IndexMap::new();
+    let mut next = IndexMap::new();
 
     for line in lines {
         if let Some(cap) = assign_re.captures(line) {
@@ -223,7 +224,7 @@ pub fn to_literal(var: &str, val: &str, primed: bool, bit_encode: bool) -> Vec<S
 
 pub fn parse_flattened_fsm(content: &str) -> Vec<Transition> {
     let mut transitions: Vec<Transition> = vec![];
-    let mut curr_state: HashMap<String, String> = HashMap::new();
+    let mut curr_state: IndexMap<String, String> = IndexMap::new();
     let mut current_var: Option<String> = None;
     let mut in_case = false;
     for line in content.lines().map(str::trim) {
@@ -242,7 +243,7 @@ pub fn parse_flattened_fsm(content: &str) -> Vec<Transition> {
         } else if in_case {
             if let Some(var) = &current_var {
                 if let Some((cond, val)) = line.strip_suffix(";").and_then(|l| l.split_once(":")) {
-                    let mut next = HashMap::new();
+                    let mut next = IndexMap::new();
                     next.insert(var.clone(), val.trim().to_string());
                     transitions.push(Transition {
                         curr: curr_state.clone(),
@@ -327,7 +328,7 @@ pub fn translate_action(val: &str) -> String {
 pub fn generate_format_functions(transitions: &[Transition]) -> String {
     let mut init_vals = BTreeMap::new();
     let mut ranges = BTreeMap::new();
-    let mut trans_map: HashMap<String, Vec<(String, String)>> = HashMap::new();
+    let mut trans_map: IndexMap<String, Vec<(String, String)>> = IndexMap::new();
 
     for t in transitions {
         for (var, val) in &t.curr {
@@ -388,17 +389,17 @@ pub struct ParsedVariable {
 #[derive(Debug)]
 pub struct ParsedModel {
     pub variables: Vec<ParsedVariable>,
-    pub inits: HashMap<String, String>,
+    pub inits: IndexMap<String, String>,
     pub transitions: Vec<(String, String, String)>,
-    pub predicates: HashMap<String, String>,
+    pub predicates: IndexMap<String, String>,
 }
 
 // issue: losing
 // pub fn parse_flattened_nuxmv(input: &str) -> ParsedModel {
 //     let mut variables = Vec::new();
-//     let mut inits = HashMap::new();
+//     let mut inits = IndexMap::new();
 //     let mut transitions: Vec<(String, String, String)> = vec![];
-//     let mut predicates = HashMap::new();
+//     let mut predicates = IndexMap::new();
 
 
 //     // Parse VAR section
@@ -521,9 +522,9 @@ pub struct ParsedModel {
 pub fn parse_original_smv(input: &str) -> ParsedModel {
     // println!("{}", input);
     let mut variables = Vec::new();
-    let mut inits = HashMap::new();
+    let mut inits = IndexMap::new();
     let mut transitions: Vec<(String, String, String)> = vec![];
-    let mut predicates = HashMap::new();
+    let mut predicates = IndexMap::new();
 
     // Parse VAR section
     let var_decl_re = Regex::new(r"(?m)^\s*([\w.\[\]]+)\s*:\s*([\w{}\s.,]+);").unwrap();

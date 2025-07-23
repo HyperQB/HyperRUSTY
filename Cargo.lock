@@ -403,6 +403,7 @@ name = "ir"
 version = "0.1.0"
 dependencies = [
  "enchelper",
+ "indexmap",
  "parser",
  "z3",
 ]
@@ -583,6 +584,7 @@ name = "parser_nusmv"
 version = "0.1.0"
 dependencies = [
  "expressions",
+ "indexmap",
  "ir",
  "regex",
  "z3",

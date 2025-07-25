@@ -190,9 +190,9 @@ fn main() {
 
             // Start the timer for encoding
             let start = Instant::now();
-            //let form = get_z3_encoding(&envs, &ast_node, *unrolling_bound, None, semantics);
-            let lp = LoopCondition::new(&ctx, &envs[0], &envs[1]);
-            let form = lp.build_loop_condition(&ast_node);
+            let form = get_z3_encoding(&envs, &ast_node, *unrolling_bound, None, semantics);
+//             let lp = LoopCondition::new(&ctx, &envs[0], &envs[1]);
+//             let form = lp.build_loop_condition(&ast_node);
    
 
             let duration = start.elapsed();
@@ -204,8 +204,9 @@ fn main() {
             let solver = Solver::new(&ctx);
             solver.assert(&form);
 
+            // SMT-LIB encoding
             let smtlib = solver.to_smt2();
- 
+
             fs::write("input.smt2", smtlib).expect("Failed to write file");
 
             match solver.check() {
@@ -221,6 +222,7 @@ fn main() {
             };
             // grab the statistics of the solver
             let stats = solver.get_statistics();
+            println!("{:#?}", stats);
             let val_str = match stats.value("time").unwrap() {
                 StatisticsValue::UInt(u)   => u.to_string(),
                 StatisticsValue::Double(d) => d.to_string(),

@@ -1,14 +1,14 @@
 forall A. exists B.
 !(
     (F
-        ({GOAL}_A)
+        ({gOAL}_A)
     )
 &
     (G
         (
-            (! {GOAL}_A)
+            (! {gOAL}_A)
             ->
-            (! {GOAL}_B)
+            (! {gOAL}_B)
         )
     )
 )

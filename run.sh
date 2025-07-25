@@ -59,18 +59,49 @@
 
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/4_nrp/NRP_correct.smv benchmarks/AH_formulas/4.hq
 
-
-
 # echo "nrp incorrect"
-#cargo run --release -- -n benchmarks/4_nrp/NRP_incorrect.smv benchmarks/4_nrp/NRP_incorrect.smv -f benchmarks/4_nrp/NRP_formula.hq -k 15 -s hpes
+# cargo run --release -- -n benchmarks/4_nrp/NRP_incorrect.smv benchmarks/4_nrp/NRP_incorrect.smv -f benchmarks/4_nrp/NRP_formula.hq -k 15 -s hpes
 
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/4_nrp/NRP_incorrect.smv benchmarks/AH_formulas/4.hq
 
 
 
 
-#=== Planning ===#
-# time cargo run --release -- -n benchmarks/5_planning/robotic_robustness_100.smv benchmarks/5_planning/robotic_robustness_100.smv -f benchmarks/5_planning/robotic_robustness_formula.hq -k 16 -s hpes
+#=== Robustness Planning ===#
+# time cargo run --release -- -n benchmarks/5_planning/robotic_robustness_100.smv benchmarks/5_planning/robotic_robustness_100.smv -f benchmarks/5_planning/robotic_robustness_formula.hq -k 20 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_robustness_100.smv benchmarks/AH_formulas/5.1.hq
+
+
+# time cargo run --release -- -n benchmarks/5_planning/robotic_robustness_400.smv benchmarks/5_planning/robotic_robustness_400.smv -f benchmarks/5_planning/robotic_robustness_formula.hq -k 40 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_robustness_400.smv benchmarks/AH_formulas/5.1.hq
+
+
+# time cargo run --release -- -n benchmarks/5_planning/robotic_robustness_1600.smv benchmarks/5_planning/robotic_robustness_1600.smv -f benchmarks/5_planning/robotic_robustness_formula.hq -k 40 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_robustness_1600.smv benchmarks/AH_formulas/5.1.hq
+
+
+# time cargo run --release -- -n benchmarks/5_planning/robotic_robustness_3600.smv benchmarks/5_planning/robotic_robustness_3600.smv -f benchmarks/5_planning/robotic_robustness_formula.hq -k 120 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_robustness_3600.smv benchmarks/AH_formulas/5.1.hq
+
+
+
+
+
+
+
+
+#=== Shortest Path Planning ===#
+# time cargo run --release -- -n benchmarks/5_planning/robotic_sp_100.smv benchmarks/5_planning/robotic_sp_100.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 20 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_sp_100.smv benchmarks/AH_formulas/5.2.hq
+
+# time cargo run --release -- -n benchmarks/5_planning/robotic_sp_400.smv benchmarks/5_planning/robotic_sp_400.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 40 -s hpes
+
+
 
 
 

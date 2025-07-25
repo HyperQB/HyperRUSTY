@@ -1,2 +1,2 @@
-exists A. forall B.
-F(GOAL[A]) /\ (G((~GOAL[A])->(~GOAL[B])))
+Exists A . Forall B .
+F(gOAL[A]) & (G((~gOAL[A])->(~gOAL[B])))

@@ -7,7 +7,26 @@
 
     act: 1..4;
 
+    BEGIN : boolean;
+    gOAL : boolean;
+
 ASSIGN
+
+    init(BEGIN) := FALSE;
+    next(BEGIN) := 
+        case
+            (((x_axis = 0) & (y_axis = 0)) | ((x_axis = 1) & (y_axis = 0)) | ((x_axis = 2) & (y_axis = 0))) : TRUE;
+            TRUE: BEGIN;
+        esac;
+
+    init(gOAL) := FALSE;
+    next(gOAL) := 
+        case
+            (((x_axis = 6) & (y_axis = 9)) | ((x_axis = 7) & (y_axis = 9)) | ((x_axis = 8) & (y_axis = 9))) : TRUE;
+            TRUE: gOAL;
+        esac;
+
+
     -- action: 1:up, 2:down, 3:left, 4:right
     init(act):= 1;
     next(act):=
@@ -20,13 +39,13 @@ ASSIGN
             ((x_axis = 1) & ((y_axis = 6) | (y_axis = 7) | (y_axis = 8) | (y_axis = 9))) : act;
             ((x_axis = 2) & ((y_axis = 7) | (y_axis = 8) | (y_axis = 9))) : act;
             ((x_axis = 3) & ((y_axis = 8) | (y_axis = 9))) : act;
-            ((x_axis = 4) & ((y_axis = 9))) : act;
+            ((x_axis = 4) & (y_axis = 9)) : act;
 
             ((x_axis = 9) & ((y_axis = 0) | (y_axis = 1) | (y_axis = 2) | (y_axis = 3) | (y_axis = 4))) : act;
             ((x_axis = 8) & ((y_axis = 0) | (y_axis = 1) | (y_axis = 2) | (y_axis = 3))) : act;
             ((x_axis = 7) & ((y_axis = 0) | (y_axis = 1) | (y_axis = 2))) : act;
             ((x_axis = 6) & ((y_axis = 0) | (y_axis = 1))) : act;
-            ((x_axis = 5) & ((y_axis = 0))) : act;
+            ((x_axis = 5) & (y_axis = 0)) : act;
 
             -- grids near obstacles
             ((x_axis = 0) & (y_axis = 3)) : {4};
@@ -110,5 +129,5 @@ ASSIGN
         esac;
 
 DEFINE
-    BEGIN := (((x_axis = 0) & (y_axis = 0)) | ((x_axis = 1) & (y_axis = 0)) | ((x_axis = 2) & (y_axis = 0)));
-    GOAL := (((x_axis = 6) & (y_axis = 9)) | ((x_axis = 7) & (y_axis = 9)) | ((x_axis = 8) & (y_axis = 9)));
+    -- BEGIN := (((x_axis = 0) & (y_axis = 0)) | ((x_axis = 1) & (y_axis = 0)) | ((x_axis = 2) & (y_axis = 0)));
+    -- gOAL := (((x_axis = 6) & (y_axis = 9)) | ((x_axis = 7) & (y_axis = 9)) | ((x_axis = 8) & (y_axis = 9)));

@@ -602,6 +602,9 @@ pub fn parse_original_smv(input: &str) -> ParsedModel {
 
 
 
+
+
+
     // Parse ASSIGN init(...) := ...
     let init_re = Regex::new(r"init\(([\w\[\]]+)\)\s*:=\s*\{?(.+?)\}?;").unwrap();
     for cap in init_re.captures_iter(input) {
@@ -618,7 +621,8 @@ pub fn parse_original_smv(input: &str) -> ParsedModel {
     while let Some(line) = lines.next() {
         let line = line.trim();
 
-        // Skip comments or empty lines
+
+        // Skip comment lines
         if line.starts_with("--") || line.starts_with("#") || line.is_empty() {
             continue;
         }
@@ -627,67 +631,61 @@ pub fn parse_original_smv(input: &str) -> ParsedModel {
             let var = cap[1].to_string();
             let mut rhs = strip_comment(cap.get(2).map_or("", |m| m.as_str())).to_string();
 
-            // Collect full RHS (possibly multiline), up to 'esac;' or terminating semicolon
-            while !rhs.trim_end().ends_with(';') && !rhs.trim_end().eq_ignore_ascii_case("esac;") {
-                if let Some(next_line) = lines.next() {
-                    let next_line_trimmed = strip_comment(next_line.trim());
-                    if next_line_trimmed.is_empty() || next_line_trimmed.starts_with("--") {
+
+            // If RHS is empty, gather more lines
+            if rhs.is_empty() {
+                while let Some(next_line) = lines.peek() {
+                    let next_line = next_line.trim();
+                    if next_line.is_empty() || next_line.starts_with("--") {
+                        lines.next(); // Consume and skip
                         continue;
                     }
-                    rhs.push(' ');
-                    rhs.push_str(&next_line_trimmed);
-                } else {
+
+                    rhs = next_line.to_string();
+                    lines.next(); // Consume the line we used
                     break;
                 }
             }
 
-            // === CASE statement ===
-            if rhs.trim_start().starts_with("case") {
-                let mut case_body = String::new();
+            if rhs.starts_with("case") {
 
-                // Push what comes after `case` in the same line, if any
-                if let Some(after_case) = rhs.trim_start().strip_prefix("case").map(str::trim) {
-                    if !after_case.is_empty() && !after_case.eq_ignore_ascii_case("esac;") {
-                        case_body.push_str(after_case);
+                let mut case_lines = Vec::new();
+
+                if let Some(after_case) = rhs.strip_prefix("case").map(str::trim) {
+                    if !after_case.is_empty() && !after_case.eq_ignore_ascii_case("esac") {
+                        case_lines.push(strip_comment(after_case).to_string());
+
                     }
                 }
 
-                // Accumulate lines until "esac;" is seen
-                while !case_body.trim_end().ends_with("esac;") {
-                    if let Some(next_line) = lines.next() {
-                        let trimmed = strip_comment(next_line.trim());
-                        if trimmed.is_empty() || trimmed.starts_with("--") {
-                            continue;
-                        }
-                        case_body.push(' ');
-                        case_body.push_str(&trimmed);
-                    } else {
+                while let Some(l) = lines.next() {
+                    let trimmed = l.trim();
+                    if trimmed.starts_with("--") || trimmed.is_empty() {
+                        continue;
+                    }
+
+                    if trimmed.eq_ignore_ascii_case("esac;") {
                         break;
                     }
+
+                    case_lines.push(strip_comment(trimmed).to_string());
+
                 }
 
-                // Remove final `esac;`
-                case_body = case_body.trim().strip_suffix("esac;").unwrap_or(&case_body).to_string();
-
-                // Split by semicolons to process each `guard : update;` block
-                for entry in case_body.split(';') {
-                    if let Some((guard, update)) = entry.split_once(':') {
-                        transitions.push((
-                            var.clone(),
-                            strip_comment(guard).trim().to_string(),
-                            strip_comment(update).trim().to_string(),
-                        ));
+                for case_line in case_lines {
+                    // println!("CASE: {}", case_line);
+                    if let Some((guard, update)) = case_line.split_once(':') {
+                        let guard = strip_comment(guard).trim().to_string();
+                        let update = strip_comment(update).trim_end_matches(';').to_string();
+                        transitions.push((var.clone(), guard, update));
                     }
                 }
             } else {
-                // === Normal (non-case) update ===
-                let update = rhs.trim_end_matches(';').trim().to_string();
+                let update = rhs.trim_end_matches(';').to_string();
                 transitions.push((var, "TRUE".to_string(), update));
             }
         }
     }
-
-
     // println!("{:#?}", transitions); // DEBUG
 
     // Parse DEFINE block
@@ -741,6 +739,7 @@ impl From<ParsedVarType> for VarType {
         }
     }
 }
+
 
 
 // Generate SMVEnv from the ParsedModel
@@ -820,9 +819,9 @@ pub fn generate_smv_env_from_parsed<'ctx>(
         );
     }
 
-    // for (name, _) in &env.predicates {
-    //     println!("Predicate: {}", name);
-    // }
+    for (name, _) in &env.predicates {
+        println!("Predicate: {}", name);
+    }
 
 
     // Step 3: Register transitions
@@ -830,8 +829,6 @@ pub fn generate_smv_env_from_parsed<'ctx>(
         let name_ref: &'ctx str = Box::leak(name.clone().into_boxed_str());
         let guard_str = guard.clone();
         let update_str = update.clone();
-
-        // println!("from {:?} to {:?}", guard_str, update_str);
 
         let var = parsed.variables.iter().find(|v| v.name == *name).unwrap_or_else(|| {
             panic!("Transition for undeclared variable '{}'", name);
@@ -871,9 +868,54 @@ pub fn generate_smv_env_from_parsed<'ctx>(
                 move |_env, _ctx, state| ReturnType::DynAst(update_fn(_env, _ctx, state)),
             );
         }   
+        
+
     }
+
     
-    
+    // // DEBUG: check registered SMVEnv
+    // println!("\nRegistered variables:");
+    // for (name, var) in env.get_variables() {
+    //     match &var.sort {
+    //         VarType::Bool { init } => {
+    //             println!("  {}: Bool {:?}", name, init);
+    //         }
+    //         VarType::Int { init, lower, upper } => {
+    //             println!("  {}: Int {:?}, bounds = [{:?}, {:?}]", name, init, lower, upper);
+    //         }
+    //         VarType::BVector { width, init, lower, upper } => {
+    //             println!(
+    //                 "  {}: BVector(width={}, init={:?}, bounds=[{:?}, {:?}])",
+    //                 name, width, init, lower, upper
+    //             );
+    //         }
+    //     }
+    // }
+    // println!("\nRegistered predicates:");
+    // for (name, func) in &env.predicates {
+    //     let result = func(&env, ctx, state);
+    //     println!("{:<8} := {:?}", name, result);
+    // }
+    // println!("\nRegistered transitions:");
+    // for (var, transitions) in env.get_transitions() {
+    //     println!("Transitions for variable '{}':", var);
+    //     for (i, (guard_fn, update_fn)) in transitions.iter().enumerate() {
+    //         let guard = guard_fn(&env, ctx, state);
+    //         let update = update_fn(&env, ctx, state);
+    //         println!("  # {}:", i);
+    //         match guard {
+    //             ReturnType::DynAst(ast) => println!("    Guard : {}", ast.to_string()),
+    //             _ => println!("    Guard : <non-AST value>"),
+    //         }
+    //         println!{"UPDATE: {:?}", update};
+    //         // match update {
+    //         //     ReturnType::DynAst(ast) => println!("    Update: {}", ast.to_string()),
+    //         //     ReturnType::Int(ast) => println!("    Update: {}", ast.to_string()),
+    //         //     _ => println!("    Update: <non-AST value>"),
+    //         // }
+    //     }
+    // }
+
     env
 }
 
@@ -916,6 +958,7 @@ pub fn parse_bool_braced_values(raw: &str) -> Vec<bool> {
 }
 
 
+
 fn preprocess_nondet_expr(var: &str, s: &str) -> String {
     let set_expr_re = regex::Regex::new(r"\{([^}]+)\}").unwrap();
     set_expr_re.replace_all(s, |caps: &regex::Captures| {
@@ -937,7 +980,7 @@ enum Choice {
 }
 
 
-// Return a dynamic node, given the condition (guard) string 
+// // Return a dynamic node, given the condition (guard) string 
 
 pub fn parse_condition<'ctx>(
     smv_env: &SMVEnv<'ctx>,
@@ -946,60 +989,49 @@ pub fn parse_condition<'ctx>(
     var_type: &ParsedVarType,
 ) -> impl Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> Dynamic<'ctx> + 'static {
 
-    // println!("NOW parsing: {:?}", cond_str);
+    println!("NOW parsing: {:?}", cond_str);
 
     let raw = preprocess_nondet_expr(var_name, cond_str.trim()); // preprocess once
     // let raw = cond_str.trim().to_owned();
     let var_name = var_name.to_owned();
 
+    // fn strip_outer_parens(s: &str) -> &str {
+    //     let s = s.trim();
+    //     if s.starts_with('(') && s.ends_with(')') {
+    //         let mut depth = 0;
+    //         for (i, c) in s.chars().enumerate() {
+    //             match c {
+    //                 '(' => depth += 1,
+    //                 ')' => {
+    //                     depth -= 1;
+    //                     if depth == 0 && i != s.len() - 1 {
+    //                         return s;
+    //                     }
+    //                 }
+    //                 _ => {}
+    //             }
+    //         }
+    //         return &s[1..s.len() - 1];
+    //     }
+    //     s
+    // }
 
     move |smv_env: &SMVEnv<'ctx>, ctx: &'ctx Context, state: &EnvState<'ctx>| {
-       fn recurse<'ctx>(
+        fn recurse<'ctx>(
             smv_env: &SMVEnv<'ctx>,
             var_name: &str,
             s: &str,
             ctx: &'ctx Context,
             state: &EnvState<'ctx>,
         ) -> Dynamic<'ctx> {
-            let s = s.trim();
-
-            // Strip outermost parentheses if they enclose the full expression
-            fn strip_parens(expr: &str) -> &str {
-                let mut start = 0;
-                let mut end = expr.len();
-                let bytes = expr.as_bytes();
-                while start < end && bytes[start] == b'(' && bytes[end - 1] == b')' {
-                    let mut depth = 0;
-                    let mut matched = true;
-                    for (i, c) in expr[start..end - 1].chars().enumerate() {
-                        match c {
-                            '(' => depth += 1,
-                            ')' => {
-                                depth -= 1;
-                                if depth == 0 && i < (end - start - 2) {
-                                    matched = false;
-                                    break;
-                                }
-                            }
-                            _ => {}
-                        }
-                    }
-                    if matched && depth == 1 {
-                        start += 1;
-                        end -= 1;
-                    } else {
-                        break;
-                    }
-                }
-                &expr[start..end]
-            }
-
-            let s = strip_parens(s);
-
+            // let s = strip_outer_parens(s.trim());
 
             if let Some(inner) = s.strip_prefix('!') {
                 let inner_expr = recurse(smv_env, var_name, inner.trim(), ctx, state);
-                return inner_expr.as_bool().unwrap().not().into();
+                let b = inner_expr.as_bool().unwrap_or_else(|| {
+                    panic!("Expected boolean after '!': {}", inner);
+                });
+                return b.not().into();
             }
 
             if s == "TRUE" {
@@ -1010,61 +1042,53 @@ pub fn parse_condition<'ctx>(
                 return Int::from_i64(ctx, n).into();
             }
 
-            let precedence = vec!["|", "&", "!=", ">=", "<=", "=", ">", "<", "+", "-"];
-
+            let precedence = vec!["!=", ">=", "<=", "=", ">", "<", "&", "|", "+", "-"];
             for op in &precedence {
                 let mut depth = 0;
-                let mut idx = None;
+                let mut split_idx = None;
 
-                let chars: Vec<char> = s.chars().collect();
-                let mut i = 0;
-                while i + op.len() <= s.len() {
-                    match chars[i] {
-                        '(' => {
-                            depth += 1;
-                            i += 1;
-                            continue;
+                // iterate from left to right to respect nesting correctly
+                for (i, _) in s.match_indices(op) {
+                    for c in s[..i].chars() {
+                        match c {
+                            '(' => depth += 1,
+                            ')' => depth -= 1,
+                            _ => {}
                         }
-                        ')' => {
-                            depth -= 1;
-                            i += 1;
-                            continue;
-                        }
-                        _ => {}
                     }
-
-                    // Check for operator match at top-level
-                    if depth == 0 && &s[i..i + op.len()] == *op {
-                        idx = Some(i);
+                    if depth == 0 {
+                        split_idx = Some(i);
                         break;
                     }
-
-                    i += 1;
                 }
 
-                if let Some(i) = idx {
+                if let Some(i) = split_idx {
                     let lhs = s[..i].trim();
                     let rhs = s[i + op.len()..].trim();
                     let lhs_expr = recurse(smv_env, var_name, lhs, ctx, state);
                     let rhs_expr = recurse(smv_env, var_name, rhs, ctx, state);
 
                     return match *op {
-                        "+" => lhs_expr.as_int().unwrap().add(&rhs_expr.as_int().unwrap()).into(),
-                        "-" => lhs_expr.as_int().unwrap().sub(&rhs_expr.as_int().unwrap()).into(),
+                        "+"  => lhs_expr.as_int().unwrap().add(&rhs_expr.as_int().unwrap()).into(),
+                        "-"  => lhs_expr.as_int().unwrap().sub(&rhs_expr.as_int().unwrap()).into(),
                         "!=" => lhs_expr._eq(&rhs_expr).not().into(),
-                        "=" => lhs_expr._eq(&rhs_expr).into(),
-                        ">" => lhs_expr.as_int().unwrap().gt(&rhs_expr.as_int().unwrap()).into(),
-                        "<" => lhs_expr.as_int().unwrap().lt(&rhs_expr.as_int().unwrap()).into(),
+                        "="  => lhs_expr._eq(&rhs_expr).into(),
+                        ">"  => lhs_expr.as_int().unwrap().gt(&rhs_expr.as_int().unwrap()).into(),
+                        "<"  => lhs_expr.as_int().unwrap().lt(&rhs_expr.as_int().unwrap()).into(),
                         ">=" => lhs_expr.as_int().unwrap().ge(&rhs_expr.as_int().unwrap()).into(),
                         "<=" => lhs_expr.as_int().unwrap().le(&rhs_expr.as_int().unwrap()).into(),
-                        "&" => {
+                        "&"  => {
                             let l = lhs_expr.as_bool().unwrap();
                             let r = rhs_expr.as_bool().unwrap();
                             Bool::and(ctx, &[&l, &r]).into()
                         }
                         "|" => {
-                            let l = lhs_expr.as_bool().unwrap();
-                            let r = rhs_expr.as_bool().unwrap();
+                            let l = lhs_expr.as_bool().unwrap_or_else(|| {
+                                panic!("Expected boolean lhs in '|': got {:?}", lhs_expr);
+                            });
+                            let r = rhs_expr.as_bool().unwrap_or_else(|| {
+                                panic!("Expected boolean rhs in '|': got {:?}", rhs_expr);
+                            });
                             Bool::or(ctx, &[&l, &r]).into()
                         }
                         _ => unreachable!(),
@@ -1072,17 +1096,18 @@ pub fn parse_condition<'ctx>(
                 }
             }
 
-            // Base case: must be variable or predicate
+
+
             if let Some(dyn_val) = smv_env.variables.get(s) {
                 match dyn_val.sort {
-                    VarType::Bool { .. } => to_dyn!(bool_var!(state, s)),
-                    VarType::Int { .. } => to_dyn!(int_var!(state, s)),
-                    VarType::BVector { .. } => to_dyn!(bv_var!(state, s)),
+                    VarType::Bool {..} => to_dyn!(bool_var!(state, s)),
+                    VarType::Int  {..} => to_dyn!(int_var!(state, s)),
+                    VarType::BVector  {..} => to_dyn!(bv_var!(state, s)),
                 }
             } else if let Some(pred_fn) = smv_env.predicates.get(s) {
-                Dynamic::from(pred_fn(smv_env, ctx, state))
+                Dynamic::from(pred_fn(&smv_env, ctx, state))
             } else {
-                panic!("Unknown variable or predicate '{}'", s);
+                panic!("Variable or predicate '{}' not found!", s);
             }
         }
 
@@ -1090,6 +1115,86 @@ pub fn parse_condition<'ctx>(
          
     }
 }
+
+
+
+fn precedence(op: &str) -> i32 {
+    match op {
+        "!=" | ">=" | "<=" | "=" | ">" | "<" => 9,
+        "&" => 8,
+        "|" => 7,
+        "+" | "-" => 6,
+        _ => -1,
+    }
+}
+
+fn is_operator(token: &str) -> bool {
+    matches!(token, "!=" | ">=" | "<=" | "=" | ">" | "<" | "&" | "|" | "+" | "-")
+}
+
+fn infix_to_prefix(expr: &str) -> String {
+    let prepared_expr = expr
+    .replace("(", " ( ")
+    .replace(")", " ) ");
+
+    let mut tokens: Vec<&str> = prepared_expr
+    .split_whitespace()
+    .collect();
+
+    let mut output: Vec<String> = Vec::new();
+    let mut stack: Vec<&str> = Vec::new();
+
+    while let Some(token) = tokens.first().cloned() {
+        tokens.remove(0);
+
+        if token == "(" {
+            stack.push(token);
+        } else if token == ")" {
+            while let Some(&op) = stack.last() {
+                if op == "(" {
+                    stack.pop();
+                    break;
+                }
+                output.push(stack.pop().unwrap().to_string());
+            }
+        } else if is_operator(token) {
+            while let Some(&op) = stack.last() {
+                if precedence(op) >= precedence(token) {
+                    output.push(stack.pop().unwrap().to_string());
+                } else {
+                    break;
+                }
+            }
+            stack.push(token);
+        } else {
+            output.push(token.to_string());
+        }
+    }
+
+    while let Some(op) = stack.pop() {
+        output.push(op.to_string());
+    }
+
+    // Convert to prefix tree recursively
+    fn to_prefix(stack: &mut Vec<String>) -> String {
+        if let Some(token) = stack.pop() {
+            if is_operator(&token) {
+                let right = to_prefix(stack);
+                let left = to_prefix(stack);
+                format!("({} {} {})", token, left, right)
+            } else {
+                token
+            }
+        } else {
+            "".to_string()
+        }
+    }
+
+    let mut rev = output.into_iter().rev().collect::<Vec<_>>();
+    to_prefix(&mut rev)
+}
+
+
 
 
 

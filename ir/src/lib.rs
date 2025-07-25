@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+// use std::collections::HashMap;
+use indexmap::IndexMap;
 use z3::{
     ast::{
         Ast, Bool, Dynamic, 
@@ -41,15 +42,15 @@ pub struct Variable {
     pub sort: VarType,
 }
 
-pub type EnvState<'ctx> = HashMap<&'ctx str, Dynamic<'ctx>>;
+pub type EnvState<'ctx> = IndexMap<&'ctx str, Dynamic<'ctx>>;
 
 // #[derive(Debug, Clone)]
 pub struct SMVEnv<'ctx> {
     pub ctx: &'ctx Context,
     // The Variable type already has the name. Do we require the name there?
-    pub variables: HashMap<&'ctx str, Variable>,
-    pub predicates: HashMap<&'ctx str, Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> Bool<'ctx>>>,
-    pub transitions: HashMap<&'ctx str, Vec<(Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> ReturnType<'ctx>>, Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> ReturnType<'ctx>>)>>,
+    pub variables: IndexMap<&'ctx str, Variable>,
+    pub predicates: IndexMap<&'ctx str, Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> Bool<'ctx>>>,
+    pub transitions: IndexMap<&'ctx str, Vec<(Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> ReturnType<'ctx>>, Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> ReturnType<'ctx>>)>>,
 }
 
 // Milad: I need this (???)
@@ -82,9 +83,9 @@ impl<'ctx> SMVEnv<'ctx> {
     pub fn new(ctx: &'ctx Context) -> Self {
         SMVEnv {
             ctx: ctx,
-            variables: HashMap::new(),
-            predicates: HashMap::new(),
-            transitions: HashMap::new(),
+            variables: IndexMap::new(),
+            predicates: IndexMap::new(),
+            transitions: IndexMap::new(),
         }
     }
 
@@ -560,12 +561,12 @@ impl<'ctx> SMVEnv<'ctx> {
         (states, sym_path)
     }
 
-    pub fn get_transitions(&self) -> &HashMap<&'ctx str, Vec<(Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> ReturnType<'ctx>>, Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> ReturnType<'ctx>>)>> {
+    pub fn get_transitions(&self) -> &IndexMap<&'ctx str, Vec<(Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> ReturnType<'ctx>>, Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> ReturnType<'ctx>>)>> {
         &self.transitions
     }
 
     pub fn make_dummy_state(&self, ctx: &'ctx z3::Context) -> EnvState<'ctx> {
-        let mut state: EnvState<'ctx> = HashMap::new();
+        let mut state: EnvState<'ctx> = IndexMap::new();
  
         for (name, var) in &self.variables {
             let val = match &var.sort {
@@ -592,7 +593,7 @@ impl<'ctx> SMVEnv<'ctx> {
         self.ctx
     }
  
-    pub fn get_variables(&self) -> &HashMap<&'ctx str, Variable> {
+    pub fn get_variables(&self) -> &IndexMap<&'ctx str, Variable> {
         &self.variables
     }
  
@@ -706,7 +707,7 @@ impl<'ctx> SMVEnv<'ctx> {
 
 
 
-   pub fn get_predicates(&self) -> &HashMap<&'ctx str, Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> Bool<'ctx>>> {
+    pub fn get_predicates(&self) -> &IndexMap<&'ctx str, Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> Bool<'ctx>>> {
         &self.predicates
    }
 }

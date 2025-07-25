@@ -10,6 +10,7 @@ use enchelper::*;
 use encoder::*;
 use parser_nusmv::*;
 use unroller_qbf::*;
+use loop_conditions::*;
 use z3::{
     ast::{
         Ast, Dynamic, Int, Bool,
@@ -190,6 +191,10 @@ fn main() {
             // Start the timer for encoding
             let start = Instant::now();
             let form = get_z3_encoding(&envs, &ast_node, *unrolling_bound, None, semantics);
+//             let lp = LoopCondition::new(&ctx, &envs[0], &envs[1]);
+//             let form = lp.build_loop_condition(&ast_node);
+   
+
             let duration = start.elapsed();
             let secs = duration.as_secs_f64();
             println!("Encoding Time: {}", secs);

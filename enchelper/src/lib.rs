@@ -30,17 +30,17 @@ pub fn create_path_mapping(formula: &AstNode, k: usize) -> HashMap<&str, usize> 
     }
 }
 
-pub fn inner_ltl(formula: &AstNode) -> &AstNode {
-    match formula {
-        AstNode::HAQuantifier{identifier: _, form} |
-        AstNode::HEQuantifier{identifier: _, form} |
-        AstNode::AAQuantifier{identifier: _, form} |
-        AstNode::AEQuantifier{identifier: _, form} => {
-            inner_ltl(form)
+    pub fn inner_ltl(formula: &AstNode) -> &AstNode {
+        match formula {
+            AstNode::HAQuantifier{identifier: _, form} |
+            AstNode::HEQuantifier{identifier: _, form} |
+            AstNode::AAQuantifier{identifier: _, form} |
+            AstNode::AEQuantifier{identifier: _, form} => {
+                inner_ltl(form)
+            }
+            _ => formula
         }
-        _ => formula
     }
-}
 
 pub fn is_hltl(formula: &AstNode) -> bool {
     match formula {
@@ -214,34 +214,34 @@ fn check_EA_rec(formula: &AstNode) -> bool {
 }
 
 pub fn detect_quantifier_order(formula: &AstNode) -> u8 {
-    // collect only the path quantifiers (AA -> 'A', AE -> 'E')
     let mut seq = Vec::new();
     let mut current = formula;
 
     loop {
         match current {
-            AstNode::AAQuantifier { form, .. } => {
+            AstNode::HAQuantifier { form, .. } => {
                 seq.push('A');
                 current = form;
             }
-            AstNode::AEQuantifier { form, .. } => {
+            AstNode::HEQuantifier { form, .. } => {
                 seq.push('E');
                 current = form;
             }
             // skip over hyper quantifiers
-            AstNode::HAQuantifier { form, .. }
-            | AstNode::HEQuantifier { form, .. } => {
+            AstNode::AAQuantifier { form, .. }
+            | AstNode::AEQuantifier { form, .. } => {
                 current = form;
             }
             // once we hit anything else, stop
             _ => break,
         }
     }
-
+    //println!("{:?}", seq);
+    // Check for the patterns we're interested in
     match seq.as_slice() {
-        ['A', 'E'] => 1,
-        ['E', 'A'] => 2,
-        _ => 0,
+        ['A', 'E'] => 1,  // AE pattern
+        ['E', 'A'] => 2,  // EA pattern
+        _ => 0  // Other patterns not supported
     }
 }
 

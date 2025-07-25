@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-z3 = "0.13"
+z3 = "0.13.0"
 clap = { version = "4.5.40", features = ["cargo"] }
 parser = { path = "./parser" }
 ir = { path = "./ir" }
@@ -12,3 +12,5 @@ encoder = { path = "./encoder" }
 enchelper = { path = "./enchelper" }
 parser_nusmv = { path = "./parser_nusmv" }
 unroller_qbf = { path = "./unroller_qbf" }
+loop_conditions = { path = "./loop_conditions" }
+fs = "0.0.5"

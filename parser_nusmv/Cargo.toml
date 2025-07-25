@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+z3 = "0.13.0"
 indexmap = "2.10.0"
-z3 = "0.13"
 regex = "1"
 ir = { path = "../ir" }
 expressions = { path = "../expressions" }

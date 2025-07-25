@@ -19,16 +19,3 @@ ASSIGN
       a_state = 11  : 1;
       TRUE            : a_state; 
     esac;
-
-DEFINE
-  S_send_p0   := (a_state = 1);
-  R_recv_p0   := (a_state = 2);
-  R_send_a0   := (a_state = 3);
-  S_recv_a0   := (a_state = 4);
-  S_send_p1   := (a_state = 5);
-  packet_loss := (a_state = 6);
-  timeout     := (a_state = 7);
-  R_recv_p1   := (a_state = 8);
-  R_send_a1   := (a_state = 9);
-  ack_loss    := (a_state = 10);
-  S_recv_a1   := (a_state = 11);

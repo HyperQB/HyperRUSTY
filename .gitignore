@@ -1,2 +1,6 @@
 /target
 AutoHyper/
+cargo.lock
+commands.txt
+input.smt2
+formula.hq

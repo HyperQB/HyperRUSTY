@@ -1,4 +1,4 @@
-read_model -i benchmarks/loop_conditions/test_loop/rs2.smv
+read_model -i benchmarks/5_planning/robotic_sp_100.smv
 flatten_hierarchy
 build_flat_model
 write_flat_model -o flattened.txt

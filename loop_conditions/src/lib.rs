@@ -13,6 +13,10 @@ use hltlunroller::*;
 use parser::*;
 
 
+use std::fs::File;
+use std::io::{self, Write};
+
+
 pub struct LoopCondition<'env, 'ctx> {
     pub ctx: &'ctx Context,
     pub model1:&'env SMVEnv<'ctx>,
@@ -115,12 +119,12 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
     pub fn initial_state_sim_AE(&self) -> Vec<Bool> {
         let mut constraints = Vec::new();
         for i in 0..self.symstates1.len() {
-            let init_constraint_m1 = self.model1.generate_initial_constraints(&self.symstates1);
+            let init_constraint_m1 = self.model1.generate_initial_constraints_for_state(&self.symstates1, i);
             let init_constraint_m1_and = Bool::and(self.ctx, &init_constraint_m1.iter().collect::<Vec<_>>());
             let mut inner_formula = Vec::new();
             for j in 0..self.symstates2.len() {
                 let mut inner_and = Vec::new();
-                let init_constraint_m2 = self.model2.generate_initial_constraints(&self.symstates2);
+                let init_constraint_m2 = self.model2.generate_initial_constraints_for_state(&self.symstates2, j);
                 inner_and.push(Bool::and(self.ctx, &init_constraint_m2.iter().collect::<Vec<_>>()));
                 inner_and.push(self.sim_i_j[i * self.symstates2.len() + j].clone());
                 inner_formula.push(Bool::and(self.ctx, &inner_and.iter().collect::<Vec<_>>()));
@@ -129,7 +133,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             constraints.push(init_constraint_m1_and.implies(&inner_or));
         }
         // println!("Initial state simulation constraints for AE:");
-        // println!("{:?}", constraints);
+        //println!("{:?}", constraints);
         constraints
     }
 
@@ -155,7 +159,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
     pub fn valid_path_EA(&self) -> Vec<Bool> {
         let mut constraints = Vec::new();
         //let n = self.symstates1.len() - 1;
-        let n = 3;
+        let n = 2;
         for i in 0..(n - 1) {
             let mut transition = self.model1.generate_transition_relation(&self.symstates1[i], &self.symstates1[i + 1]);
             transition.push(self.succ_t(i, i + 1));
@@ -169,7 +173,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
     pub fn loop_back_EA(&self) -> Bool {
         let mut constraints = Vec::new();
         //let n = self.symstates1.len();
-        let n = 3;
+        let n = 2;
         for i in 0..(n) {
             let transition = self.model1.generate_transition_relation(&self.symstates1[n - 1], &self.symstates1[i]);
             let transition_constraint = Bool::and(self.ctx, &transition.iter().collect::<Vec<_>>());
@@ -189,7 +193,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
         let k = self.symstates2.len();
         for i in 0..(n){
             for t in 0..(n){
-                let transition_x = self.model1.generate_transition_relation(&self.symstates1[i], &self.symstates2[t]);
+                let transition_x = self.model1.generate_transition_relation(&self.symstates1[i], &self.symstates1[t]);
                 let transition_x_constraint = Bool::and(self.ctx, &transition_x.iter().collect::<Vec<_>>());
                 let mut inner_implication = Vec::new();
                 for j in 0..(k){
@@ -306,7 +310,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             }
         }
         println!("Relation predicate constraints:");
-        println!("{:?}", constraints);
+        //println!("{:?}", constraints);
         constraints
     }
 
@@ -337,7 +341,9 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
                 all_constraints.extend(self.relation_predicate(formula));
 
                 let refs: Vec<&Bool> = all_constraints.iter().collect();
-                Bool::and(self.ctx, &refs)
+                let final_constraint = Bool::and(self.ctx, &refs);
+                
+                final_constraint
             }
             2 => {
                 // If the formula is EA, build the loop condition for EA

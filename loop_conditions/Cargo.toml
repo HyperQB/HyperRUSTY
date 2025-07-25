@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-z3 = "0.12"
+z3 = "0.13.0"
 ir = { path = "../ir" }
 enchelper = { path = "../enchelper" }
 hltlunroller = { path = "../hltlunroller" }

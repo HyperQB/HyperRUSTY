@@ -7,7 +7,7 @@
 
 #=== LOOP CONDITIONS EXAMPLES ===#
 
-cargo run --release -- -n benchmarks/loop_conditions/simple_loop1.smv benchmarks/loop_conditions/simple_loop2.smv -f benchmarks/loop_conditions/simple_loop.hq -k 10000000 -s pes
+cargo run --release -- -n benchmarks/loop_conditions/rp_1.smv benchmarks/loop_conditions/rp_2.smv -f benchmarks/loop_conditions/rp.hq -k 10000000000000 -s pes
 
 
 #=== BAKERY ===#

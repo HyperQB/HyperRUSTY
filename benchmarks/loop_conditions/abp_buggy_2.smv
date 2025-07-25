@@ -22,15 +22,3 @@ ASSIGN
       TRUE         : b_state;
     esac;
 
-DEFINE
-  S_send_p0   := (b_state = 1);
-  packet_loss := (b_state = 2 | b_state = 6);
-  timeout     := FALSE;                -- buggy: never true
-  S_recv_a0   := (b_state = 4);
-  S_send_p1   := (b_state = 5);
-  S_recv_a1   := (b_state = 8);
-  R_recv_p0   := (b_state = 9);
-  R_send_a0   := (b_state = 10);
-  ack_loss    := (b_state = 11 | b_state = 14);
-  R_recv_p1   := (b_state = 12);
-  R_send_a1   := (b_state = 13);

@@ -190,9 +190,11 @@ fn main() {
 
             // Start the timer for encoding
             let start = Instant::now();
-            // let form = get_z3_encoding(&envs, &ast_node, *unrolling_bound, None, semantics);
+            //let form = get_z3_encoding(&envs, &ast_node, *unrolling_bound, None, semantics);
             let lp = LoopCondition::new(&ctx, &envs[0], &envs[1]);
             let form = lp.build_loop_condition(&ast_node);
+   
+
             let duration = start.elapsed();
             let secs = duration.as_secs_f64();
             println!("Encoding Time: {}", secs);
@@ -201,6 +203,10 @@ fn main() {
             // Create a new solver
             let solver = Solver::new(&ctx);
             solver.assert(&form);
+
+            let smtlib = solver.to_smt2();
+ 
+            fs::write("input.smt2", smtlib).expect("Failed to write file");
 
             match solver.check() {
                 SatResult::Sat => {

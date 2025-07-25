@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-z3 = "0.12"
+z3 = "0.13.0"
 ir = { path = "../ir" }
 parser = { path = "../parser" }
 enchelper = { path = "../enchelper" }

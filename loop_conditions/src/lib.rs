@@ -423,10 +423,9 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
                 all_constraints.extend(self.simulation_pairs());              // Transition simulation
                 all_constraints.extend(self.relation_predicate(formula));     // Formula satisfaction
 
+                // Create references vector in the same scope as Bool::and
                 let refs: Vec<&Bool> = all_constraints.iter().collect();
-                let final_constraint = Bool::and(self.ctx, &refs);
-                
-                final_constraint
+                Bool::and(self.ctx, &refs)
             }
             2 => {
                 // EA (∃∀) pattern: There exists a path in model1 for all paths in model2
@@ -437,6 +436,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
                 all_constraints.push(self.simulation_constrains_EA());        // Path-based simulation
                 all_constraints.extend(self.relation_predicate(formula));     // Formula satisfaction
                 
+                // Create references vector in the same scope as Bool::and
                 let refs: Vec<&Bool> = all_constraints.iter().collect();
                 Bool::and(self.ctx, &refs)
             }

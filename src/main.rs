@@ -51,15 +51,22 @@ fn main() {
             arg!(
                 -k --unrolling_bound <FILE> "Unrolling bound"
             )
-            .required(true)
+            .required(false)  // Changed from true to false
             .value_parser(value_parser!(usize)),
         )
         .arg(
             arg!(
                 -s --semantics <FILE> "Choice of semantics"
             )
-            .required(true)
+            .required(false)  // Changed from true to false
             .value_parser(value_parser!(String)),
+        )
+        .arg(
+            arg!(
+                -l --loop_conditions "Use loop conditions instead of unrolling"
+            )
+            .required(false)
+            .action(clap::ArgAction::SetTrue),
         )
         .arg(
             arg!(
@@ -101,21 +108,36 @@ fn main() {
 
     let matches = cli.get_matches();
 
-    let unrolling_bound = matches
-        .get_one::<usize>("unrolling_bound").unwrap();
+    // Check if loop conditions flag is set
+    let use_loop_conditions = matches.get_flag("loop_conditions");
 
-    let formula_path = matches
-        .get_one::<PathBuf>("formula").unwrap();
+    // Handle conditional requirements
+    let (unrolling_bound, semantics) = if use_loop_conditions {
+        // When using loop conditions, we don't need unrolling bound or semantics
+        (0, Semantics::Pes) // Default values (not used)
+    } else {
+        // When NOT using loop conditions, both unrolling bound and semantics are required
+        let unrolling_bound = matches
+            .get_one::<usize>("unrolling_bound")
+            .expect("Unrolling bound (-k) is required when not using loop conditions (-l)");
 
-    let semantics_as_str = matches.get_one::<String>("semantics").unwrap().as_str();
+        let semantics_as_str = matches
+            .get_one::<String>("semantics")
+            .expect("Semantics (-s) is required when not using loop conditions (-l)");
 
-    let semantics = match semantics_as_str {
+        let semantics = match semantics_as_str.as_str() {
             "pes" => Semantics::Pes,
             "opt" => Semantics::Opt,
             "hpes" => Semantics::Hopt,
             "hopt" => Semantics::Hpes,
             _ => panic!("Invalid choice of semantics")
         };
+
+        (*unrolling_bound, semantics)
+    };
+
+    let formula_path = matches
+        .get_one::<PathBuf>("formula").unwrap();
 
     if let Some(nusmv_models) = matches.get_many::<PathBuf>("nusmv") {
         // NuSMV Path
@@ -161,7 +183,7 @@ fn main() {
             if !stderr.trim().is_empty() {
                 println!("{}", stderr);
             }
-        }else {
+        } else {
             let path_identifiers: Vec<&str> = get_path_identifiers(&ast_node);
             let mut envs = Vec::new();
 
@@ -190,48 +212,81 @@ fn main() {
 
             // Start the timer for encoding
             let start = Instant::now();
-            let form = get_z3_encoding(&envs, &ast_node, *unrolling_bound, None, semantics);
-//             let lp = LoopCondition::new(&ctx, &envs[0], &envs[1]);
-//             let form = lp.build_loop_condition(&ast_node);
-   
+            // Copy-Paste code, but due to some lifetimes issues thats the best solution for now, also my nickname is ctrl_c_n1nja :)
+            if use_loop_conditions{
+                 let lp = LoopCondition::new(&ctx, &envs[0], &envs[1]);
+                 let form = lp.build_loop_condition(&ast_node);
+                let duration = start.elapsed();
+                let secs = duration.as_secs_f64();
+                println!("Encoding Time: {}", secs);
 
-            let duration = start.elapsed();
-            let secs = duration.as_secs_f64();
-            println!("Encoding Time: {}", secs);
+                // Create a new solver
+                let solver = Solver::new(&ctx);
+                solver.assert(&form);
 
+                // SMT-LIB encoding
+                let smtlib = solver.to_smt2();
 
-            // Create a new solver
-            let solver = Solver::new(&ctx);
-            solver.assert(&form);
+                fs::write("input.smt2", smtlib).expect("Failed to write file");
 
-            // SMT-LIB encoding
-            let smtlib = solver.to_smt2();
+                match solver.check() {
+                    SatResult::Sat => {
+                        println!("result: sat.");
+                    },
+                    SatResult::Unsat => {
+                        println!("result: unsat.");
+                    },
+                    SatResult::Unknown => {
+                        println!("result: unknown.");
+                    }
+                };
+                // grab the statistics of the solver
+                let stats = solver.get_statistics();
+                println!("{:#?}", stats);
+                let val_str = match stats.value("time").unwrap() {
+                    StatisticsValue::UInt(u)   => u.to_string(),
+                    StatisticsValue::Double(d) => d.to_string(),
+                };
+                println!("Solve Time: {}", val_str);
 
-            fs::write("input.smt2", smtlib).expect("Failed to write file");
+            }
+            else{
+                let form = get_z3_encoding(&envs, &ast_node, unrolling_bound, None, semantics);
+                let duration = start.elapsed();
+                let secs = duration.as_secs_f64();
+                println!("Encoding Time: {}", secs);
 
-            match solver.check() {
-                SatResult::Sat => {
-                    println!("result: sat.");
-                },
-                SatResult::Unsat => {
-                    println!("result: unsat.");
-                },
-                SatResult::Unknown => {
-                    println!("result: unknown.");
-                }
-            };
-            // grab the statistics of the solver
-            let stats = solver.get_statistics();
-            println!("{:#?}", stats);
-            let val_str = match stats.value("time").unwrap() {
-                StatisticsValue::UInt(u)   => u.to_string(),
-                StatisticsValue::Double(d) => d.to_string(),
-            };
-            println!("Solve Time: {}", val_str);
+                // Create a new solver
+                let solver = Solver::new(&ctx);
+                solver.assert(&form);
+
+                // SMT-LIB encoding
+                let smtlib = solver.to_smt2();
+
+                fs::write("input.smt2", smtlib).expect("Failed to write file");
+
+                match solver.check() {
+                    SatResult::Sat => {
+                        println!("result: sat.");
+                    },
+                    SatResult::Unsat => {
+                        println!("result: unsat.");
+                    },
+                    SatResult::Unknown => {
+                        println!("result: unknown.");
+                    }
+                };
+                // grab the statistics of the solver
+                let stats = solver.get_statistics();
+                println!("{:#?}", stats);
+                let val_str = match stats.value("time").unwrap() {
+                    StatisticsValue::UInt(u)   => u.to_string(),
+                    StatisticsValue::Double(d) => d.to_string(),
+                };
+                println!("Solve Time: {}", val_str);
+            }
         }
-
-        
-    }else {
+    } else {
         // Verilog Path
         panic!("I Shouldn't be here! -Said verilog");
         let build_path = matches

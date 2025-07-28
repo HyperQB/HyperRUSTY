@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 read_model -i benchmarks/5_planning/robotic_sp_100.smv
+=======
+read_model -i benchmarks/loop_conditions/robust_path_planning/rp_2.smv
+>>>>>>> 3dd8a688726f8e362536267249e7b7481da34733
 flatten_hierarchy
 build_flat_model
 write_flat_model -o flattened.txt

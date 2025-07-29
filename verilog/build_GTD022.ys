@@ -1,0 +1,9 @@
+# build.ys
+read_verilog -pwires ./designs/TrustHub/RHI011/fifo4.v
+hierarchy -check -top fifo4
+proc
+flatten
+async2sync
+dffunmap
+opt_clean -purge
+write_smt2 -stdt -wires MULTI_TEST.txt

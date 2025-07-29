@@ -1,0 +1,15 @@
+# build.ys
+read_verilog -pwires ./multi/verilog/oh_bin2gray.v \
+               ./multi/verilog/oh_fifo_generic.v \
+               ./multi/verilog/oh_dsync.v \
+               ./multi/verilog/oh_memory_dp.v \
+               ./multi/verilog/oh_gray2bin.v \
+               ./multi/verilog/oh_rsync.v \
+               ./multi/verilog/oh_memory_ram.v
+hierarchy -check -top oh_fifo_generic
+proc
+flatten
+async2sync
+dffunmap
+opt_clean -purge
+write_smt2 -stdt -wires MULTI_TEST.txt

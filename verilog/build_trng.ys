@@ -1,0 +1,20 @@
+# build.ys
+read_verilog -pwires ./designs/TrustHub/RTD021/trng.v \
+               ./designs/TrustHub/RTD021/trng_mixer.v \
+               ./designs/TrustHub/RTD021/trng_csprng.v \
+               ./designs/TrustHub/RTD021/rosc_entropy.v \
+               ./designs/TrustHub/RTD021/avalanche_entropy.v \
+               ./designs/TrustHub/RTD021/sha512_core.v \
+               ./designs/TrustHub/RTD021/trng_csprng_fifo.v \
+               ./designs/TrustHub/RTD021/chacha_core.v \
+               ./designs/TrustHub/RTD021/chacha_qr.v \
+               ./designs/TrustHub/RTD021/sha512_w_mem.v \
+               ./designs/TrustHub/RTD021/sha512_h_constants.v \
+               ./designs/TrustHub/RTD021/sha512_k_constants.v
+hierarchy -check -top trng
+proc
+flatten
+async2sync
+dffunmap
+opt_clean -purge
+write_smt2 -stdt -wires MULTI_TEST.txt

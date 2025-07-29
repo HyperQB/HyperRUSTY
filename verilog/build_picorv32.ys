@@ -1,0 +1,11 @@
+# build.ys
+read_verilog -pwires ./designs/picorv/picorv32.v
+hierarchy -check -top picorv32
+proc
+flatten
+async2sync
+dffunmap
+opt_clean -purge
+memory
+opt_clean -purge
+write_smt2 -stdt -wires MULTI_TEST.txt

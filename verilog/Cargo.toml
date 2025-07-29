@@ -1,0 +1,16 @@
+[package]
+name = "hqb-verilog"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "smt_extractor_cli"
+path = "src/main.rs"
+
+[dependencies]
+z3 = "0.12.1"
+regex = "1.11.1"
+thiserror = "2.0.12"
+anyhow = "1.0.98"
+clap = { version = "4.5.40", features = ["cargo"] }
+z3-sys = "0.8.1"

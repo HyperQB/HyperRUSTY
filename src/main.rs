@@ -1,5 +1,6 @@
 #![allow(warnings)]
 use std::fs;
+use std::mem;
 use std::io::{self, Write};
 use std::process;
 use std::path::PathBuf;
@@ -157,12 +158,6 @@ fn main() {
         let formula = fs::read_to_string(formula_path).expect("Failed to read the formula");
         let ast_node = parse(&formula).expect("Failed parsing the formula");
 
-        println!("{:?}", ast_node);
-
-        let mut cfg = Config::new();
-        cfg.set_model_generation(true);
-        let ctx = Context::new(&cfg);
-
         if *matches.get_one::<bool>("qbf_solver").unwrap() {
             // gen_qcir(&model_paths, &String::from(formula_path.to_str().unwrap()), &env, *unrolling_bound as i32, false, semantics_as_str);
             let output = process::Command::new("/Users/milad/Desktop/rust_tutorial/HyperRUSTY/quabs")
@@ -185,6 +180,10 @@ fn main() {
             }
         } else {
             let path_identifiers: Vec<&str> = get_path_identifiers(&ast_node);
+
+            let mut cfg = Config::new();
+            cfg.set_model_generation(true);
+            let ctx = Context::new(&cfg);
             let mut envs = Vec::new();
 
             if model_paths.len() != path_identifiers.len() {
@@ -212,79 +211,41 @@ fn main() {
 
             // Start the timer for encoding
             let start = Instant::now();
-            // Copy-Paste code, but due to some lifetimes issues thats the best solution for now, also my nickname is ctrl_c_n1nja :)
-            if use_loop_conditions{
-                 let lp = LoopCondition::new(&ctx, &envs[0], &envs[1]);
-                 let form = lp.build_loop_condition(&ast_node);
-                let duration = start.elapsed();
-                let secs = duration.as_secs_f64();
-                println!("Encoding Time: {}", secs);
 
-                // Create a new solver
-                let solver = Solver::new(&ctx);
-                solver.assert(&form);
+            let encoding = if use_loop_conditions {
+                let lp = LoopCondition::new(&ctx, &envs[0], &envs[1]);
+                Bool::from_bool(envs[0].ctx, true)
+                // lp.build_loop_condition(&ast_node)
 
-                // SMT-LIB encoding
-                let smtlib = solver.to_smt2();
+            } else {
+                get_z3_encoding(&envs, &ast_node, unrolling_bound, None, semantics)
+            };
+            let duration = start.elapsed();
+            let secs = duration.as_secs_f64();
+            println!("Encoding Time: {}", secs);
 
-                fs::write("input.smt2", smtlib).expect("Failed to write file");
+            // Create a new solver
+            let solver = Solver::new(&ctx);
+            solver.assert(&encoding);
 
-                match solver.check() {
-                    SatResult::Sat => {
-                        println!("result: sat.");
-                    },
-                    SatResult::Unsat => {
-                        println!("result: unsat.");
-                    },
-                    SatResult::Unknown => {
-                        println!("result: unknown.");
-                    }
-                };
-                // grab the statistics of the solver
-                let stats = solver.get_statistics();
-                println!("{:#?}", stats);
-                let val_str = match stats.value("time").unwrap() {
-                    StatisticsValue::UInt(u)   => u.to_string(),
-                    StatisticsValue::Double(d) => d.to_string(),
-                };
-                println!("Solve Time: {}", val_str);
-
-            }
-            else{
-                let form = get_z3_encoding(&envs, &ast_node, unrolling_bound, None, semantics);
-                let duration = start.elapsed();
-                let secs = duration.as_secs_f64();
-                println!("Encoding Time: {}", secs);
-
-                // Create a new solver
-                let solver = Solver::new(&ctx);
-                solver.assert(&form);
-
-                // SMT-LIB encoding
-                let smtlib = solver.to_smt2();
-
-                fs::write("input.smt2", smtlib).expect("Failed to write file");
-
-                match solver.check() {
-                    SatResult::Sat => {
-                        println!("result: sat.");
-                    },
-                    SatResult::Unsat => {
-                        println!("result: unsat.");
-                    },
-                    SatResult::Unknown => {
-                        println!("result: unknown.");
-                    }
-                };
-                // grab the statistics of the solver
-                let stats = solver.get_statistics();
-                println!("{:#?}", stats);
-                let val_str = match stats.value("time").unwrap() {
-                    StatisticsValue::UInt(u)   => u.to_string(),
-                    StatisticsValue::Double(d) => d.to_string(),
-                };
-                println!("Solve Time: {}", val_str);
-            }
+            match solver.check() {
+                SatResult::Sat => {
+                    println!("result: sat.");
+                },
+                SatResult::Unsat => {
+                    println!("result: unsat.");
+                },
+                SatResult::Unknown => {
+                    println!("result: unknown.");
+                }
+            };
+            // grab the statistics of the solver
+            let stats = solver.get_statistics();
+            let val_str = match stats.value("time").unwrap() {
+                StatisticsValue::UInt(u)   => u.to_string(),
+                StatisticsValue::Double(d) => d.to_string(),
+            };
+            println!("Solve Time: {}", val_str);
         }
     } else {
         // Verilog Path

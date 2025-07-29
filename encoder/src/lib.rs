@@ -22,7 +22,7 @@ pub fn get_z3_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, formula: &'ctx
     // First, extract path names from the formula
     let path_names = get_path_identifiers(formula);
     // Next, get the corresponding states and path encoding for each name
-    let mut states: Vec<Vec<EnvState<'env>>> = Vec::new();
+    let mut states: Vec<Vec<EnvState<'ctx>>> = Vec::new();
     let mut constraints: Vec<Bool<'env>> = Vec::new();
     for (idx, &name) in path_names.iter().enumerate() {
         let (new_states, new_constraint) = envs[idx].generate_symbolic_path(k, Some(name));
@@ -30,12 +30,10 @@ pub fn get_z3_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, formula: &'ctx
         constraints.push(new_constraint);
     }
 
-    // println!("{:?}", constraints[0]);
-
     // detect the type of formula
     if is_hltl(formula) {
         // Last, call the encoding generator
-        generate_hltl_encoding(envs[0].ctx, formula, states, constraints, sem)
+        generate_hltl_encoding(envs, formula, states, constraints, sem)
     }else {
         Bool::from_bool(envs[0].ctx, false)
     //     // It's an A-HLTL formula
@@ -279,9 +277,10 @@ fn generate_quantified_encoding<'ctx>(ctx: &'ctx Context, formula: &AstNode, pat
     }
 }
 
-fn generate_hltl_encoding<'ctx>(ctx: &'ctx Context, formula: &AstNode, paths: Vec<Vec<EnvState<'ctx>>>, path_encodings: Vec<Bool<'ctx>>, sem: Semantics) -> Bool<'ctx> {
+fn generate_hltl_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, formula: &AstNode, paths: Vec<Vec<EnvState<'ctx>>>, path_encodings: Vec<Bool<'env>>, sem: Semantics) -> Bool<'env> {
+    let ctx = envs[0].ctx;
     // Unroll the formula first
-    let inner_ltl = unroll_hltl_formula(ctx, formula, &paths, &sem);
+    let inner_ltl = unroll_hltl_formula(envs, formula, &paths, &sem);
     // Construct the inner encoding
     let inner = generate_inner_encoding(ctx, formula, &path_encodings, inner_ltl.clone(), 0);
     // Get the mapping

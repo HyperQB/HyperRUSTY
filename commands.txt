@@ -1,5 +1,0 @@
-read_model -i benchmarks/1_bakery/bakery9.smv
-flatten_hierarchy
-build_flat_model
-write_flat_model -o flattened.txt
-quit

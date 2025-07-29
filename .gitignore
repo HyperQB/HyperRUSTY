@@ -1,15 +1,5 @@
 /target
 AutoHyper/
-cargo.lock
+Cargo.lock
 commands.txt
-input.smt2
-formula.hq
-flattened.txt
-formula.hq
-mini.hq
-mini.smv
-ni.hq
-ni.smv
-out.txt
-text.txt
-auto_mini.hq
+.DS_Store

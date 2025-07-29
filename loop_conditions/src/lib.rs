@@ -56,7 +56,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
 
     /// Generates constraints ensuring all symbolic states are legal/valid
     /// Includes scope constraints for variables and initial state constraints
-    pub fn legal_state(&self) -> Vec<Bool> {
+    pub fn legal_state(&self) -> Vec<Bool<'env>> {
         let mut valid_states = Vec::new();
         
         // Add scope constraints for model1 states (variable bounds, types, etc.)
@@ -81,7 +81,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
     /// Generates exhaustive exploration constraints ensuring distinct states are distinguishable
     /// For each pair of different states, they must differ in at least one variable value
     /// is_q: true for model2 (quantifier model), false for model1
-    pub fn exhaustive_exploration(&self, is_q: bool) -> Vec<Bool> {
+    pub fn exhaustive_exploration(&self, is_q: bool) -> Vec<Bool<'env>> {
         let (model, symstates) = if is_q {
             (&self.model2, &self.symstates2)
         } else {
@@ -122,7 +122,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
 
     /// Generates initial state simulation constraints for EA (∃∀) patterns
     /// Ensures that initial states of model1 can be simulated by some initial state of model2
-    pub fn initial_state_sim_EA(&self) -> Vec<Bool> {
+    pub fn initial_state_sim_EA(&self) -> Vec<Bool<'env>> {
         let mut constraints = Vec::new();
         
         // Add all initial constraints for model1
@@ -139,7 +139,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
 
     /// Generates initial state simulation constraints for AE (∀∃) patterns
     /// For each initial state of model1, there must exist a corresponding initial state in model2
-    pub fn initial_state_sim_AE(&self) -> Vec<Bool> {
+    pub fn initial_state_sim_AE(&self) -> Vec<Bool<'env>> {
         let mut constraints = Vec::new();
         
         for i in 0..self.symstates1.len() {
@@ -167,7 +167,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
     /// Generates successor constraints for simulation relation
     /// If state x simulates state y, then successors of x must simulate corresponding successors of y
     /// x, x_pr: indices in model1; relationship with model2 states through simulation variables
-    pub fn succ_t(&self, x: usize, x_pr: usize) -> Bool {
+    pub fn succ_t(&self, x: usize, x_pr: usize) -> Bool<'env> {
         let mut constraints = Vec::new();
         let m = self.symstates2.len();
         
@@ -191,7 +191,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
 
     /// Generates valid path constraints for EA patterns
     /// Ensures transitions in model1 are valid and successor simulation holds
-    pub fn valid_path_EA(&self, n: usize) -> Vec<Bool> {
+    pub fn valid_path_EA(&self, n: usize) -> Vec<Bool<'env>> {
         let mut constraints = Vec::new();
         
         // For each consecutive pair of states in the path
@@ -206,7 +206,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
 
     /// Generates loop-back constraints for EA patterns
     /// Ensures that from the last state in the path, we can loop back to some earlier state
-    pub fn loop_back_EA(&self, n: usize) -> Bool {
+    pub fn loop_back_EA(&self, n: usize) -> Bool<'env> {
         let mut constraints = Vec::new();
         
         // Try to loop back from state n-1 to any state i in [0, n-1]
@@ -225,7 +225,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
 
     /// Generates complete simulation constraints for EA patterns
     /// Combines valid paths with loop-back constraints for different path lengths
-    pub fn simulation_constrains_EA(&self) -> Bool {
+    pub fn simulation_constrains_EA(&self) -> Bool<'env> {
         let mut constrains = Vec::new();
         
         // Try different path lengths from 1 to number of states
@@ -240,7 +240,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
 
     /// Generates simulation pair constraints
     /// Ensures that if states are in simulation relation, their transitions preserve the relation
-    pub fn simulation_pairs(&self) -> Vec<Bool> {
+    pub fn simulation_pairs(&self) -> Vec<Bool<'env>> {
         let mut constraints = Vec::new();
         let n = self.symstates1.len();
         let k = self.symstates2.len();
@@ -370,7 +370,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
 
     /// Generates relation predicate constraints
     /// For each pair of states, if simulation holds, then the inner formula must be satisfied
-    pub fn relation_predicate(&self, formula: &AstNode) -> Vec<Bool> {
+    pub fn relation_predicate(&self, formula: &AstNode) -> Vec<Bool<'env>> {
         let mut constraints = Vec::new();
         
         // For each pair of states from both models
@@ -396,7 +396,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
 
     /// Main function to build loop condition constraints
     /// Validates the formula and generates appropriate constraints based on quantifier pattern
-    pub fn build_loop_condition(&self, formula: &AstNode) -> Bool {
+    pub fn build_loop_condition(&self, formula: &AstNode) -> Bool<'env> {
         // Validate that formula starts with G or F (temporal operators)
         if !starts_with_g_or_f(formula) {
             panic!("The formula must start with G or F");
@@ -437,7 +437,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
                 all_constraints.extend(self.relation_predicate(formula));     // Formula satisfaction
                 
                 // Create references vector in the same scope as Bool::and
-                let refs: Vec<&Bool> = all_constraints.iter().collect();
+                let refs: Vec<&Bool<'env>> = all_constraints.iter().collect();
                 Bool::and(self.ctx, &refs)
             }
             _ => {

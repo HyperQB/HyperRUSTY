@@ -214,8 +214,7 @@ fn main() {
 
             let encoding = if use_loop_conditions {
                 let lp = LoopCondition::new(&ctx, &envs[0], &envs[1]);
-                Bool::from_bool(envs[0].ctx, true)
-                // lp.build_loop_condition(&ast_node)
+                lp.build_loop_condition(&ast_node)
 
             } else {
                 get_z3_encoding(&envs, &ast_node, unrolling_bound, None, semantics)

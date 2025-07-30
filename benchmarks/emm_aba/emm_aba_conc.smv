@@ -1,0 +1,241 @@
+-- Two-thread Treiber stack over 2 nodes; free1/free2 work as a free-pool stack emulating (EMM)
+-- with an explicit chosen mechanic for selecting which free node to push
+
+MODULE main
+VAR
+  -- Shared stack top: 0=NULL, 1=NODE1, 2=NODE2
+  top         : 0..2;
+
+  -- Free-pool flags: TRUE = node free; FALSE = allocated
+  free1       : boolean;
+  free2       : boolean;
+
+  -- Each node's next pointer (valid if allocated)
+  next1       : 0..2;
+  next2       : 0..2;
+
+  -- Node payloads (1 or 2)
+  val1        : 1..2;    -- NODE1 payload, initially 1; on reallocate becomes 2
+  val2        : 1..2;    -- NODE2 payload, initially 2; on reallocate becomes 1
+
+  --delay
+
+  -- Thread 1 control & locals (with two extra pop steps)
+  p1_pc       : 0..7;
+  p1_op      : 0..2;    -- operation type {PUSH=0, POP=1, NONE=2}
+  p1_old_top  : 0..2;-- Cas variables
+  p1_old_next : 0..2;
+  p1_ret      : 0..2;
+  p1_ret_push : boolean; -- return value for T1 push operation (TRUE=success, FALSE=failure)
+  p1_chosen   : 0..2;    -- which node T1 will allocate on its next push (0=none,1 or 2)
+
+  -- Thread 2 control & locals
+  p2_pc       : 0..6;    -- 0-start_pop,1-pop,2-return,3-start_push,4-push,5-return_push(done)
+  p2_old_top  : 0..2;
+  p2_old_next : 0..2;
+  p2_ret      : 0..2;    -- return value for T2 pop operation
+  p2_ret_push : boolean; -- return value for T2 push operation (TRUE=success, FALSE=failure)
+  p2_chosen   : 0..2;    -- which node T2 will allocate on its next push (0=none,1 or 2)
+
+ASSIGN
+  -- Initial state: stack = [1->2->NULL]
+  init(top)        := 1;
+  init(next1)      := 2;
+  init(next2)      := 0;
+  init(free1)      := FALSE;
+  init(free2)      := FALSE;
+  init(val1)       := 1;
+  init(val2)       := 2;
+
+  init(p1_pc)      := 0;
+  init(p1_op)      := 2; -- NONE
+  init(p1_old_top) := 0;
+  init(p1_old_next):= 0;
+  init(p1_ret)     := 0;
+  init(p1_ret_push):= FALSE;
+  init(p1_chosen)  := 0;
+
+  init(p2_pc)      := 0;
+  init(p2_old_top) := 0;
+  init(p2_old_next):= 0;
+  init(p2_ret)     := 0;
+  init(p2_ret_push):= FALSE;
+  init(p2_chosen)  := 0;
+
+  -- Update val1 on T2's push CAS; and val2 on T1's push CAS
+  next(val1) := case
+    p2_pc = 4 & p2_chosen = 1 : {1, 2};
+    TRUE                      : val1;
+  esac;
+  next(val2) := case
+    p1_pc = 6 & p1_chosen = 2 : {1, 2};
+    TRUE                      : val2;
+  esac;
+
+  -- Update shared top
+  next(top) := case
+    p1_pc = 2 & top = p1_old_top : p1_old_next;
+    p1_pc = 2                    : top;
+    p2_pc = 1 & top = p2_old_top : p2_old_next;
+    p2_pc = 1                    : top;
+    p1_pc = 6 & p1_chosen != 0   : p1_chosen;
+    p2_pc = 4 & p2_chosen != 0   : p2_chosen;
+    TRUE                         : top;
+  esac;
+
+  -- Update next1
+  next(next1) := case
+    p1_pc = 2 & p1_old_top = 1 & top = p1_old_top : 0;
+    p2_pc = 1 & p2_old_top = 1 & top = p2_old_top : 0;
+    p1_pc = 5 & p1_chosen = 1                     : top;
+    p2_pc = 3 & free1                             : top;
+    TRUE                                          : next1;
+  esac;
+
+  -- Update next2
+  next(next2) := case
+    p1_pc = 2 & p1_old_top = 2 & top = p1_old_top : 0;
+    p2_pc = 1 & p2_old_top = 2 & top = p2_old_top : 0;
+    p1_pc = 5 & p1_chosen = 2                     : top;
+    p2_pc = 3 & free2                             : top;
+    TRUE                                          : next2;
+  esac;
+
+  -- Update free1
+  next(free1) := case
+    p1_pc = 2 & p1_old_top = 1 & top = p1_old_top : TRUE;
+    p2_pc = 1 & p2_old_top = 1 & top = p2_old_top : TRUE;
+    p1_pc = 6 & p1_chosen = 1                     : FALSE;
+    p2_pc = 4 & p2_chosen = 1                     : FALSE;
+    TRUE                                          : free1;
+  esac;
+
+  -- Update free2
+  next(free2) := case
+    p1_pc = 2 & p1_old_top = 2 & top = p1_old_top : TRUE;
+    p2_pc = 1 & p2_old_top = 2 & top = p2_old_top : TRUE;
+    p1_pc = 6 & p1_chosen = 2                     : FALSE;
+    p2_pc = 4 & p2_chosen = 2                     : FALSE;
+    TRUE                                          : free2;
+  esac;
+
+  -- Thread 1 control flow (pop goes through two extra steps before done; push unchanged)
+  next(p1_pc) := case
+    p1_pc = 0 : {1, 5};
+    p1_pc = 1 : {1, 2};  
+    p1_pc = 2 : 3;       
+    p1_pc = 3 : 4;
+    (p1_pc = 4) & (p2_pc = 4) : 4;
+    p1_pc = 4 & p2_pc != 4 : 7;       
+    p1_pc = 5 & (p2_pc != 5) : 5;
+    p1_pc = 5 & (p2_pc = 5) : 6;     
+    p1_pc = 6 : 7;      
+    TRUE      : 0;       
+  esac;
+
+  next(p1_op) := case
+    p1_pc = 1 : 1; -- choose PUSH or POP
+    p1_pc = 5 : 0; -- choose PUSH or POP
+    p1_pc = 7 : 2; -- done
+    TRUE      : p1_op;
+  esac;
+
+  -- Snapshot for pop (T1)
+  next(p1_old_top) := case
+    p1_pc = 1                   : top;
+    TRUE                        : p1_old_top;
+  esac;
+  next(p1_old_next) := case
+    p1_pc = 1 & top = 1 : next1;
+    p1_pc = 1 & top = 2 : next2;
+    TRUE                : p1_old_next;
+  esac;
+
+  -- Record return (T1) after the two extra pop steps
+  next(p1_ret) := case
+    p1_pc = 4 & top = p1_old_top & free1  : val2;
+    p1_pc = 4 & top = p1_old_top & free2  : 0;
+    p1_pc = 4 & top = p1_old_top & !free1 : val1;
+    p1_pc = 4 & top != p1_old_top         : 0;
+    TRUE                                  : p1_ret;
+  esac;
+
+  -- Record return (T1) push operation
+  next(p1_ret_push) := case
+    p1_pc = 6 & p1_chosen != 0 : TRUE;   -- push succeeds if node was chosen
+    p1_pc = 6 & p1_chosen = 0  : FALSE;  -- push fails if no node available
+    TRUE                       : p1_ret_push;
+  esac;
+
+  -- Choose which node T1 will push at push_load
+  next(p1_chosen) := case
+    p1_pc = 5 & free2 : 2;
+    p1_pc = 5 & free1 : 1;
+    TRUE      : p1_chosen;
+  esac;
+
+  -- Thread 2 control flow (unchanged)
+  next(p2_pc) := case
+    p2_pc = 0 : 1;
+    p2_pc = 1 : 2;
+    p2_pc = 2 : 3;
+    p2_pc = 3 : 4;
+    p2_pc = 4 : 5;
+    TRUE      : 0;
+  esac;
+
+  -- Snapshot for pop (T2)
+  next(p2_old_top) := case
+    p2_pc = 0 : top;
+    TRUE      : p2_old_top;
+  esac;
+  next(p2_old_next) := case
+    p2_pc = 0 & top = 1 : next1;
+    p2_pc = 0 & top = 2 : next2;
+    TRUE : p2_old_next;
+  esac;
+
+  -- Record return (T2) after pop cas
+  next(p2_ret) := case
+    p2_pc = 1 & top = p2_old_top & p2_old_top = 1 & !free1 : val1;
+    p2_pc = 1 & top = p2_old_top & p2_old_top = 2 & !free2 : val2;
+    p2_pc = 1 & top = p2_old_top & p2_old_top = 1 & free1  : 0;
+    p2_pc = 1 & top = p2_old_top & p2_old_top = 2 & free2  : 0;
+    p2_pc = 1 & top != p2_old_top                          : 0;
+    TRUE                                                   : p2_ret;
+  esac;
+
+  -- Record return (T2) push operation
+  next(p2_ret_push) := case
+    p2_pc = 4 & p2_chosen != 0 : TRUE;   -- push succeeds if node was chosen
+    p2_pc = 4 & p2_chosen = 0  : FALSE;  -- push fails if no node available
+    TRUE                       : p2_ret_push;
+  esac;
+
+  -- Choose which node T2 will push at push_load
+  next(p2_chosen) := case
+    p2_pc = 3 & free2 : 2;
+    p2_pc = 3 & free1 : 1;
+    TRUE              : p2_chosen;
+  esac;
+
+DEFINE
+  -- Thread 1 operation predicates
+  p1_push_invoked := (p1_pc = 5) | (p1_pc = 6);  -- push_load or push_cas
+  p1_pop_invoked  := (p1_pc = 1) | (p1_pc = 2) | (p1_pc = 3) | (p1_pc = 4);  -- pop_load, pop_cas, pop_extra1, pop_extra2
+
+  -- Thread 2 operation predicates  
+  p2_push_invoked := (p2_pc = 3) | (p2_pc = 4);  -- push_load or push_cas
+  p2_pop_invoked  := (p2_pc = 0) | (p2_pc = 1);  -- pop_load or pop_cas
+
+  -- Combined operation predicates
+  invoked_push := (p1_push_invoked | p2_push_invoked);
+  invoked_pop  := (p1_pop_invoked | p2_pop_invoked);
+
+  -- Return predicates
+  returning_push := (p1_pc = 7 & p1_op = 0) | (p2_pc = 5);
+  returning_pop  := (p1_pc = 7 & p1_op = 1) | (p2_pc = 2);
+
+  -- Success return predicates
+  push_return := (p1_ret_push) | (p2_ret_push);
+  pop_return  := (p1_ret != 0) | (p2_ret != 0);

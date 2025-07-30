@@ -26,9 +26,11 @@
 #=== Linearizability ===#
 
 # Lazy-list
- time cargo run --release -- -n benchmarks/lazy_list/lazy_list_conc.smv benchmarks/lazy_list/lazy_list_seq.smv -f benchmarks/lazy_list/lazy_list.hq -k 13 -s hpes
+# time cargo run --release -- -n benchmarks/lazy_list/lazy_list_conc.smv benchmarks/lazy_list/lazy_list_seq.smv -f benchmarks/lazy_list/lazy_list.hq -k 13 -s hpes
 
+# Emm ABA bug
 
+time cargo run --release -- -n benchmarks/emm_aba/emm_aba_conc.smv benchmarks/emm_aba/emm_aba_seq.smv -f benchmarks/emm_aba/emm_aba.hq -k 6 -s hpes
 
 
 #=== SNARK ===#

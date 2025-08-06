@@ -9,5 +9,10 @@ ir = { path = "../ir" }
 enchelper = { path = "../enchelper" }
 hltlunroller = { path = "../hltlunroller" }
 parser = { path = "../parser" }
+expressions = { path = "../expressions" }
+fsm = { path = "../fsm" }
+flags = { path = "../flags" }
+logging = { path = "../logging" }
+unroller_qbf = { path = "../unroller_qbf"}
 
     

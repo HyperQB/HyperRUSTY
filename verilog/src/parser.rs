@@ -89,12 +89,9 @@ fn add_unrolling_constraints(smt2: &str, mod_name: &str, bound: u32, trace_id: &
     result.push_str(&format!(
         "\n; Initial and Next-state constraints\n"
     ));
-    result.push_str(
-        "(and "
-    );
 
     result.push_str(&format!(
-        "(assert (|{}_i| |s_{}_0|)) ",
+        "(assert (and (|{}_i| |s_{}_0|) ",
         mod_name,
         trace_id 
     ));
@@ -109,7 +106,7 @@ fn add_unrolling_constraints(smt2: &str, mod_name: &str, bound: u32, trace_id: &
             i + 1
         ));
     }
-    result.push_str(")\n");
+    result.push_str("))\n");
 
     result.push_str(&format!(
         "; End of unrolling constraints\n"

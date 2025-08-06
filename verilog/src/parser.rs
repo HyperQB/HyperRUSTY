@@ -40,6 +40,7 @@ fn parse_variables(smt2: &str, mod_name: &str) -> Result<Vec<StateVariable>, Ext
         });
     }
     if variables.is_empty() {
+        println!("{:#?}", smt2);
         return Err(ExtractError::Parse(format!("No variables found for module {}", mod_name)));
     }
     Ok(variables)
@@ -84,24 +85,20 @@ fn add_unrolling_constraints(smt2: &str, mod_name: &str, bound: u32, trace_id: &
         ));
         state_names.push(format!("|s_{}_{}|", trace_id, i));
     }
-
-    // Add initial state constraint
+    // Add next-state constraints
     result.push_str(&format!(
-        "\n; Initial state constraint\n"
+        "\n; Initial and Next-state constraints\n"
     ));
+    result.push_str(
+        "(and "
+    );
+
     result.push_str(&format!(
-        "(assert (|{}_i| |s_{}_0|))\n",
+        "(assert (|{}_i| |s_{}_0|)) ",
         mod_name,
         trace_id 
     ));
 
-    // Add next-state constraints
-    result.push_str(&format!(
-        "\n; Next-state constraints\n"
-    ));
-    result.push_str(
-        "(and ("
-    );
     for i in 0..(bound) {
         result.push_str(&format!(
             "(|{}_t| s_{}_{} s_{}_{}) ",
@@ -112,7 +109,7 @@ fn add_unrolling_constraints(smt2: &str, mod_name: &str, bound: u32, trace_id: &
             i + 1
         ));
     }
-    result.push_str("))\n");
+    result.push_str(")\n");
 
     result.push_str(&format!(
         "; End of unrolling constraints\n"

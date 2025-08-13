@@ -12,5 +12,6 @@ encoder = { path = "./encoder" }
 enchelper = { path = "./enchelper" }
 parser_nusmv = { path = "./parser_nusmv" }
 unroller_qbf = { path = "./unroller_qbf" }
+hqb_verilog = { path = "./verilog" }
 loop_conditions = { path = "./loop_conditions" }
 fs = "0.0.5"

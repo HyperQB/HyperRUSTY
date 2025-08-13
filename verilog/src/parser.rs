@@ -10,7 +10,7 @@ pub struct StateVariable {
 
 /// Unrolls the design in-place, modifying the SMT2 string to include unrolling constraints.
 /// Returns the modified SMT2 string, a list of states' names, and the mapping of the getters
-pub fn unroll_in_place(smt2: &str, mod_name: &str, bound: u32, trace_id: &str) -> Result<(String, Vec<String>, HashMap<String, String>), ExtractError> {
+pub fn unroll_in_place(smt2: &str, mod_name: &str, bound: usize, trace_id: &str) -> Result<(String, Vec<String>, HashMap<String, String>), ExtractError> {
     // Parse the variables to get their names
     let id_to_name = parse_variables(smt2, mod_name)?;
     println!("Parsed variables: {:#?}", id_to_name);
@@ -68,7 +68,7 @@ fn map_variables(mod_name: &str, variable_names: &Vec<StateVariable>) -> HashMap
 
 // Augments the SMT2 string with unrolling constraints
 // Returns the modified SMT2 string and a list of states' names
-fn add_unrolling_constraints(smt2: &str, mod_name: &str, bound: u32, trace_id: &str) -> (String, Vec<String>) {
+fn add_unrolling_constraints(smt2: &str, mod_name: &str, bound: usize, trace_id: &str) -> (String, Vec<String>) {
     let mut result = smt2.to_string();
     // Add constraints for unrolling
     //Add contants for each step

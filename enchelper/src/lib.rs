@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use parser::{
     UnaryOperator, BinOperator,
     AstNode,
@@ -30,17 +30,17 @@ pub fn create_path_mapping(formula: &AstNode, k: usize) -> HashMap<&str, usize> 
     }
 }
 
-    pub fn inner_ltl(formula: &AstNode) -> &AstNode {
-        match formula {
-            AstNode::HAQuantifier{identifier: _, form} |
-            AstNode::HEQuantifier{identifier: _, form} |
-            AstNode::AAQuantifier{identifier: _, form} |
-            AstNode::AEQuantifier{identifier: _, form} => {
-                inner_ltl(form)
-            }
-            _ => formula
+pub fn inner_ltl(formula: &AstNode) -> &AstNode {
+    match formula {
+        AstNode::HAQuantifier{identifier: _, form} |
+        AstNode::HEQuantifier{identifier: _, form} |
+        AstNode::AAQuantifier{identifier: _, form} |
+        AstNode::AEQuantifier{identifier: _, form} => {
+            inner_ltl(form)
         }
+        _ => formula
     }
+}
 
 pub fn is_hltl(formula: &AstNode) -> bool {
     match formula {
@@ -210,6 +210,38 @@ fn check_EA_rec(formula: &AstNode) -> bool {
         AstNode::HEQuantifier{identifier:_, form} |
         AstNode::AEQuantifier{identifier:_, form} => check_EA_rec(form),
         _ => true
+    }
+}
+
+pub fn extract_variables<'ctx>(formula: &'ctx AstNode, mapping: &HashMap<&str, usize>) -> Vec<HashSet<&'ctx str>> {
+    let mut variables: Vec<HashSet<&str>> = (0..mapping.len())
+        .map(|_| HashSet::new())
+        .collect();
+    recursively_extract_variables(formula, mapping, &mut variables);
+    variables
+}
+
+fn recursively_extract_variables<'ctx>(
+    formula: &'ctx AstNode,
+    mapping: &HashMap<&str, usize>,
+    vars: &mut Vec<HashSet<&'ctx str>>) {
+    match formula {
+        AstNode::HAQuantifier {form, ..} |
+        AstNode::HEQuantifier {form, ..} |
+        AstNode::AAQuantifier {form, ..} |
+        AstNode::AEQuantifier {form, ..} => recursively_extract_variables(form, mapping, vars),
+        AstNode::BinOp {operator:_, lhs, rhs} => {
+            recursively_extract_variables(lhs, mapping, vars);
+            recursively_extract_variables(rhs, mapping, vars);
+        }
+        AstNode::UnOp {operator: _, operand} => recursively_extract_variables(operand, mapping, vars),
+        AstNode::HIndexedProp {proposition, path_identifier} |
+        AstNode::AIndexedProp {proposition, path_identifier, ..} => {
+            // Record the identifier
+            let idx: &usize = mapping.get(path_identifier as &str).unwrap();
+            vars[*idx].insert(proposition);
+        }
+        _ => ()
     }
 }
 

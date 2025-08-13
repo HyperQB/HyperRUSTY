@@ -30,7 +30,7 @@
 
 # Emm ABA bug
 
-time cargo run --release -- -n benchmarks/emm_aba/emm_aba_conc.smv benchmarks/emm_aba/emm_aba_seq.smv -f benchmarks/emm_aba/emm_aba.hq -k 6 -s hpes
+# time cargo run --release -- -n benchmarks/emm_aba/emm_aba_conc.smv benchmarks/emm_aba/emm_aba_seq.smv -f benchmarks/emm_aba/emm_aba.hq -k 6 -s hpes
 
 
 #=== SNARK ===#
@@ -190,3 +190,6 @@ time cargo run --release -- -n benchmarks/emm_aba/emm_aba_conc.smv benchmarks/em
 # cargo run --release -- -n benchmarks/loop_conditions/simple_loop/simple_loop1.smv benchmarks/loop_conditions/simple_loop/simple_loop2.smv -f benchmarks/loop_conditions/simple_loop/simple_loop.hq -l
 
 # cargo run --release -- -n benchmarks/loop_conditions/test_loop/rs1.smv benchmarks/loop_conditions/test_loop/rs2.smv -f benchmarks/loop_conditions/test_loop/rs.hq -l
+
+#=== VERLIOG EXAMPLES ===#
+RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/build_infoflow.ys verilog_benchmarks/build_infoflow.ys -t main -o model.smt2 -f verilog_benchmarks/formula.hq -k 3 -s hpes

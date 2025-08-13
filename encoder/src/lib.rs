@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use z3::{
     ast::{
         Ast, Bool, Dynamic, 
@@ -6,11 +5,18 @@ use z3::{
     },
     Context,
 };
-use enchelper::*;
-use ir::*;
-use hltlunroller::*;
+use std::collections::{HashMap, HashSet};
+use std::ffi::{CString, CStr};
+use indexmap::IndexMap;
 use ahltlunroller::*;
+use hltlunroller::*;
+use enchelper::*;
 use parser::*;
+use z3_sys::*;
+use std::ptr;
+use ir::*;
+
+mod verilog_helper;
 
 /****************************
 *
@@ -249,16 +255,19 @@ fn generate_quantified_encoding<'ctx>(ctx: &'ctx Context, formula: &AstNode, pat
             let ast_refs: Vec<&dyn Ast<'ctx>> = vars.iter().map(|v| v as &dyn Ast<'ctx>).collect();
             // Step 2: Convert to a slice
             let ast_slice: &[&dyn Ast<'ctx>] = &ast_refs;
-            forall_const(
+            let node = forall_const(
                 ctx,
                 ast_slice,
                 &[],
-                &generate_quantified_encoding(ctx, form, paths, path_encodings, mapping, inner)
-            )
+                &generate_quantified_encoding(ctx, form, paths, path_encodings, mapping, inner.clone())
+            );
+            node
         }
         AstNode::HEQuantifier {form, identifier} => {
             let idx = mapping.get(identifier as &str).unwrap();
             let selected_path = &paths[*idx];
+            let something = generate_quantified_encoding(ctx, form, paths, path_encodings, mapping, inner);
+            println!("{:?}", something);
             let vars: Vec<Dynamic<'ctx>> = selected_path
                 .iter()
                 .flat_map(|env| env.values().cloned()) // clones Dynamic<'ctx>
@@ -266,12 +275,15 @@ fn generate_quantified_encoding<'ctx>(ctx: &'ctx Context, formula: &AstNode, pat
             let ast_refs: Vec<&dyn Ast<'ctx>> = vars.iter().map(|v| v as &dyn Ast<'ctx>).collect();
             // Step 2: Convert to a slice
             let ast_slice: &[&dyn Ast<'ctx>] = &ast_refs;
-            exists_const(
+            let node = exists_const(
                 ctx,
                 ast_slice,
                 &[],
-                &generate_quantified_encoding(ctx, form, paths, path_encodings, mapping, inner)
-            )
+                &something,
+            );
+            // println!("{:?}", node);
+            // println!("#################################################");
+            node
         }
         _ => inner
     }
@@ -286,6 +298,47 @@ fn generate_hltl_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, formula: &A
     // Get the mapping
     let mapping = create_path_mapping(formula, 0);
     // Build the complete encoding
-    generate_quantified_encoding(ctx, formula, &paths, &path_encodings, &mapping, inner.clone())
+    inner_ltl
+    // generate_quantified_encoding(ctx, formula, &paths, &path_encodings, &mapping, inner.clone())
 
+}
+
+pub fn get_verilog_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, models: &Vec<String>, formula: &'ctx AstNode, k: usize, sem: Semantics) -> Bool<'env> {
+    let ctx = envs[0].ctx;
+    let mut path_constraints : Vec<Bool<'ctx>> = Vec::new();
+    let mut states : Vec<Vec<EnvState<'ctx>>> = Vec::new();
+    // Obtain the path mapping from the formula
+    let path_mapping = create_path_mapping(formula, 0);
+    // Formula variables for each path
+    let var_mapping: Vec<HashSet<&str>> = extract_variables(formula, &path_mapping);
+
+    for (idx, model) in models.iter().enumerate() {
+        let smt2 = CString::new(model.as_str()).unwrap();
+        // Get ast vector of each smtlib - There should be only one
+        let ast_vec = unsafe {
+            Z3_parse_smtlib2_string(
+                ctx.z3_ctx,           // raw Z3_context
+                smt2.as_ptr(),
+                0,
+                std::ptr::null(), std::ptr::null(), // no extra sorts
+                0,
+                std::ptr::null(), std::ptr::null(), // no extra decls
+            )
+        };
+        // Prevent the ast_vec from getting dropped
+        unsafe { Z3_ast_vector_inc_ref(ctx.z3_ctx, ast_vec) };
+        // extract the assertion as an Ast node
+        let raw_ast = unsafe { Z3_ast_vector_get(ctx.z3_ctx, ast_vec, 0 as u32) };
+        // Wrap the raw Z3_ast as a Bool - this is the unrolled path constraint
+        let d = unsafe { Bool::wrap(&ctx, raw_ast) };
+        // Record current path encoding
+        path_constraints.push(d.clone());
+        // create unrolled states from AST
+        let unrolled_states = verilog_helper::unrolled_states_from_Z3_ast(&d, &var_mapping[idx], k);
+        // Record current states
+        states.push(unrolled_states);
+    }
+
+    generate_hltl_encoding(envs, formula, states, path_constraints, sem)
+    
 }

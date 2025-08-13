@@ -13,7 +13,7 @@ pub fn unroll_from_smt_build(
     _build_file_path: &Path,
     top_module_name: &str,
     smt_path: &Path,
-    bound: u32,
+    bound: usize,
     trace_id: &str,
 ) -> Result<(String, Vec<String>, HashMap<String, String>), ExtractError> {
     yosys::run_yosys_with_build(_build_file_path)?;
@@ -24,7 +24,7 @@ pub fn unroll_from_smt_build(
 pub fn unroll_from_verilog(
     verilog_path: &Path,
     top_module_name: &str,
-    bound: u32,
+    bound: usize,
     trace_id: &str,
 ) -> Result<(String, Vec<String>, HashMap<String, String>), ExtractError> {
     // 1) temp SMT file path

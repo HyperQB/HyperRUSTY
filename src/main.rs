@@ -12,6 +12,7 @@ use encoder::*;
 use parser_nusmv::*;
 use unroller_qbf::*;
 use loop_conditions::*;
+use hqb_verilog::*;
 use z3::{
     ast::{
         Ast, Dynamic, Int, Bool,
@@ -31,6 +32,7 @@ fn main() {
                 -v --verilog <FILE> "Yosys build file"
             )
             .required(false)
+            .num_args(1..)
             .value_parser(value_parser!(PathBuf)),
         )
         .arg(
@@ -154,7 +156,6 @@ fn main() {
         let trajectory_bound = matches
             .get_one::<usize>("trajectory_bound");
 
-        // To be replaced with the formula path
         let formula = fs::read_to_string(formula_path).expect("Failed to read the formula");
         let ast_node = parse(&formula).expect("Failed parsing the formula");
 
@@ -181,14 +182,14 @@ fn main() {
         } else {
             let path_identifiers: Vec<&str> = get_path_identifiers(&ast_node);
 
+            if model_paths.len() != path_identifiers.len() {
+                panic!("ERROR: number of provided models and number of path quantifiers do not match!");
+            }
+
             let mut cfg = Config::new();
             cfg.set_model_generation(true);
             let ctx = Context::new(&cfg);
             let mut envs = Vec::new();
-
-            if model_paths.len() != path_identifiers.len() {
-                panic!("ERROR: number of provided models and number of path quantifiers do not match!");
-            }
 
             // Start the timer for model parsing
             let start = Instant::now();
@@ -248,15 +249,105 @@ fn main() {
         }
     } else {
         // Verilog Path
-        panic!("I Shouldn't be here! -Said verilog");
-        let build_path = matches
-            .get_one::<PathBuf>("verilog").unwrap();
+        // TODO: Duplicate code. Needs to be managed
+        let build_paths: Vec<_> = matches
+            .get_many::<PathBuf>("verilog")
+            .unwrap()
+            .map(|pb| pb.as_path())
+            .collect();
 
-        let output_file = matches
-            .get_one::<PathBuf>("yosys_output").unwrap();
 
+        // Top module
         let top_module = matches
-            .get_one::<String>("top").unwrap();
+            .get_one::<String>("top")
+            .expect("Top module name (-t) is required when using verilog (-v, --verilog)");
+
+        // Yosys output file
+        let yosys_out = matches
+            .get_one::<PathBuf>("yosys_output")
+            .expect("Yosys output file name (-o) is required when using verilog (-v, --verilog)")
+            .as_path();
+        
+        let formula = fs::read_to_string(formula_path).expect("Failed to read the formula");
+        let ast_node = parse(&formula).expect("Failed parsing the formula");
+        // Check if the number of models and quantifiers match
+        let path_identifiers: Vec<&str> = get_path_identifiers(&ast_node);
+        if build_paths.len() != path_identifiers.len() {
+            panic!("ERROR: number of provided models and number of path quantifiers do not match!");
+        }
+
+        let mut cfg = Config::new();
+        cfg.set_model_generation(true);
+        let ctx = Context::new(&cfg);
+        let mut envs = Vec::new();
+
+        // Start the timer for model parsing
+        // Can you the path_identifiers variable above to annotate models
+        let start = Instant::now();
+
+        // Call Verilog-related code to obtain SMT2-LIB outputs
+        let mut models: Vec<String> = Vec::with_capacity(path_identifiers.len());
+
+        for i in 0..path_identifiers.len() {
+            // Create fake environments for compatibility
+            let env = SMVEnv::new(&ctx);
+            envs.push(env);
+            // Get SMT2-LIB from each build file
+            let smt2_model = match unroll_from_smt_build(build_paths[i], top_module, yosys_out, unrolling_bound, path_identifiers[i]) {
+                Ok((unrolled, a1, a2)) => {
+                    println!("{:#?}", a2);
+                    unrolled
+                },
+                Err(e) => panic!("{}", e),
+            };
+            models.push(smt2_model);
+        }
+        let duration = start.elapsed();
+        let secs = duration.as_secs_f64();
+        println!("Model Creation Time: {}", secs);
+
+        // Start the timer for encoding
+        let start = Instant::now();
+
+        let encoding = get_verilog_encoding(&envs, &models, &ast_node, unrolling_bound, semantics);
+
+        // println!("{:?}", encoding);
+        
+        let duration = start.elapsed();
+        let secs = duration.as_secs_f64();
+        println!("Encoding Time: {}", secs);
+
+        // Create a new solver
+        let solver = Solver::new(&ctx);
+        solver.assert(&encoding);
+
+        match solver.check() {
+            SatResult::Sat => {
+                println!("result: sat.");
+            },
+            SatResult::Unsat => {
+                println!("result: unsat.");
+            },
+            SatResult::Unknown => {
+                println!("result: unknown.");
+            }
+        };
+        // grab the statistics of the solver
+        let stats = solver.get_statistics();
+        let val_str = match stats.value("time").unwrap() {
+            StatisticsValue::UInt(u)   => u.to_string(),
+            StatisticsValue::Double(d) => d.to_string(),
+        };
+        println!("Solve Time: {}", val_str);
+        
+        // let build_path = matches
+        //     .get_one::<PathBuf>("verilog").unwrap();
+
+        // let output_file = matches
+        //     .get_one::<PathBuf>("yosys_output").unwrap();
+
+        // let top_module = matches
+        //     .get_one::<String>("top").unwrap();
     }
 
 }

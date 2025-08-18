@@ -30,7 +30,7 @@
 
 # Emm ABA bug
 
-time cargo run --release -- -n benchmarks/emm_aba/emm_aba_conc.smv benchmarks/emm_aba/emm_aba_seq.smv -f benchmarks/emm_aba/emm_aba.hq -k 6 -s hpes
+#time cargo run --release -- -n benchmarks/emm_aba/emm_aba_conc.smv benchmarks/emm_aba/emm_aba_seq.smv -f benchmarks/emm_aba/emm_aba.hq -k 6 -s hpes
 
 
 #=== SNARK ===#
@@ -189,4 +189,4 @@ time cargo run --release -- -n benchmarks/emm_aba/emm_aba_conc.smv benchmarks/em
 
 # cargo run --release -- -n benchmarks/loop_conditions/simple_loop/simple_loop1.smv benchmarks/loop_conditions/simple_loop/simple_loop2.smv -f benchmarks/loop_conditions/simple_loop/simple_loop.hq -l
 
-# cargo run --release -- -n benchmarks/loop_conditions/test_loop/rs1.smv benchmarks/loop_conditions/test_loop/rs2.smv -f benchmarks/loop_conditions/test_loop/rs.hq -l
+cargo run --release -- -n benchmarks/loop_conditions/test_loop/rs1.smv benchmarks/loop_conditions/test_loop/rs2.smv -f benchmarks/loop_conditions/test_loop/rs.hq -q -l

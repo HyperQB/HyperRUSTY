@@ -159,6 +159,38 @@ fn main() {
         let ast_node = parse(&formula).expect("Failed parsing the formula");
 
         if *matches.get_one::<bool>("qbf_solver").unwrap() {
+            if use_loop_conditions{
+                let path_identifiers: Vec<&str> = get_path_identifiers(&ast_node);
+                let mut cfg = Config::new();
+                cfg.set_model_generation(true);
+                let ctx = Context::new(&cfg);
+                let mut envs = Vec::new();
+
+                if model_paths.len() != path_identifiers.len() {
+                    panic!("ERROR: number of provided models and number of path quantifiers do not match!");
+                }
+
+                // Start the timer for model parsing
+                let start = Instant::now();
+
+                for i in 0..path_identifiers.len() {
+                    // parse the smv for this model
+                    let env = parse_smv(
+                        &ctx,
+                        model_paths[i],
+                        Some("output.txt".to_string()),
+                        false,
+                        "model",
+                        "ir",
+                    );
+                    envs.push(env);
+                }
+                let duration = start.elapsed();
+                let secs = duration.as_secs_f64();
+                println!("Model Creation Time: {}", secs);
+                let lp = LoopCondition::new(&ctx, &envs[0], &envs[1]);
+                lp.build_qbf_loop_condition(&ast_node);
+            }
             // gen_qcir(&model_paths, &String::from(formula_path.to_str().unwrap()), &env, *unrolling_bound as i32, false, semantics_as_str);
             let output = process::Command::new("/Users/milad/Desktop/rust_tutorial/HyperRUSTY/quabs")
                 .arg("outputs/HQ.qcir")

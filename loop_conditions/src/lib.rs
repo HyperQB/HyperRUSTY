@@ -12,10 +12,9 @@ use enchelper::*;
 use hltlunroller::*;
 use parser::*;
 use expressions::*;
-use logging::*;
+use std::io::Write as IoWrite;
 use unroller_qbf::*;
-use utils::*;
-use std::fs;
+use fsm::helper_functions::create_file;
 
 
 
@@ -457,55 +456,46 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
 
     // HELPERS of QCIR conversion
 
-    pub fn build_max_bit_map(&self) -> HashMap<String, usize> {
-        let mut map = HashMap::<String, usize>::new();
-        let envs = vec![self.model1, self.model2];
-        for env in envs {
-            for (name, var) in env.get_variables() {
-                let bits = match &var.sort {
-                    // Booleans need exactly 1 bit
-                    VarType::Bool { .. } => 1,
-
-                    // Integers: we require both bounds, then bits = ceil(log2(hi - lo + 1))
-                    VarType::Int { lower: Some(lo), upper: Some(hi), .. } => {
-                        let domain = (*hi - *lo + 1).max(1) as u64;
-                        // bit_width = smallest n such that 2^n ≥ domain
-                        64 - (domain - 1).leading_zeros() as usize
-                    }
-                    VarType::Int { .. } => {
-                        panic!("Int var `{}` must have explicit bounds", name);
-                    }
-
-                    // Bit-vectors: same idea, but you could also pull width directly if your sort exposes it.
-                    VarType::BVector { lower: Some(lo), upper: Some(hi), .. } => {
-                        let domain = (*hi - *lo + 1).max(1) as u64;
-                        64 - (domain - 1).leading_zeros() as usize
-                    }
-                    VarType::BVector { .. } => {
-                        panic!("BV var `{}` must have explicit bounds", name);
-                    }
-                };
-
-                let key: String = name.to_string();
-
-                if let Some(old_bits) = map.get_mut(&key) {
-                    // key existed: update to the larger of the two
-                    *old_bits = (*old_bits).max(bits);
-                } else {
-                    // key wasn’t there: insert it
-                    map.insert(key.clone(), bits);
-                }
-            }
-        }
-        map
+pub fn build_max_bit_map(&self) -> HashMap<String, usize> {
+    fn bits_from_upper(hi: i64) -> usize {
+        // ignoring lower bound entirely; treat values as unsigned 0..=hi
+        let u = hi.max(0) as u64;
+        if u == 0 { 1 } else { 64 - u.leading_zeros() as usize }
     }
 
+    let mut map = HashMap::<String, usize>::new();
+
+    for env in [&self.model1, &self.model2] {
+        for (name, var) in env.get_variables().iter() {
+            let bits = match &var.sort {
+                VarType::Bool { .. } => 1,
+
+                // ignore `lower`; only use `upper`
+                VarType::Int     { upper: Some(hi), .. }
+                | VarType::BVector{ upper: Some(hi), .. } => bits_from_upper(*hi),
+
+                VarType::Int     { upper: None, .. } =>
+                    panic!("Int var `{}` must have an upper bound to size bits", name),
+                VarType::BVector { upper: None, .. } =>
+                    panic!("BV var `{}` must have an upper bound to size bits", name),
+            };
+
+            map.entry(name.to_string())
+               .and_modify(|old| *old = (*old).max(bits))
+               .or_insert(bits);
+        }
+    }
+    map
+}
     
-    pub fn build_qbf_loop_condition(&self, formula: &AstNode) -> Expression{
+    pub fn build_qbf_loop_condition(&self, formula: &AstNode) {
         let z3_encoding: Bool = self.build_loop_condition(formula);
         let mut max_bit_map: HashMap<String, usize> = self.build_max_bit_map();
         let dyn_root = Dynamic::from_ast(&z3_encoding);
-        dynamic_to_expression("", &dyn_root, /* is_primed */ false, &max_bit_map)
+        let expression = dynamic_to_expression("", &dyn_root, /* is_primed */ false, &max_bit_map);
+        let final_string = expression_to_string(&expression);
+        let mut file = create_file();
+        file.write_all(final_string.as_bytes()).expect("Should have been able to write to file");
     }
 
 

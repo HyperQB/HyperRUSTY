@@ -36,7 +36,7 @@
 #=== SNARK ===#
 
 # echo "snark 1"
-time cargo run --release -- -n benchmarks/2_snark/snark1_conc.smv benchmarks/2_snark/snark1_seq.smv -f benchmarks/2_snark/lin.hq -k 18 -s hpes
+# time cargo run --release -- -n benchmarks/2_snark/snark1_conc.smv benchmarks/2_snark/snark1_seq.smv -f benchmarks/2_snark/lin.hq -k 18 -s hpes
 
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/2_snark/snark1_conc.smv benchmarks/2_snark/snark1_seq.smv benchmarks/AH_formulas/2.1.hq
 
@@ -104,7 +104,7 @@ time cargo run --release -- -n benchmarks/2_snark/snark1_conc.smv benchmarks/2_s
 
 
 #=== Shortest Path Planning ===#
-# time cargo run --release -- -n benchmarks/5_planning/robotic_sp_100.smv benchmarks/5_planning/robotic_sp_100.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 20 -s hpes
+time cargo run --release -- -n benchmarks/5_planning/robotic_sp_100.smv benchmarks/5_planning/robotic_sp_100.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 20 -s hpes
 
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_sp_100.smv benchmarks/AH_formulas/5.2.hq
 
@@ -124,56 +124,99 @@ time cargo run --release -- -n benchmarks/2_snark/snark1_conc.smv benchmarks/2_s
 #=== Co-termination ===#
 # time cargo run --release -- -n benchmarks/7_coterm/coterm1.smv benchmarks/7_coterm/coterm1.smv -f benchmarks/7_coterm/coterm.hq -k 10 -s hpes
 
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/7_coterm/coterm1.smv benchmarks/AH_formulas/7.hq
+
 
 
 #=== Deniability ===#
 # time cargo run --release -- -n benchmarks/8_deniability/electronic_wallet.smv benchmarks/8_deniability/electronic_wallet.smv benchmarks/8_deniability/electronic_wallet.smv -f benchmarks/8_deniability/den.hq -k 10 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/8_deniability/electronic_wallet.smv benchmarks/AH_formulas/8.hq
 
 
 
 #=== Shared buffer ===#
 # time cargo run --release -- -n benchmarks/9_buffer/scheduled_buffer.smv benchmarks/9_buffer/scheduled_buffer.smv -f benchmarks/9_buffer/classic_OD.hq -k 10 -s hpes
 
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/9_buffer/scheduled_buffer.smv benchmarks/AH_formulas/9.1.hq
+
+
 # time cargo run --release -- -n benchmarks/9_buffer/scheduled_buffer.smv benchmarks/9_buffer/scheduled_buffer.smv -f benchmarks/9_buffer/intrans_OD.hq -k 10 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/9_buffer/scheduled_buffer.smv benchmarks/AH_formulas/9.2.hq
+
+
 
 # time cargo run --release -- -n benchmarks/9_buffer/scheduled_buffer.smv benchmarks/9_buffer/scheduled_buffer.smv -f benchmarks/9_buffer/intrans_GMNI.hq -k 10 -s hpes
 
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/9_buffer/scheduled_buffer.smv benchmarks/AH_formulas/9.3.hq
+
+
+
 # time cargo run --release -- -n benchmarks/9_buffer/unscheduled_buffer.smv benchmarks/9_buffer/unscheduled_buffer.smv -f benchmarks/9_buffer/classic_OD.hq -k 10 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/9_buffer/unscheduled_buffer.smv benchmarks/AH_formulas/9.1.hq
 
 
 
 #=== Non-determinism Experience ===#
 # time cargo run --release -- -n benchmarks/10_NIexp/ni_example.smv benchmarks/10_NIexp/ni_example.smv -f benchmarks/10_NIexp/tini.hq -k 10 -s hpes
 
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/10_NIexp/ni_example.smv benchmarks/AH_formulas/10.1.hq
+
+
 
 # time cargo run --release -- -n benchmarks/10_NIexp/ni_example.smv benchmarks/10_NIexp/ni_example.smv -f benchmarks/10_NIexp/tsni.hq -k 10 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/10_NIexp/ni_example.smv benchmarks/AH_formulas/10.2.hq
+
 
 
 #=== k-safety ===#
 # time cargo run --release -- -n benchmarks/11_ksafety/doubleSquare.smv benchmarks/11_ksafety/doubleSquare.smv -f benchmarks/11_ksafety/doubleSquare.hq -k 10 -s hpes
 
 
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/11_ksafety/doubleSquare.smv benchmarks/AH_formulas/11.hq
 
 #=== Mapping synthesis ===#
 # time cargo run --release -- -n benchmarks/12_mapsynth/msynth_MM.smv  benchmarks/12_mapsynth/msynth_MA.smv benchmarks/12_mapsynth/msynth_MB.smv benchmarks/12_mapsynth/msynth_MA.smv benchmarks/12_mapsynth/msynth_MB.smv -f benchmarks/12_mapsynth/msynth.hq -k 10 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/12_mapsynth/msynth_MM.smv  benchmarks/12_mapsynth/msynth_MA.smv benchmarks/12_mapsynth/msynth_MB.smv benchmarks/12_mapsynth/msynth_MA.smv benchmarks/12_mapsynth/msynth_MB.smv benchmarks/AH_formulas/12.1.hq
+
 
 
 # time cargo run --release -- -n benchmarks/12_mapsynth/msynth2_MM.smv  benchmarks/12_mapsynth/msynth2_MA.smv benchmarks/12_mapsynth/msynth2_MB.smv benchmarks/12_mapsynth/msynth2_MA.smv benchmarks/12_mapsynth/msynth2_MB.smv -f benchmarks/12_mapsynth/msynth2.hq -k 10 -s hpes
 
 
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/12_mapsynth/msynth2_MM.smv  benchmarks/12_mapsynth/msynth2_MA.smv benchmarks/12_mapsynth/msynth2_MB.smv benchmarks/12_mapsynth/msynth2_MA.smv benchmarks/12_mapsynth/msynth2_MB.smv benchmarks/AH_formulas/12.2.hq
+
+
+
+
 #=== TEAM LTL ===#
 # time cargo run --release -- -n benchmarks/13_teamltl/team.smv benchmarks/13_teamltl/team.smv benchmarks/13_teamltl/team.smv -f benchmarks/13_teamltl/team.hq -k 10 -s hpes
 
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/13_teamltl/team.smv benchmarks/AH_formulas/13.1.hq
+
+
 # time cargo run --release -- -n benchmarks/13_teamltl/team2.smv benchmarks/13_teamltl/team2.smv benchmarks/13_teamltl/team2.smv -f benchmarks/13_teamltl/team.hq -k 10 -s hpes
 
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/13_teamltl/team2.smv benchmarks/AH_formulas/13.2.hq
 
 
 #=== NDET ===#
 # time cargo run --release -- -n benchmarks/14_ndet/NI_v1.smv benchmarks/14_ndet/NI_v1.smv -f benchmarks/14_ndet/NI.hq -k 10 -s hpes
 
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/14_ndet/NI_v1.smv benchmarks/AH_formulas/14.hq
+
 # time cargo run --release -- -n benchmarks/14_ndet/NI_v2.smv benchmarks/14_ndet/NI_v2.smv -f benchmarks/14_ndet/NI.hq -k 10 -s hpes
 
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/14_ndet/NI_v2.smv benchmarks/AH_formulas/14.hq
+
 # time cargo run --release -- -n benchmarks/14_ndet/NI_v3.smv benchmarks/14_ndet/NI_v3.smv -f benchmarks/14_ndet/NI.hq -k 10 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/14_ndet/NI_v3.smv benchmarks/AH_formulas/14.hq
 
 
 

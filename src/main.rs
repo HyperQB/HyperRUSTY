@@ -66,6 +66,12 @@ fn main() {
         )
         .arg(
             arg!(
+                -c --counterexample "Generates counterexample if formula is unsat"
+            )
+            .required(false)
+        )
+        .arg(
+            arg!(
                 -l --loop_conditions "Use loop conditions instead of unrolling"
             )
             .required(false)
@@ -157,8 +163,7 @@ fn main() {
             .get_one::<usize>("trajectory_bound");
 
         let formula = fs::read_to_string(formula_path).expect("Failed to read the formula");
-        let ast_node = parse(&formula).expect("Failed parsing the formula");
-
+        let mut ast_node = parse(&formula).expect("Failed parsing the formula");
         if *matches.get_one::<bool>("qbf_solver").unwrap() {
             // gen_qcir(&model_paths, &String::from(formula_path.to_str().unwrap()), &env, *unrolling_bound as i32, false, semantics_as_str);
             let output = process::Command::new("/Users/milad/Desktop/rust_tutorial/HyperRUSTY/quabs")
@@ -180,6 +185,13 @@ fn main() {
                 println!("{}", stderr);
             }
         } else {
+            // Should we use the negation for counterexample generation?
+            let mut witness : bool = false;
+            if *matches.get_one::<bool>("counterexample").unwrap() {
+                witness = true;
+                ast_node = negate_formula(&ast_node);
+            }
+
             let path_identifiers: Vec<&str> = get_path_identifiers(&ast_node);
 
             if model_paths.len() != path_identifiers.len() {
@@ -212,13 +224,12 @@ fn main() {
 
             // Start the timer for encoding
             let start = Instant::now();
-
             let encoding = if use_loop_conditions {
                 let lp = LoopCondition::new(&ctx, &envs[0], &envs[1]);
                 lp.build_loop_condition(&ast_node)
 
             } else {
-                get_z3_encoding(&envs, &ast_node, unrolling_bound, None, semantics)
+                get_z3_encoding(&envs, &ast_node, unrolling_bound, None, semantics, witness)
             };
             let duration = start.elapsed();
             let secs = duration.as_secs_f64();
@@ -227,13 +238,30 @@ fn main() {
             // Create a new solver
             let solver = Solver::new(&ctx);
             solver.assert(&encoding);
-
             match solver.check() {
                 SatResult::Sat => {
-                    println!("result: sat.");
+                    // Is counterexample set?
+                    if witness {
+                        println!("result: unsat.");
+                        let model = solver.get_model().unwrap();
+                        let grouped = extract_grouped_model(&model);
+                        for (state, entries) in grouped {
+                            println!("\nState {state}:");
+                            for (var, val) in entries {
+                                println!("  {var} = {val}");
+                            }
+                        }
+
+                    }else {
+                        println!("result: sat.");
+                    }
                 },
                 SatResult::Unsat => {
-                    println!("result: unsat.");
+                    if witness {
+                        println!("result: sat.");
+                    }else {
+                        println!("result: unsat.");
+                    }
                 },
                 SatResult::Unknown => {
                     println!("result: unknown.");
@@ -269,7 +297,15 @@ fn main() {
             .as_path();
         
         let formula = fs::read_to_string(formula_path).expect("Failed to read the formula");
-        let ast_node = parse(&formula).expect("Failed parsing the formula");
+        let mut ast_node = parse(&formula).expect("Failed parsing the formula");
+
+        // Should we use the negation for counterexample generation?
+        let mut witness : bool = false;
+        if *matches.get_one::<bool>("counterexample").unwrap() {
+            witness = true;
+            ast_node = negate_formula(&ast_node);
+        }
+
         // Check if the number of models and quantifiers match
         let path_identifiers: Vec<&str> = get_path_identifiers(&ast_node);
         if build_paths.len() != path_identifiers.len() {
@@ -309,7 +345,7 @@ fn main() {
         // Start the timer for encoding
         let start = Instant::now();
 
-        let encoding = get_verilog_encoding(&envs, &models, &ast_node, unrolling_bound, semantics);
+        let encoding = get_verilog_encoding(&envs, &models, &ast_node, unrolling_bound, semantics, witness);
         
         let duration = start.elapsed();
         let secs = duration.as_secs_f64();
@@ -321,10 +357,28 @@ fn main() {
 
         match solver.check() {
             SatResult::Sat => {
-                println!("result: sat.");
+                // Is counterexample set?
+                if witness {
+                    println!("result: unsat.");
+                    let model = solver.get_model().unwrap();
+                    let grouped = extract_grouped_model(&model);
+                    for (state, entries) in grouped {
+                        println!("\nState {state}:");
+                        for (var, val) in entries {
+                            println!("  {var} = {val}");
+                        }
+                    }
+
+                }else {
+                    println!("result: sat.");
+                }
             },
             SatResult::Unsat => {
-                println!("result: unsat.");
+                if witness {
+                    println!("result: sat.");
+                }else {
+                    println!("result: unsat.");
+                }
             },
             SatResult::Unknown => {
                 println!("result: unknown.");
@@ -337,15 +391,6 @@ fn main() {
             StatisticsValue::Double(d) => d.to_string(),
         };
         println!("Solve Time: {}", val_str);
-        
-        // let build_path = matches
-        //     .get_one::<PathBuf>("verilog").unwrap();
-
-        // let output_file = matches
-        //     .get_one::<PathBuf>("yosys_output").unwrap();
-
-        // let top_module = matches
-        //     .get_one::<String>("top").unwrap();
     }
 
 }

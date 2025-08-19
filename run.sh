@@ -7,7 +7,7 @@
 #=== BAKERY ===#
 
 # echo "bakery 3"
-# cargo run --release -- -n benchmarks/1_bakery/bakery.smv benchmarks/1_bakery/bakery.smv -f benchmarks/1_bakery/symmetry.hq -k 10 -s hpes
+cargo run --release -- -n benchmarks/1_bakery/bakery.smv benchmarks/1_bakery/bakery.smv -f benchmarks/1_bakery/symmetry.hq -k 10 -s hpes -c
 
 # echo "AutoHyper"
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/1_bakery/bakery.smv benchmarks/AH_formulas/1.1.hq
@@ -193,4 +193,4 @@
 
 #=== VERLIOG EXAMPLES ===#
 # RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/build_infoflow.ys verilog_benchmarks/build_infoflow.ys -t main -o model.smt2 -f verilog_benchmarks/formula.hq -k 3 -s hpes
-time cargo run --release -- -v verilog_benchmarks/LED/build.ys verilog_benchmarks/LED/build.ys -t light -o model.smt2 -f verilog_benchmarks/formula.hq -k 101 -s hpes
+# time cargo run --release -- -v verilog_benchmarks/LED/build.ys verilog_benchmarks/LED/build.ys -t light -o model.smt2 -f verilog_benchmarks/formula.hq -k 101 -s hpes

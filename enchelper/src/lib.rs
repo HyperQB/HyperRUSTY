@@ -213,6 +213,40 @@ fn check_EA_rec(formula: &AstNode) -> bool {
     }
 }
 
+// Negates the given formula
+pub fn negate_formula(formula: &AstNode) -> AstNode {
+    match formula {
+        AstNode::HAQuantifier{identifier, form} => {
+            AstNode::HEQuantifier {
+                identifier: identifier.clone(),
+                form: Box::new(negate_formula(form)),
+            }
+        },
+        AstNode::HEQuantifier{identifier, form} => {
+            AstNode::HAQuantifier {
+                identifier: identifier.clone(),
+                form: Box::new(negate_formula(form)),
+            }
+        },
+        AstNode::AAQuantifier{identifier, form} => {
+            AstNode::AEQuantifier {
+                identifier: identifier.clone(),
+                form: Box::new(negate_formula(form)),
+            }
+        },
+        AstNode::AEQuantifier{identifier, form} => {
+            AstNode::AAQuantifier {
+                identifier: identifier.clone(),
+                form: Box::new(negate_formula(form)),
+            }
+        },
+        other => AstNode::UnOp {
+            operator: UnaryOperator::Negation,
+            operand: Box::new(other.clone())
+        }
+    }
+}
+
 pub fn extract_variables<'ctx>(formula: &'ctx AstNode, mapping: &HashMap<&str, usize>) -> Vec<HashSet<&'ctx str>> {
     let mut variables: Vec<HashSet<&str>> = (0..mapping.len())
         .map(|_| HashSet::new())

@@ -3,13 +3,14 @@ use z3::{
         Ast, Bool, Dynamic, 
         forall_const, exists_const,
     },
-    Context,
+    Context, Model,
 };
 use std::collections::{HashMap, HashSet};
 use std::ffi::{CString, CStr};
 use indexmap::IndexMap;
 use ahltlunroller::*;
 use hltlunroller::*;
+use regex::Regex;
 use enchelper::*;
 use parser::*;
 use z3_sys::*;
@@ -24,7 +25,7 @@ mod verilog_helper;
 *
 ****************************/
 
-pub fn get_z3_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, formula: &'ctx AstNode, k: usize, m: Option<usize>, sem: Semantics) -> Bool<'env> {
+pub fn get_z3_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, formula: &'ctx AstNode, k: usize, m: Option<usize>, sem: Semantics, witness: bool) -> Bool<'env> {
     // First, extract path names from the formula
     let path_names = get_path_identifiers(formula);
     // Next, get the corresponding states and path encoding for each name
@@ -39,7 +40,7 @@ pub fn get_z3_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, formula: &'ctx
     // detect the type of formula
     if is_hltl(formula) {
         // Last, call the encoding generator
-        generate_hltl_encoding(envs, formula, states, constraints, sem)
+        generate_hltl_encoding(envs, formula, states, constraints, sem, witness)
     }else {
         Bool::from_bool(envs[0].ctx, false)
     //     // It's an A-HLTL formula
@@ -283,7 +284,8 @@ fn generate_quantified_encoding<'ctx>(ctx: &'ctx Context, formula: &AstNode, pat
     }
 }
 
-fn generate_hltl_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, formula: &AstNode, paths: Vec<Vec<EnvState<'ctx>>>, path_encodings: Vec<Bool<'env>>, sem: Semantics) -> Bool<'env> {
+fn generate_hltl_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, formula: &AstNode, paths: Vec<Vec<EnvState<'ctx>>>, path_encodings: Vec<Bool<'env>>, sem: Semantics, witness: bool) -> Bool<'env> {
+    // If witness is set, the formula is already negated
     let ctx = envs[0].ctx;
     // Unroll the formula first
     let inner_ltl = unroll_hltl_formula(envs, formula, &paths, &sem);
@@ -292,11 +294,22 @@ fn generate_hltl_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, formula: &A
     // Get the mapping
     let mapping = create_path_mapping(formula, 0);
     // Build the complete encoding
-    generate_quantified_encoding(ctx, formula, &paths, &path_encodings, &mapping, inner.clone())
+    // Do we look for a witness?
+    if witness {
+        match formula {
+            AstNode::HEQuantifier{identifier:_, form} => {
+                generate_quantified_encoding(ctx, form, &paths, &path_encodings, &mapping, inner.clone())
+            },
+            _ => panic!("Cannot generate witness for an existentially quantified formula."),
+        }
+
+    }else {
+        generate_quantified_encoding(ctx, formula, &paths, &path_encodings, &mapping, inner.clone())
+    }
 
 }
 
-pub fn get_verilog_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, models: &Vec<String>, formula: &'ctx AstNode, k: usize, sem: Semantics) -> Bool<'env> {
+pub fn get_verilog_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, models: &Vec<String>, formula: &'ctx AstNode, k: usize, sem: Semantics, witness: bool) -> Bool<'env> {
     let ctx = envs[0].ctx;
     let mut path_constraints : Vec<Bool<'ctx>> = Vec::new();
     let mut states : Vec<Vec<EnvState<'ctx>>> = Vec::new();
@@ -342,6 +355,70 @@ pub fn get_verilog_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, models: &
     // Get the mapping
     let mapping = create_path_mapping(formula, 0);
     // Build the complete encoding
-    generate_quantified_encoding(ctx, formula, &bounded_vars, &path_constraints, &mapping, inner.clone())
+    // Do we look for a witness?
+    if witness {
+        match formula {
+            AstNode::HEQuantifier{identifier:_, form} => {
+                generate_quantified_encoding(ctx, form, &bounded_vars, &path_constraints, &mapping, inner.clone())
+            },
+            _ => panic!("Cannot generate witness for an existentially quantified formula."),
+        }
+
+    }else {
+        generate_quantified_encoding(ctx, formula, &bounded_vars, &path_constraints, &mapping, inner.clone())
+    }
     
+}
+
+pub fn extract_grouped_model(model: &Model) -> Vec<(i32, Vec<(String, String)>)> {
+    let re = Regex::new(r".*_(\d+)_(\w+)$").expect("valid regex");
+
+    // Temp list: (state, (var_name, value))
+    let mut temp: Vec<(i32, (String, String))> = Vec::new();
+
+    // Iterate declarations in the model
+    for decl in model.iter() {
+        // We only care about constants (functions with arity 0)
+        if decl.arity() != 0 {
+            continue;
+        }
+
+        let var_name = decl.name();
+
+        // Turn the declaration into a constant AST and read its interpretation.
+        // `apply(&[])` yields the constant; try `get_const_interp`, then fall back to `eval`.
+        let const_ast: Dynamic = decl.apply(&[]);
+        let value_ast = model
+            .get_const_interp(&const_ast)
+            .or_else(|| model.eval(&const_ast, true));
+
+        let val_str = value_ast
+            .map(|v| v.to_string())
+            .unwrap_or_else(|| "undef".to_string());
+
+        if let Some(caps) = re.captures(&var_name) {
+            let state: i32 = caps.get(1).unwrap().as_str().parse().unwrap_or(-1);
+            temp.push((state, (var_name, val_str)));
+        } else {
+            // Uncomment if you want to see non-matching names:
+            eprintln!("unmatched: {}", var_name);
+        }
+    }
+
+    // Sort by state, then variable name
+    temp.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1 .0.cmp(&b.1 .0)));
+
+    // Group into the requested Vec format
+    let mut grouped: Vec<(i32, Vec<(String, String)>)> = Vec::new();
+    for (state, (var, val)) in temp {
+        if let Some(last) = grouped.last_mut() {
+            if last.0 == state {
+                last.1.push((var, val));
+                continue;
+            }
+        }
+        grouped.push((state, vec![(var, val)]));
+    }
+
+    grouped
 }

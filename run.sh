@@ -124,7 +124,7 @@
 #=== Co-termination ===#
 # time cargo run --release -- -n benchmarks/7_coterm/coterm1.smv benchmarks/7_coterm/coterm1.smv -f benchmarks/7_coterm/coterm.hq -k 10 -s hpes
 
-# time AutoHyper/app/AutoHyper --nusmv benchmarks/7_coterm/coterm1.smv benchmarks/AH_formulas/7.hq
+time AutoHyper/app/AutoHyper --nusmv benchmarks/7_coterm/coterm1.smv benchmarks/AH_formulas/7.hq
 
 
 

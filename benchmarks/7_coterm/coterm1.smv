@@ -7,7 +7,7 @@ MODULE main
 -- 1		x = x - y
 -- 2	}
 	VAR
-		x: 5..100;
+		x: 0..100;
 		t: 0..1;
 		location: 0..2;
 		y: 0..5;

@@ -75,7 +75,6 @@ fn main() {
                 -l --loop_conditions "Use loop conditions instead of unrolling"
             )
             .required(false)
-            .action(clap::ArgAction::SetTrue),
         )
         .arg(
             arg!(
@@ -117,33 +116,27 @@ fn main() {
 
     let matches = cli.get_matches();
 
-    // Check if loop conditions flag is set
-    let use_loop_conditions = matches.get_flag("loop_conditions");
+    let mut unrolling_bound = *matches
+        .get_one::<usize>("unrolling_bound")
+        .expect("Unrolling bound (-k) is required when not using loop conditions (-l)");
 
-    // Handle conditional requirements
-    let (unrolling_bound, semantics) = if use_loop_conditions {
-        // When using loop conditions, we don't need unrolling bound or semantics
-        (0, Semantics::Pes) // Default values (not used)
-    } else {
-        // When NOT using loop conditions, both unrolling bound and semantics are required
-        let unrolling_bound = matches
-            .get_one::<usize>("unrolling_bound")
-            .expect("Unrolling bound (-k) is required when not using loop conditions (-l)");
+    let semantics_as_str = matches
+        .get_one::<String>("semantics")
+        .expect("Semantics (-s) is required when not using loop conditions (-l)");
 
-        let semantics_as_str = matches
-            .get_one::<String>("semantics")
-            .expect("Semantics (-s) is required when not using loop conditions (-l)");
-
-        let semantics = match semantics_as_str.as_str() {
-            "pes" => Semantics::Pes,
-            "opt" => Semantics::Opt,
-            "hpes" => Semantics::Hopt,
-            "hopt" => Semantics::Hpes,
-            _ => panic!("Invalid choice of semantics")
-        };
-
-        (*unrolling_bound, semantics)
+    let mut semantics = match semantics_as_str.as_str() {
+        "pes" => Semantics::Pes,
+        "opt" => Semantics::Opt,
+        "hpes" => Semantics::Hopt,
+        "hopt" => Semantics::Hpes,
+        _ => panic!("Invalid choice of semantics")
     };
+
+    // Check if loop conditions flag is set
+    if *matches.get_one::<bool>("loop_conditions").unwrap() {
+        unrolling_bound = 0;
+        semantics = Semantics::Pes;
+    }
 
     let formula_path = matches
         .get_one::<PathBuf>("formula").unwrap();
@@ -165,7 +158,12 @@ fn main() {
         let formula = fs::read_to_string(formula_path).expect("Failed to read the formula");
         let mut ast_node = parse(&formula).expect("Failed parsing the formula");
         if *matches.get_one::<bool>("qbf_solver").unwrap() {
-            // gen_qcir(&model_paths, &String::from(formula_path.to_str().unwrap()), &env, *unrolling_bound as i32, false, semantics_as_str);
+            
+            let mut cfg = Config::new();
+            cfg.set_model_generation(true);
+            let ctx = Context::new(&cfg);
+            
+            gen_qcir(&ctx, &model_paths, &String::from(formula_path.to_str().unwrap()), unrolling_bound as i32, false, semantics_as_str);
             let output = process::Command::new("/Users/milad/Desktop/rust_tutorial/HyperRUSTY/quabs")
                 .arg("outputs/HQ.qcir")
                 .stdout(process::Stdio::piped())
@@ -224,7 +222,7 @@ fn main() {
 
             // Start the timer for encoding
             let start = Instant::now();
-            let encoding = if use_loop_conditions {
+            let encoding = if *matches.get_one::<bool>("loop_conditions").unwrap() {
                 let lp = LoopCondition::new(&ctx, &envs[0], &envs[1]);
                 lp.build_loop_condition(&ast_node)
 

@@ -385,7 +385,7 @@ ASSIGN
 
 
 DEFINE
-    GOAL := ((x_axis=7 & y_axis=5));
+    gOAL := ((x_axis=7 & y_axis=5));
 
     FAIL :=(x_axis=1 & y_axis=3)| (x_axis=1 & y_axis=5)| (x_axis=1 & y_axis=6)| (x_axis=1 & y_axis=8)| (x_axis=1 & y_axis=9)| (x_axis=2 & y_axis=6)| (x_axis=2 & y_axis=8)| (x_axis=2 & y_axis=9)
         | (x_axis=3 & y_axis=1)| (x_axis=3 & y_axis=4)| (x_axis=3 & y_axis=5)| (x_axis=3 & y_axis=6)| (x_axis=3 & y_axis=8)| (x_axis=4 & y_axis=5)| (x_axis=4 & y_axis=6)| (x_axis=4 & y_axis=9)

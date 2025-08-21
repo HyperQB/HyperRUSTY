@@ -1,0 +1,2 @@
+
+Forall A . Forall B . G((din[A] = dout[B]) & (dout[A] = ))

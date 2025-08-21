@@ -4,10 +4,12 @@
 
 # AutoHyper/app/AutoHyper --nusmv mini.smv auto_mini.hq
 
+# cargo run --release -- -n benchmarks/0_infoflow/info.smv benchmarks/0_infoflow/info.smv -f benchmarks/0_infoflow/info.hq -k 10 -s hpes -q
+
 #=== BAKERY ===#
 
 # echo "bakery 3"
-cargo run --release -- -n benchmarks/1_bakery/bakery.smv benchmarks/1_bakery/bakery.smv -f benchmarks/1_bakery/symmetry.hq -k 10 -s hpes -q
+# cargo run --release -- -n benchmarks/1_bakery/bakery.smv benchmarks/1_bakery/bakery.smv -f benchmarks/1_bakery/symmetry.hq -k 10 -s hpes -q
 
 # echo "AutoHyper"
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/1_bakery/bakery.smv benchmarks/AH_formulas/1.1.hq
@@ -109,6 +111,14 @@ cargo run --release -- -n benchmarks/1_bakery/bakery.smv benchmarks/1_bakery/bak
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_sp_100.smv benchmarks/AH_formulas/5.2.hq
 
 # time cargo run --release -- -n benchmarks/5_planning/robotic_sp_400.smv benchmarks/5_planning/robotic_sp_400.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 40 -s hpes
+
+# time cargo run --release -- -n benchmarks/5_planning/robotic_sp_1600.smv benchmarks/5_planning/robotic_sp_1600.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 80 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_sp_1600.smv benchmarks/AH_formulas/5.2.hq --log
+
+# time cargo run --release -- -n benchmarks/5_planning/robotic_sp_3600.smv benchmarks/5_planning/robotic_sp_3600.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 120 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_sp_3600.smv benchmarks/AH_formulas/5.2.hq --log
 
 
 
@@ -237,5 +247,13 @@ cargo run --release -- -n benchmarks/1_bakery/bakery.smv benchmarks/1_bakery/bak
 # cargo run --release -- -n benchmarks/loop_conditions/test_loop/rs1.smv benchmarks/loop_conditions/test_loop/rs2.smv -f benchmarks/loop_conditions/test_loop/rs.hq -l
 
 #=== VERLIOG EXAMPLES ===#
+
 # RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/build_infoflow.ys verilog_benchmarks/build_infoflow.ys -t main -o model.smt2 -f verilog_benchmarks/formula.hq -k 3 -s hpes
+
 # time cargo run --release -- -v verilog_benchmarks/LED/build.ys verilog_benchmarks/LED/build.ys -t light -o model.smt2 -f verilog_benchmarks/formula.hq -k 101 -s hpes
+
+#=== True Random Number Generator ===#
+# RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/TRNG/build.ys verilog_benchmarks/TRNG/build.ys -t trng -o trng.smt2 -f verilog_benchmarks/TRNG/formula_1.hq -k 1 -s opt
+
+#=== FIFO ASYNC ===#
+RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/fifo_async/build.ys verilog_benchmarks/fifo_async/build.ys -t oh_fifo_generic -o fifo_async.smt2 -f verilog_benchmarks/fifo_async/formula_1.hq -k 1 -s hpes

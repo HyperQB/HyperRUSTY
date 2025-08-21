@@ -3,7 +3,7 @@ use ir::*;
 use enchelper::{Semantics, create_path_mapping, inner_ltl};
 use z3::{Context,
     ast::{
-        Ast, Dynamic, Bool, Int,
+        Ast, Dynamic, Bool, Int, BV,
     }
 };
 use parser::{
@@ -75,6 +75,11 @@ fn unroll_ltl_formula<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, formula: &AstNo
             if value.parse::<i64>().is_ok() {
                 let number = value.parse::<i64>().unwrap();
                 return UnrollingReturn::Var(Int::from_i64(ctx, number).into());
+            }
+            if value.starts_with("#b") {
+                let bits_as_str = value.strip_prefix("#b").unwrap();
+                let size = bits_as_str.len();
+                return UnrollingReturn::Var(BV::from_str(ctx, size.try_into().unwrap(), bits_as_str).unwrap().into());
             }
             if value == "TRUE" {
                 UnrollingReturn::Bool(Bool::from_bool(ctx, true))

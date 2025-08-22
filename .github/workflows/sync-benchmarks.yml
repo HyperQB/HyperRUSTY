@@ -1,0 +1,50 @@
+name: Push benchmarks folder to hyperqb-ui repo
+
+on:
+  push:
+    branches:
+      - verilog_integration # Change after merging it to main
+    paths:
+      - "benchmarks_ui/**"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout HyperRUSTY branch
+        uses: actions/checkout@v4
+        with:
+          ref: verilog_integration # Change after merging it to main
+
+      - name: Checkout hyperqb-ui repo
+        uses: actions/checkout@v4
+        with:
+          repository: HyperQB/hyperqb-ui
+          path: target
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Copy folder and generate code
+        run: |
+          cd target
+          git checkout main
+          rsync -av --delete ../benchmarks_ui/ assets/benchmarks_ui/
+          dart run lib/generate_case_studies.dart
+
+      - name: Sync to main branch
+        run: |
+          cd target
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "Sync benchmarks_ui from HyperRUSTY and regenerate code" || echo "No changes to main"
+          git push origin main
+
+      - name: Sync to release branch
+        run: |
+          cd target
+          git push origin main:release

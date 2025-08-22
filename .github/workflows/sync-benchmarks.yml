@@ -6,6 +6,7 @@ on:
       - verilog_integration # Change after merging it to main
     paths:
       - "benchmarks_ui/**"
+  workflow_dispatch:
 
 jobs:
   sync:

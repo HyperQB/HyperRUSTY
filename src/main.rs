@@ -227,7 +227,7 @@ fn main() {
                 lp.build_loop_condition(&ast_node)
 
             } else {
-                get_z3_encoding(&envs, &ast_node, unrolling_bound, None, semantics, witness)
+                get_z3_encoding(&envs, &ast_node, unrolling_bound, trajectory_bound.copied(), semantics, witness)
             };
             let duration = start.elapsed();
             let secs = duration.as_secs_f64();

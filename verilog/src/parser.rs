@@ -29,11 +29,20 @@ pub fn unroll_in_place(smt2: &str, mod_name: &str, bound: usize, trace_id: &str)
 }
 
 fn parse_variables(smt2: &str, mod_name: &str) -> Result<Vec<StateVariable>, ExtractError> {
-    let re = Regex::new(&format!(r"\s*\(\|({}#\d+)\|.*(Bool|BitVec).*;\s*\\(\S*)", mod_name)).unwrap();
+    let re = Regex::new(&format!(r"\s*\(\|({}#\d+)\|.*(Bool|BitVec).*;\s*\\(.*)[\r\n]", mod_name)).unwrap();
     let mut variables = Vec::new();
     for cap in re.captures_iter(smt2) {
         let yosys_name = cap[1].to_string();
-        let original_name = cap[3].to_string();
+        let original_name: String = cap[3]
+            .chars()
+            .map(|c| {
+                if c.is_alphanumeric() || c == '.' || c == '_' {
+                    c
+                }else {
+                    '_'
+                }
+            })
+            .collect();
         variables.push(StateVariable {
             original_name: original_name.clone(),
             yosys_name,

@@ -1,0 +1,13 @@
+{
+  "name": "Term-sens-NI",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["ni_example.smv", "ni_example.smv"],
+    "formula": "tsni.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

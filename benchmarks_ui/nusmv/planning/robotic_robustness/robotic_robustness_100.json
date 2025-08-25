@@ -1,0 +1,13 @@
+{
+  "name": "Robotic Robustness 100",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["robotic_robustness_100.smv", "robotic_robustness_100.smv"],
+    "formula": "robotic_robustness_formula.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 20,
+    "semantics": "hpes"
+  }
+}

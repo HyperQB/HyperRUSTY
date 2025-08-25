@@ -1,0 +1,13 @@
+{
+  "name": "Co-termination",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["coterm1.smv", "coterm1.smv"],
+    "formula": "coterm.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

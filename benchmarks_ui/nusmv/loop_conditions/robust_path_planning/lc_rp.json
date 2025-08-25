@@ -1,0 +1,13 @@
+{
+  "name": "Robust Path Planning (Valid)",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["rp_1.smv", "rp_2.smv"],
+    "formula": "rp.hq"
+  },
+  "options": {
+    "useLoopConditions": true,
+    "unrollingBound": null,
+    "semantics": null
+  }
+}

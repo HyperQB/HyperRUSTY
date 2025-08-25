@@ -1,0 +1,9 @@
+# build.ys
+read_verilog -pwires verilog1.v
+hierarchy -check -top oh_fifo_generic
+proc
+flatten
+async2sync
+dffunmap
+opt_clean -purge
+write_smt2 -stdt -wires fifo_async.smt2

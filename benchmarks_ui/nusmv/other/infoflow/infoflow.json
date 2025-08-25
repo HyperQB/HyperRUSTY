@@ -1,0 +1,13 @@
+{
+  "name": "Infoflow",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["info.smv", "info.smv"],
+    "formula": "info.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

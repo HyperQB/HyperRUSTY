@@ -1,4 +1,8 @@
 /target
+/AutoHyper/
 Cargo.lock
 commands.txt
+aut1.hoa
+aut2.hoa
+autRes.hoa
 .DS_Store

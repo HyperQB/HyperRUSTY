@@ -1,0 +1,13 @@
+{
+  "name": "KSafety",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["doubleSquare.smv", "doubleSquare.smv"],
+    "formula": "doubleSquare.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

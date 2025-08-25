@@ -31,7 +31,7 @@ aunop = { "G" | "F" | "~" }
 unop = { "G" | "F" | "X" | "~" }
 ident = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_" | ".")* }
 constant = {"TRUE" | "FALSE"}
-number = { ASCII_DIGIT+ }
+number = @{ ASCII_DIGIT+ | "#b" ~ ("0" | "1")+ }
 
 // Entry point for the parser
 formula = _{ SOI ~ path_formula ~ EOI }

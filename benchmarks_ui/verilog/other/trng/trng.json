@@ -1,0 +1,29 @@
+{
+  "name": "TRNG",
+  "inputLanguage": "verilog",
+  "files": {
+    "nusmvFiles": null,
+    "verilogFiles": [
+      "trng.v",
+      "trng_mixer.v",
+      "trng_csprng.v",
+      "rosc_entropy.v",
+      "avalanche_entropy.v",
+      "sha512_core.v",
+      "trng_csprng_fifo.v",
+      "chacha_core.v",
+      "chacha_qr.v",
+      "sha512_w_mem.v",
+      "sha512_h_constants.v",
+      "sha512_k_constants.v"
+    ],
+    "verilogBuildFiles": ["build.ys", "build.ys"],
+    "verilogTopModule": "trng",
+    "formula": "formula_1.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 1,
+    "semantics": "opt"
+  }
+}

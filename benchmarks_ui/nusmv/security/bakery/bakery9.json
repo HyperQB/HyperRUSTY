@@ -1,0 +1,13 @@
+{
+  "name": "Bakery 9",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["bakery9.smv", "bakery9.smv"],
+    "formula": "symmetry9.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

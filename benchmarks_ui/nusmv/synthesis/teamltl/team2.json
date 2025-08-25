@@ -1,0 +1,13 @@
+{
+  "name": "TeamLTL 2",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["team2.smv", "team2.smv", "team2.smv"],
+    "formula": "team.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

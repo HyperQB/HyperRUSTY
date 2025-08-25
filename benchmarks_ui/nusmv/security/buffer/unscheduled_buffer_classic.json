@@ -1,0 +1,13 @@
+{
+  "name": "Unscheduled buffer with classic OD",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["unscheduled_buffer.smv", "unscheduled_buffer.smv"],
+    "formula": "classic_OD.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

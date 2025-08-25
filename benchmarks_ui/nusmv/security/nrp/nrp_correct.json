@@ -1,0 +1,13 @@
+{
+  "name": "NRP Correct",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["NRP_correct.smv", "NRP_correct.smv"],
+    "formula": "NRP_formula.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 20,
+    "semantics": "pes"
+  }
+}

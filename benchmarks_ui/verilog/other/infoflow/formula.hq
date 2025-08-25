@@ -1,0 +1,2 @@
+
+Exists p . Exists q . G (light_out[p] = light_out[q])

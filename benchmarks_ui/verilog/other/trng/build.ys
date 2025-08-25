@@ -1,0 +1,20 @@
+# build.ys
+read_verilog -pwires verilog1.v \
+               verilog2.v \
+               verilog3.v \
+               verilog4.v \
+               verilog5.v \
+               verilog6.v \
+               verilog7.v \
+               verilog8.v \
+               verilog9.v \
+               verilog10.v \
+               verilog11.v \
+               verilog12.v
+hierarchy -check -top trng
+proc
+flatten
+async2sync
+dffunmap
+opt_clean -purge
+write_smt2 -stdt -wires trng.smt2

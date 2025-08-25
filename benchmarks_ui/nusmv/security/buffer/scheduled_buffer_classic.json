@@ -1,0 +1,13 @@
+{
+  "name": "Scheduled Buffer Classic OD",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["scheduled_buffer.smv", "scheduled_buffer.smv"],
+    "formula": "classic_OD.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

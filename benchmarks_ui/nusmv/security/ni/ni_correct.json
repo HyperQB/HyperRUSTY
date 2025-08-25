@@ -1,0 +1,13 @@
+{
+  "name": "NI Correct",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["NI_correct.smv", "NI_correct.smv"],
+    "formula": "NI_formula.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 50,
+    "semantics": "hopt"
+  }
+}

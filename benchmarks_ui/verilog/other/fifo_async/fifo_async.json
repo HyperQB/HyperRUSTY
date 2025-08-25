@@ -1,0 +1,16 @@
+{
+  "name": "FIFO Async",
+  "inputLanguage": "verilog",
+  "files": {
+    "nusmvFiles": null,
+    "verilogFiles": ["oh_fifo_generic-single.v"],
+    "verilogBuildFiles": ["build.ys", "build.ys"],
+    "verilogTopModule": "oh_fifo_generic",
+    "formula": "formula_1.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 1,
+    "semantics": "hpes"
+  }
+}

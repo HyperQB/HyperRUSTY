@@ -1,0 +1,13 @@
+{
+  "name": "Mutation Testing",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["mutation_testing.smv", "mutation_testing.smv"],
+    "formula": "mutation_testing.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "pes"
+  }
+}

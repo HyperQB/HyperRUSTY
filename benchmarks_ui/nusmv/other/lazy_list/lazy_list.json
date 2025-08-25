@@ -1,0 +1,13 @@
+{
+  "name": "Lazy List",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["lazy_list_conc.smv", "lazy_list_seq.smv"],
+    "formula": "lazy_list.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 13,
+    "semantics": "hpes"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "Mapping Synthesis 2",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": [
+      "msynth2_MM.smv",
+      "msynth2_MA.smv",
+      "msynth2_MB.smv",
+      "msynth2_MA.smv",
+      "msynth2_MB.smv"
+    ],
+    "formula": "msynth2.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "Alternating Bit Protocol",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["abp_1.smv", "abp_2.smv"],
+    "formula": "abp.hq"
+  },
+  "options": {
+    "useLoopConditions": true,
+    "unrollingBound": null,
+    "semantics": null
+  }
+}

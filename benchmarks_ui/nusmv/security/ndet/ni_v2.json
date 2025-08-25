@@ -1,0 +1,13 @@
+{
+  "name": "Nondeterministic v2",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["NI_v2.smv", "NI_v2.smv"],
+    "formula": "NI.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

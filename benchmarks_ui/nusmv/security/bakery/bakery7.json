@@ -1,0 +1,13 @@
+{
+  "name": "Bakery 7",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["bakery7.smv", "bakery7.smv"],
+    "formula": "symmetry7.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

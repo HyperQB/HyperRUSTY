@@ -5,6 +5,7 @@ use z3::ast::Ast;
 use expressions::*;
 use logging::*;
 use ir::*;
+use parser_nusmv::*;
 use z3::ast::{Bool, Int, Dynamic};
 use z3::{Config, Context, Sort};
 use utils::*;
@@ -15,9 +16,9 @@ use flags::flags::parse_flags;
 
 
 pub fn gen_qcir(
+    ctx: &Context,
     files: &Vec<&str>, 
     formula_file: &String, 
-    env: &SMVEnv, 
     layers: i32, 
     debug: bool, 
     semantics: &str
@@ -32,6 +33,14 @@ pub fn gen_qcir(
 
     for file in files.iter() {
         println!("parsing {}...", file);
+        let env = parse_smv(
+            &ctx,
+            file,
+            Some("output.txt".to_string()),
+            false,
+            "model",
+            "ir",
+        );
 
         let mut max_bit_map: HashMap<String, usize> = HashMap::new();
         let variables = env.get_variables(); // returns &HashMap<String, Variable>
@@ -67,12 +76,12 @@ pub fn gen_qcir(
                 // println!("[ Transition #{} ]", i);
 
                 // Evaluate guard and update only once
-                let guard_result = guard_fn(env, env.get_context(), &dummy_state);
+                let guard_result = guard_fn(&env, env.get_context(), &dummy_state);
 
-                let update_result = update_fn(env, env.get_context(), &dummy_state);
+                let update_result = update_fn(&env, env.get_context(), &dummy_state);
 
                 // Extract Dynamic nodes from ReturnType
-                let guard_node_opt = match guard_fn(env, env.get_context(), &dummy_state) {
+                let guard_node_opt = match guard_fn(&env, env.get_context(), &dummy_state) {
                     ReturnType::DynAst(node) => Some(node),
                     ReturnType::Bool(ref bvec) if bvec.len() == 1 => {
                         let b = Bool::from_bool(env.get_context(), bvec[0]);
@@ -85,7 +94,7 @@ pub fn gen_qcir(
                     _ => None,
                 };
 
-                let update_node_opt = match update_fn(env, env.get_context(), &dummy_state) {
+                let update_node_opt = match update_fn(&env, env.get_context(), &dummy_state) {
                     ReturnType::DynAst(node) => Some(node),
                     ReturnType::Bool(ref bvec) if bvec.len() == 1 => {
                         let b = Bool::from_bool(env.get_context(), bvec[0]);

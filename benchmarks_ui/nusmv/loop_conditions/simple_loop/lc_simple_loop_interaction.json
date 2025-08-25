@@ -1,0 +1,13 @@
+{
+  "name": "Simple Loop Interaction",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["simple_loop1.smv", "simple_loop2.smv"],
+    "formula": "simple_loop.hq"
+  },
+  "options": {
+    "useLoopConditions": true,
+    "unrollingBound": null,
+    "semantics": null
+  }
+}

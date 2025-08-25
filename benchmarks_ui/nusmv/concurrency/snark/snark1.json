@@ -1,0 +1,13 @@
+{
+  "name": "Snark 1",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["snark1_conc.smv", "snark1_seq.smv"],
+    "formula": "lin.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 18,
+    "semantics": "hpes"
+  }
+}

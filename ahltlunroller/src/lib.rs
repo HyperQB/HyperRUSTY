@@ -12,7 +12,7 @@ use parser::{
 };
 
 pub struct AHLTLObject<'env, 'ctx> {
-    pub env: &'env SMVEnv<'ctx>,
+    pub envs: &'env Vec<SMVEnv<'ctx>>,
     pub states: Vec<Vec<EnvState<'ctx>>>,
     pub formula: &'ctx AstNode,
     pub k: usize,
@@ -28,7 +28,7 @@ pub struct AHLTLObject<'env, 'ctx> {
 
 impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
     pub fn new(
-        env: &'env SMVEnv<'ctx>,
+        envs: &'env Vec<SMVEnv<'ctx>>,
         formula: &'ctx AstNode,
         paths: Vec<&'ctx str>, 
         trajs: Vec<&'ctx str>,
@@ -42,12 +42,12 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
     ) -> Self {
         //Generate the corresponding states and path encoding for each name
         let mut states: Vec<Vec<EnvState<'ctx>>> = Vec::new();
-        for &name in &paths {
-            let (new_states, _) = env.generate_symbolic_path(k, Some(name));
+        for (idx, &name) in paths.iter().enumerate() {
+            let (new_states, _) = envs[idx].generate_symbolic_path(k, Some(name));
             states.push(new_states);
         }
         AHLTLObject {
-            env,
+            envs,
             states,
             formula,
             k,
@@ -104,7 +104,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
         let off_node = &self.offs[traj_name][path_name][j];
         constraints.push(off_node.clone().not());
         let refs: Vec<&Bool> = constraints.iter().collect();
-        Bool::and(self.env.ctx, &refs)
+        Bool::and(self.envs[0].ctx, &refs)
     }
 
     fn nopos(& self, path_name: &str, traj_name: &str, j: usize) -> Bool<'ctx> {
@@ -118,7 +118,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             );
         }
         let refs: Vec<&Bool> = constraints.iter().collect();
-        Bool::and(self.env.ctx, &refs)
+        Bool::and(self.envs[0].ctx, &refs)
     }
 
     fn init_pos(& self) -> Bool<'ctx> {
@@ -130,7 +130,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             }
         }
         let refs: Vec<&Bool> = constraints.iter().collect();
-        Bool::and(self.env.ctx, &refs)
+        Bool::and(self.envs[0].ctx, &refs)
     }
 
     fn step(& self, path_name: &str, traj_name: &str, j: usize) -> Bool<'ctx> {
@@ -148,7 +148,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             );
         }
         let refs: Vec<&Bool> = constraints.iter().collect();
-        Bool::and(self.env.ctx, &refs)
+        Bool::and(self.envs[0].ctx, &refs)
     }
 
     fn stutters(& self, path_name: &str, traj_name: &str, j: usize) -> Bool<'ctx> {
@@ -166,7 +166,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             );
         }
         let refs: Vec<&Bool> = constraints.iter().collect();
-        Bool::and(self.env.ctx, &refs)
+        Bool::and(self.envs[0].ctx, &refs)
     }
 
     fn ends(& self, path_name: &str, traj_name: &str, j: usize) -> Bool<'ctx> {
@@ -177,7 +177,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
         // get the index of the corresponding state variables
         let path_idx = self.path_mappings[path_name];
         let kth_state = &self.states[path_idx][self.k];
-        let halt_k = self.env.predicates["halt"](self.env, self.env.ctx, &kth_state);
+        let halt_k = self.envs[path_idx].predicates["halt"](&self.envs[path_idx], self.envs[0].ctx, &kth_state);
         let left_of_rhs = Bool::implies(
             &halt_k.not(),
             &self.nopos(path_name, traj_name, j + 1)
@@ -204,7 +204,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             }
         }
         let refs: Vec<&Bool> = constraints.iter().collect();
-        Bool::and(self.env.ctx, &refs)
+        Bool::and(self.envs[0].ctx, &refs)
     }
 
     fn off_disj(& self, j: usize) -> Bool<'ctx> {
@@ -216,13 +216,13 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             }
         }
         let refs: Vec<&Bool> = constraints.iter().collect();
-        Bool::or(self.env.ctx, &refs)
+        Bool::or(self.envs[0].ctx, &refs)
     }
 
     fn halt_pi_tau(& self, path_name: &str, traj_name: &str, i: usize, j: usize) -> Bool<'ctx> {
         let path_idx = self.path_mappings[path_name];
         let ith_state = &self.states[path_idx][i];
-        let halt = self.env.predicates["halt"](self.env, self.env.ctx, &ith_state);
+        let halt = self.envs[path_idx].predicates["halt"](&self.envs[path_idx], self.envs[0].ctx, &ith_state);
         let ij_key = format!("{}_{}", i, j);
         let pos = &self.positions[traj_name][path_name][&ij_key];
         pos & halt
@@ -231,7 +231,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
     fn not_halt_pi_tau(& self, path_name: &str, traj_name: &str, i: usize, j: usize) -> Bool<'ctx> {
         let path_idx = self.path_mappings[path_name];
         let ith_state = &self.states[path_idx][i];
-        let halt = self.env.predicates["halt"](self.env, self.env.ctx, &ith_state);
+        let halt = self.envs[path_idx].predicates["halt"](&self.envs[path_idx], self.envs[0].ctx, &ith_state);
         let ij_key = format!("{}_{}", i, j);
         let pos = &self.positions[traj_name][path_name][&ij_key];
         pos & halt.not()
@@ -244,7 +244,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             constraints.push(self.halt_pi_tau(path_name, traj_name, i, j));
         }
         let refs: Vec<&Bool> = constraints.iter().collect();
-        Bool::or(self.env.ctx, &refs)
+        Bool::or(self.envs[0].ctx, &refs)
     }
 
     fn not_halt_pi_tau_disj(& self, path_name: &str, traj_name: &str, j: usize) -> Bool<'ctx> {
@@ -253,7 +253,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             constraints.push(self.not_halt_pi_tau(path_name, traj_name, i, j));
         }
         let refs: Vec<&Bool> = constraints.iter().collect();
-        Bool::or(self.env.ctx, &refs)
+        Bool::or(self.envs[0].ctx, &refs)
     }
 
     fn halted_traj(& self, traj_name: &str, j: usize) -> Bool<'ctx> {
@@ -262,7 +262,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             constraints.push(self.halt_pi_tau_disj(path_name, traj_name, j));
         }
         let refs: Vec<&Bool> = constraints.iter().collect();
-        Bool::and(self.env.ctx, &refs)
+        Bool::and(self.envs[0].ctx, &refs)
     }
 
     fn halted(& self, j: usize, trajs: Option<&Vec<&'ctx str>>) -> Bool<'ctx> {
@@ -275,7 +275,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             constraints.push(self.halted_traj(traj_name, j));
         }
         let refs: Vec<&Bool> = constraints.iter().collect();
-        Bool::and(self.env.ctx, &refs)
+        Bool::and(self.envs[0].ctx, &refs)
     }
 
     fn moves(& self, j: usize, trajs: Option<&Vec<&'ctx str>>) -> Bool<'ctx> {
@@ -296,7 +296,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             }
         }
         let refs: Vec<&Bool> = rhs_constraints.iter().collect();
-        let rhs = Bool::or(self.env.ctx, &refs);
+        let rhs = Bool::or(self.envs[0].ctx, &refs);
         lhs | rhs
     }
 
@@ -311,7 +311,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
                 lhs_constraints.push(self.moves(j, None));
             }
             let refs: Vec<&Bool> = lhs_constraints.iter().collect();
-            let lhs = Bool::and(self.env.ctx, &refs);
+            let lhs = Bool::and(self.envs[0].ctx, &refs);
             return lhs & self.shared_semantics(inner, 0);
         
         }else if is_A(self.formula) {
@@ -320,7 +320,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
                 lhs_constraints.push(self.moves(j, None));
             }
             let refs: Vec<&Bool> = lhs_constraints.iter().collect();
-            let lhs = Bool::and(self.env.ctx, &refs);
+            let lhs = Bool::and(self.envs[0].ctx, &refs);
             return Bool::implies(&lhs, &self.shared_semantics(inner, 0));
         
         }else if is_AE(self.formula) {
@@ -332,7 +332,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
                 lhs_const.push(self.moves(j, Some(&trajs_A)));
             }
             let lhs_refs: Vec<&Bool> = lhs_const.iter().collect();
-            let lhs = Bool::and(self.env.ctx, &lhs_refs);
+            let lhs = Bool::and(self.envs[0].ctx, &lhs_refs);
 
             let mut rhs_const = Vec::with_capacity(self.m + 2);
             for j in 0..=self.m {
@@ -345,7 +345,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             }
             rhs_const.push(self.shared_semantics(inner, 0));
             let rhs_refs: Vec<&Bool> = rhs_const.iter().collect();
-            let rhs = Bool::and(self.env.ctx, &rhs_refs);
+            let rhs = Bool::and(self.envs[0].ctx, &rhs_refs);
             Bool::implies(&lhs, &rhs)
             
         }else if is_EA(self.formula) {
@@ -357,7 +357,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
                 lhs_const.push(self.moves(j, Some(&trajs_E)));
             }
             let lhs_refs: Vec<&Bool> = lhs_const.iter().collect();
-            let lhs = Bool::and(self.env.ctx, &lhs_refs);
+            let lhs = Bool::and(self.envs[0].ctx, &lhs_refs);
 
             let mut rhs_const = Vec::with_capacity(self.m + 1);
             for j in 0..=self.m {
@@ -369,7 +369,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
                 );
             }
             let rhs_refs: Vec<&Bool> = rhs_const.iter().collect();
-            let rhs_imp = Bool::and(self.env.ctx, &rhs_refs);
+            let rhs_imp = Bool::and(self.envs[0].ctx, &rhs_refs);
             let rhs = Bool::implies(&rhs_imp, &self.shared_semantics(inner, 0));
             lhs & rhs
 
@@ -386,24 +386,40 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
         match formula {
             AstNode::Constant {value} => {
                 if value == "TRUE" {
-                    Bool::from_bool(self.env.ctx, true)
+                    Bool::from_bool(self.envs[0].ctx, true)
+                }else if value == "FALSE" {
+                    Bool::from_bool(self.envs[0].ctx, false)
                 }else {
-                    Bool::from_bool(self.env.ctx, false)
+                    panic!("Only Boolean constants are supported in AHLTL mode.")
                 }
             }
             AstNode::AIndexedProp {proposition, path_identifier, traj_identifier} => {
                 let mut constraints = Vec::with_capacity(self.k + 1);
                 let path_idx = self.path_mappings[path_identifier.as_str()];
                 for i in 0..=self.k {
-                    let ith_state = self.states[path_idx][i][proposition.as_str()].as_bool().unwrap();
+                    let ith_state = &self.states[path_idx][i]; // Containts all variables
+                    let proposition = match ith_state.get(proposition as &str) {
+                        Some(v) => v.as_bool().unwrap(), // variable exists
+                        None => {
+                            // Might be a predicate
+                            let env = &self.envs[path_idx];
+                            match env.predicates.get(proposition as &str) {
+                                Some(predicate) => {
+                                    // Apply the predicate and return
+                                    predicate(&env, env.ctx, &ith_state)
+                                }
+                                None => panic!("Udnefined variable or predicate `{}`", proposition)
+                            }
+                        }
+                    };
                     let ij_key = format!("{}_{}", i, j);
                     constraints.push(
                         &self.positions[traj_identifier.as_str()][path_identifier.as_str()][&ij_key] &
-                        ith_state
+                        proposition
                     );
                 }
                 let refs: Vec<&Bool> = constraints.iter().collect();
-                Bool::or(self.env.ctx, &refs)
+                Bool::or(self.envs[0].ctx, &refs)
             }
             AstNode::UnOp {operator, operand} => {
                 match operator {
@@ -414,15 +430,29 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
                                 let mut constraints = Vec::with_capacity(self.k + 1);
                                 let path_idx = self.path_mappings[path_identifier.as_str()];
                                 for i in 0..=self.k {
-                                    let ith_state = self.states[path_idx][i][proposition.as_str()].as_bool().unwrap();
+                                    let ith_state = &self.states[path_idx][i]; // Containts all variables
+                                    let proposition = match ith_state.get(proposition as &str) {
+                                        Some(v) => v.as_bool().unwrap(), // variable exists
+                                        None => {
+                                            // Might be a predicate
+                                            let env = &self.envs[path_idx];
+                                            match env.predicates.get(proposition as &str) {
+                                                Some(predicate) => {
+                                                    // Apply the predicate and return
+                                                    predicate(&env, env.ctx, &ith_state)
+                                                }
+                                                None => panic!("Udnefined variable or predicate `{}`", proposition)
+                                            }
+                                        }
+                                    };
                                     let ij_key = format!("{}_{}", i, j);
                                     constraints.push(
                                         &self.positions[traj_identifier.as_str()][path_identifier.as_str()][&ij_key] &
-                                        ith_state.not()
+                                        proposition.not()
                                     );
                                 }
                                 let refs: Vec<&Bool> = constraints.iter().collect();
-                                Bool::or(self.env.ctx, &refs)
+                                Bool::or(self.envs[0].ctx, &refs)
                             }
                             _ => self.shared_semantics(operand, j).not()
                         }
@@ -444,12 +474,12 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
                         let true_boxed = Box::new(
                             AstNode::Constant{value: String::from("TRUE")}
                         );
-                        let release_equiv = Box::new(AstNode::BinOp{
+                        let until_equiv = Box::new(AstNode::BinOp{
                             operator: BinOperator::Until,
                             lhs: true_boxed,
                             rhs: operand.clone(),
                         });
-                        self.shared_semantics(&release_equiv, j)
+                        self.shared_semantics(&until_equiv, j)
                     }
                     _ => unreachable!(),
                 }
@@ -461,7 +491,18 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
                         let lhs_bool = self.shared_semantics(lhs, j);
                         let rhs_bool = self.shared_semantics(rhs, j);
                         let pos = lhs_bool.clone() & rhs_bool.clone();
-                        let neg = lhs_bool.not() & rhs_bool.not();
+                        // Also need to consider the negation
+                        let lhs_negated_node = Box::new(AstNode::UnOp {
+                            operator: UnaryOperator::Negation,
+                            operand: lhs.clone(),
+                        });
+                        let lhs_neg_bool = self.shared_semantics(&lhs_negated_node, j);
+                        let rhs_negated_node = Box::new(AstNode::UnOp {
+                            operator: UnaryOperator::Negation,
+                            operand: rhs.clone(),
+                        });
+                        let rhs_neg_bool = self.shared_semantics(&rhs_negated_node, j);
+                        let neg = lhs_neg_bool.clone() & rhs_neg_bool.clone();
                         pos | neg
                     }
                     BinOperator::Conjunction => {

@@ -1,0 +1,13 @@
+{
+  "name": "NRP Incorrect",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["NRP_incorrect.smv", "NRP_incorrect.smv"],
+    "formula": "NRP_formula.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 15,
+    "semantics": "hpes"
+  }
+}

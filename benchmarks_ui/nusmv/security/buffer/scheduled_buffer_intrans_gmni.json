@@ -1,0 +1,13 @@
+{
+  "name": "Scheduled Buffer Intransitive GMNI",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["scheduled_buffer.smv", "scheduled_buffer.smv"],
+    "formula": "intrans_GMNI.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

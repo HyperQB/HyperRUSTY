@@ -1,0 +1,99 @@
+name: Push benchmarks folder to hyperqb-ui repo
+
+on:
+  push:
+    branches:
+      - verilog_integration # Change after merging it to main
+    paths:
+      - "benchmarks_ui/**"
+  workflow_dispatch:
+
+jobs:
+  sync-benchmarks-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout HyperRUSTY branch
+        uses: actions/checkout@v4
+        with:
+          ref: verilog_integration # Change after merging it to main
+
+      - name: Checkout hyperqb-ui repo
+        uses: actions/checkout@v4
+        with:
+          repository: HyperQB/hyperqb-ui
+          path: target
+          token: ${{ secrets.PAT_TOKEN }}
+          fetch-depth: 0 # Fetch all branches
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.32.8"
+
+      - name: Install Flutter dependencies
+        run: |
+          cd target
+          flutter pub get
+
+      - name: Copy folder and generate code
+        run: |
+          cd target
+          git checkout main
+          rsync -av --delete ../benchmarks_ui/ assets/benchmarks_ui/
+          dart run lib/generate_case_studies.dart
+
+      - name: Sync to main branch
+        run: |
+          cd target
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "Sync benchmarks_ui from HyperRUSTY and regenerate code" || echo "No changes to main"
+          git push origin main
+
+      - name: Sync to release branch
+        run: |
+          cd target
+          git checkout release
+          git pull origin release
+
+          # Copy the same changes to release branch
+          rsync -av --delete ../benchmarks_ui/ assets/benchmarks_ui/
+          dart run lib/generate_case_studies.dart
+
+          git add .
+          git commit -m "Sync benchmarks_ui from HyperRUSTY and regenerate code" || echo "No changes to release"
+          git push origin release
+
+  sync-github-io:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout HyperRUSTY branch
+        uses: actions/checkout@v4
+        with:
+          ref: verilog_integration # Change after merging it to main
+
+      - name: Checkout hyperqb.github.io repo
+        uses: actions/checkout@v4
+        with:
+          repository: HyperQB/hyperqb.github.io
+          path: target
+          token: ${{ secrets.PAT_TOKEN }}
+          fetch-depth: 0 # Fetch all branches
+
+      - name: Sync to main branch
+        run: |
+          cd target
+          git checkout main
+          git pull origin main
+
+          # Copy benchmarks_ui to case-studies folder
+          mkdir -p source/case-studies/
+          rsync -av --delete ../benchmarks_ui/ source/case-studies/benchmarks_ui/
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "Sync benchmarks_ui from HyperRUSTY" || echo "No changes to main"
+          git push origin main

@@ -1,0 +1,13 @@
+{
+  "name": "Test-Loop Request Response",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["rs1.smv", "rs2.smv"],
+    "formula": "rs.hq"
+  },
+  "options": {
+    "useLoopConditions": true,
+    "unrollingBound": null,
+    "semantics": null
+  }
+}

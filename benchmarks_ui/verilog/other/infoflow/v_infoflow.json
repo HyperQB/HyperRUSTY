@@ -1,0 +1,15 @@
+{
+  "name": "Infoflow",
+  "inputLanguage": "verilog",
+  "files": {
+    "nusmvFiles": null,
+    "verilogFiles": ["infoflow.v"],
+    "verilogBuildFiles": ["build_infoflow.ys", "build_infoflow.ys"],
+    "formula": "formula.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 3,
+    "semantics": "hpes"
+  }
+}

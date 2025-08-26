@@ -3,7 +3,7 @@ use ir::*;
 use enchelper::*;
 use z3::{Context,
     ast::{
-        Ast, Dynamic, Bool,
+        Ast, Dynamic, Bool, Int,
     }
 };
 use parser::{
@@ -399,7 +399,10 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
                 for i in 0..=self.k {
                     let ith_state = &self.states[path_idx][i]; // Containts all variables
                     let proposition = match ith_state.get(proposition as &str) {
-                        Some(v) => v.as_bool().unwrap(), // variable exists
+                        Some(v) => {
+                            println!("{:#?}", v);
+                            v.as_bool().unwrap()
+                        }, // variable exists
                         None => {
                             // Might be a predicate
                             let env = &self.envs[path_idx];
@@ -488,22 +491,89 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
                 match operator {
                     // TODO: Variable
                     BinOperator::Equality => {
-                        let lhs_bool = self.shared_semantics(lhs, j);
-                        let rhs_bool = self.shared_semantics(rhs, j);
-                        let pos = lhs_bool.clone() & rhs_bool.clone();
-                        // Also need to consider the negation
-                        let lhs_negated_node = Box::new(AstNode::UnOp {
-                            operator: UnaryOperator::Negation,
-                            operand: lhs.clone(),
-                        });
-                        let lhs_neg_bool = self.shared_semantics(&lhs_negated_node, j);
-                        let rhs_negated_node = Box::new(AstNode::UnOp {
-                            operator: UnaryOperator::Negation,
-                            operand: rhs.clone(),
-                        });
-                        let rhs_neg_bool = self.shared_semantics(&rhs_negated_node, j);
-                        let neg = lhs_neg_bool.clone() & rhs_neg_bool.clone();
-                        pos | neg
+                        // If the lhs or rhs is an integer, special care is required.
+                        match &**lhs {
+                            AstNode::Constant {value} => {
+                                // rhs must be a proposition
+                                match &**rhs {
+                                    AstNode::AIndexedProp {proposition, path_identifier, traj_identifier} => {
+                                        let parsed_int = value.parse::<i64>().unwrap();
+                                        let mut constraints = Vec::with_capacity(self.k + 1);
+                                        let path_idx = self.path_mappings[path_identifier.as_str()];
+                                        for i in 0..=self.k {
+                                            let ith_state = &self.states[path_idx][i]; // Containts all variables
+                                            // An integer node
+                                            let int_variable = match ith_state.get(proposition as &str) {
+                                                Some(v) => {
+                                                    v.as_int().expect(format!("Expected an integer proposition, found {:#?}", v).as_str())
+                                                }, // variable exists
+                                                None => panic!("Invalid Integer variable: {}", proposition),
+                                            };
+                                            let ij_key = format!("{}_{}", i, j);
+                                            constraints.push(
+                                                &self.positions[traj_identifier.as_str()][path_identifier.as_str()][&ij_key] &
+                                                int_variable._eq(&Int::from_i64(self.envs[0].ctx, parsed_int))
+                                            );
+                                        }
+                                        let refs: Vec<&Bool> = constraints.iter().collect();
+                                        Bool::or(self.envs[0].ctx, &refs)
+                                    }
+                                    _ => panic!("Expected an integer proposition, found: {:#?}", rhs),
+                                }
+                            },
+                            _ => {
+                                // Also do the check for rhs
+                                match &**rhs {
+                                    AstNode::Constant {value} => {
+                                        // rhs must be a proposition
+                                        match &**lhs {
+                                            AstNode::AIndexedProp {proposition, path_identifier, traj_identifier} => {
+                                                let parsed_int = value.parse::<i64>().unwrap();
+                                                let mut constraints = Vec::with_capacity(self.k + 1);
+                                                let path_idx = self.path_mappings[path_identifier.as_str()];
+                                                for i in 0..=self.k {
+                                                    let ith_state = &self.states[path_idx][i]; // Containts all variables
+                                                    // An integer node
+                                                    let int_variable = match ith_state.get(proposition as &str) {
+                                                        Some(v) => {
+                                                            v.as_int().expect(format!("Expected an integer proposition, found {:#?}", v).as_str())
+                                                        }, // variable exists
+                                                        None => panic!("Invalid Integer variable: {}", proposition),
+                                                    };
+                                                    let ij_key = format!("{}_{}", i, j);
+                                                    constraints.push(
+                                                        &self.positions[traj_identifier.as_str()][path_identifier.as_str()][&ij_key] &
+                                                        int_variable._eq(&Int::from_i64(self.envs[0].ctx, parsed_int))
+                                                    );
+                                                }
+                                                let refs: Vec<&Bool> = constraints.iter().collect();
+                                                Bool::or(self.envs[0].ctx, &refs)
+                                            },
+                                            _ => panic!("Expected an integer proposition, found: {:#?}", rhs),
+                                        }
+                                    },
+                                    _ => {
+                                        // Boolean equality
+                                        let lhs_bool = self.shared_semantics(lhs, j);
+                                        let rhs_bool = self.shared_semantics(rhs, j);
+                                        let pos = lhs_bool.clone() & rhs_bool.clone();
+                                        // Also need to consider the negation
+                                        let lhs_negated_node = Box::new(AstNode::UnOp {
+                                            operator: UnaryOperator::Negation,
+                                            operand: lhs.clone(),
+                                        });
+                                        let lhs_neg_bool = self.shared_semantics(&lhs_negated_node, j);
+                                        let rhs_negated_node = Box::new(AstNode::UnOp {
+                                            operator: UnaryOperator::Negation,
+                                            operand: rhs.clone(),
+                                        });
+                                        let rhs_neg_bool = self.shared_semantics(&rhs_negated_node, j);
+                                        let neg = lhs_neg_bool.clone() & rhs_neg_bool.clone();
+                                        pos | neg
+                                    }
+                                }
+                            }
+                        }
                     }
                     BinOperator::Conjunction => {
                         let lhs_bool = self.shared_semantics(lhs, j);

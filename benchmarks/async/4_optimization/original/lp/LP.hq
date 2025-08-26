@@ -1,0 +1,1 @@
+Forall A . Forall B . E t .  G(out_public[A][t] = out_public[B][t])

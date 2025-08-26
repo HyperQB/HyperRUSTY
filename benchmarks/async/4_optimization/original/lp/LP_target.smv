@@ -5,7 +5,7 @@
     int_x: 0..15;
     int_k: 0..3;
     in_secret: 0..3;
-    public_out: 0..3;
+    out_public: 0..3;
 
   ASSIGN
 
@@ -16,13 +16,13 @@
     -- L4: {x := in_secretput();}
     -- L5: else {x := x + x;}
     -- L6: k := k + 1;
-    -- L7: public_output = (x % k);
+    -- L7: out_publicput = (x % k);
     -- L8: while (k < 3) {
     -- L9: if (k == 0) {
     -- L10:  x := in_secretput();}
     -- L11: else {x := x + x;}
     -- L12: k := k + 1;
-    -- L13: public_output(x % k);
+    -- L13: out_publicput(x % k);
     -- L14: END
   init(step):= 0;
   next(step):=
@@ -53,9 +53,9 @@
     case
       ((int_x+int_x)>15): 15;
       (step=4) : in_secret;
-      (step=5) : int_x+int_x;
+      (step=5) : (int_x + int_x);
       (step=10) : in_secret;
-      (step=11) : int_x+int_x;
+      (step=11) : (int_x + int_x);
       TRUE: int_x;
     esac;
 
@@ -68,12 +68,12 @@
       TRUE: int_k;
     esac;
 
-  init(public_out) := 0;
-  next(public_out) :=
+  init(out_public) := 0;
+  next(out_public) :=
     case
-      ((step=7)& !(int_k=0)): int_x mod int_k;
-      ((step=13)& !(int_k=0)): int_x mod int_k;
-      TRUE: public_out;
+      ((step=7)& !(int_k=0)): (int_x mod int_k);
+      ((step=13)& !(int_k=0)): (int_x mod int_k);
+      TRUE: out_public;
     esac;
 
   init(in_secret) := {0, 1, 2, 3};

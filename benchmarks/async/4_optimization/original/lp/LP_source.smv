@@ -43,7 +43,7 @@
     case
       ((int_x+int_x)>15): 15;
       (step=5) : in_secret;
-      (step=6) : int_x+int_x;
+      (step=6) : (int_x + int_x);
       TRUE: int_x;
     esac;
 
@@ -51,7 +51,7 @@
   next(int_k) :=
     case
       (int_k=3): 3;
-      (step=7) : int_k+1;
+      (step=7) : int_k + 1;
       TRUE: int_k;
     esac;
 

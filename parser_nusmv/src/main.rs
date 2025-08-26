@@ -1,6 +1,7 @@
 extern crate regex;
 
 use std::collections::HashMap;
+use std::ops::Mul;
 use z3::{Config, Context};
 use z3::ast::{Bool, Int};
 use z3::ast::Ast; // needed for `.eq()` etc.
@@ -393,130 +394,6 @@ pub struct ParsedModel {
     pub predicates: HashMap<String, String>,
 }
 
-// issue: losing
-// pub fn parse_flattened_nuxmv(input: &str) -> ParsedModel {
-//     let mut variables = Vec::new();
-//     let mut inits = HashMap::new();
-//     let mut transitions: Vec<(String, String, String)> = vec![];
-//     let mut predicates = HashMap::new();
-
-
-//     // Parse VAR section
-//     let var_decl_re = Regex::new(r"(?m)^\s*(\w+)\s*:\s*([\w{},\s]+);").unwrap();
-//     for cap in var_decl_re.captures_iter(input) {
-//         let name = cap[1].to_string();
-//         let typ_raw = cap[2].trim();
-
-//         // patch: TRUE somehow get registered unintentionally
-//         let reserved = ["TRUE", "FALSE"];
-//         if reserved.contains(&name.as_str()) {
-//             continue; // Skip reserved keywords
-//         }
-
-//         let sort = 
-//         if typ_raw == "boolean" {
-//             ParsedVarType::Bool { init: None }
-//         } else if typ_raw.starts_with('{') && typ_raw.ends_with('}') {
-//             // Parse enumerated set as bounded Int domain
-//             let values: Vec<i64> = typ_raw[1..typ_raw.len() - 1]
-//                 .split(',')
-//                 .filter_map(|s| s.trim().parse::<i64>().ok())
-//                 .collect();
-
-//             if values.is_empty() {
-//                 // Invalid set: treat as unbounded int --> should not happen 
-//                 ParsedVarType::Int {
-//                     init: None,
-//                     lower: None,
-//                     upper: None,
-//                 }
-//             } else {
-//                 let (min, max) = values
-//                     .iter()
-//                     .fold((i64::MAX, i64::MIN), |(lo, hi), &v| (lo.min(v), hi.max(v)));
-
-//                 ParsedVarType::Int {
-//                     init: None,
-//                     lower: Some(min),
-//                     upper: Some(max),
-//                 }
-//             }
-//         } else {
-//             // fallback: treat unknown types as unbounded integer
-//             ParsedVarType::Int {
-//                 init: None,
-//                 lower: None,
-//                 upper: None,
-//             }
-//         };
-
-//         variables.push(
-//             ParsedVariable {
-//                 name,
-//                 sort,
-//             },
-//         );
-//     }
-
-//     // Parse ASSIGN init(...) := ...
-//     let init_re = Regex::new(r"init\((\w+)\)\s*:=\s*(.+);").unwrap();
-//     for cap in init_re.captures_iter(input) {
-//         let var = cap[1].to_string();
-//         let val = cap[2].trim().trim_end_matches(';').to_string();
-//         inits.insert(var, val);
-//     }
-
-//     // Parse ASSIGN next(...) := ...
-//     let next_assign_re = Regex::new(r"next\((\w+)\)\s*:=\s*(.*)").unwrap();
-//     let mut lines = input.lines().map(str::trim).peekable();
-//     let mut current_var: Option<String> = None;
-//     while let Some(line) = lines.next() {
-//         if let Some(cap) = next_assign_re.captures(line) {
-//             let var = cap[1].to_string();
-//             let rhs = cap[2].trim();
-
-//             if rhs.starts_with("case") {
-//                 // Start collecting the full case block
-//                 let mut case_lines = Vec::new();
-
-//                 // First line may include guard (e.g., "case x : y + 1;")
-//                 if let Some(after_case) = rhs.strip_prefix("case").map(str::trim) {
-//                     if !after_case.is_empty() {
-//                         case_lines.push(after_case.to_string());
-//                     }
-//                 }
-
-//                 while let Some(l) = lines.next() {
-//                     let trimmed = l.trim();
-//                     if trimmed.eq_ignore_ascii_case("esac;") {
-//                         break;
-//                     }
-//                     case_lines.push(trimmed.to_string());
-//                 }
-
-//                 for case_line in case_lines {
-//                     if let Some((guard, update)) = case_line.split_once(':') {
-//                         let guard = guard.trim().to_string();
-//                         let update = update.trim().trim_end_matches(';').to_string();
-//                         transitions.push((var.clone(), guard, update));
-//                     }
-//                 }
-//             } else {
-//                 // It's a simple assignment: next(x) := expr;
-//                 let update = rhs.trim_end_matches(';').to_string();
-//                 transitions.push((var, "TRUE".to_string(), update));
-//             }
-//         }
-//     }
-//     // println!("{:#?}", transitions); // DEBUG
-
-//     ParsedModel {
-//         variables,
-//         inits,
-//         transitions,
-//         predicates,
-//     }
-// }
 
 pub fn parse_original_smv(input: &str) -> ParsedModel {
     // println!("{}", input);
@@ -1010,7 +887,7 @@ pub fn parse_condition<'ctx>(
                 return Int::from_i64(ctx, n).into();
             }
 
-            let precedence = vec!["|", "&", "!=", ">=", "<=", "=", ">", "<", "+", "-"];
+            let precedence = vec!["|", "&", "!=", ">=", "<=", "=", ">", "<",  "*", "mod", "/", "+", "-"];
 
             for op in &precedence {
                 let mut depth = 0;
@@ -1051,6 +928,9 @@ pub fn parse_condition<'ctx>(
                     return match *op {
                         "+" => lhs_expr.as_int().unwrap().add(&rhs_expr.as_int().unwrap()).into(),
                         "-" => lhs_expr.as_int().unwrap().sub(&rhs_expr.as_int().unwrap()).into(),
+                        "*" => lhs_expr.as_int().unwrap().mul(&rhs_expr.as_int().unwrap()).into(),
+                        "/" => lhs_expr.as_int().unwrap().div(&rhs_expr.as_int().unwrap()).into(),
+                        "mod" => lhs_expr.as_int().unwrap().modulo(&rhs_expr.as_int().unwrap()).into(),
                         "!=" => lhs_expr._eq(&rhs_expr).not().into(),
                         "=" => lhs_expr._eq(&rhs_expr).into(),
                         ">" => lhs_expr.as_int().unwrap().gt(&rhs_expr.as_int().unwrap()).into(),
@@ -1073,10 +953,11 @@ pub fn parse_condition<'ctx>(
             }
 
             // Base case: must be variable or predicate
+            // println!("{}", s);
             if let Some(dyn_val) = smv_env.variables.get(s) {
                 match dyn_val.sort {
-                    VarType::Bool { .. } => to_dyn!(bool_var!(state, s)),
-                    VarType::Int { .. } => to_dyn!(int_var!(state, s)),
+                    VarType::Bool { .. }    => to_dyn!(bool_var!(state, s)),
+                    VarType::Int { .. }     => to_dyn!(int_var!(state, s)),
                     VarType::BVector { .. } => to_dyn!(bv_var!(state, s)),
                 }
             } else if let Some(pred_fn) = smv_env.predicates.get(s) {

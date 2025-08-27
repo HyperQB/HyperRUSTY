@@ -310,10 +310,10 @@
 
 #=== Queue ===#
 
-time cargo run --release -- -n benchmarks/21_queue/concurrent.smv benchmarks/21_queue/atomic.smv -f benchmarks/21_queue/lin.hq -k 10 -s hpes 
+# time cargo run --release -- -n benchmarks/21_queue/concurrent.smv benchmarks/21_queue/atomic.smv -f benchmarks/21_queue/lin.hq -k 10 -s hpes 
 
 
-time AutoHyper/app/AutoHyper --nusmv benchmarks/21_queue/concurrent.smv benchmarks/21_queue/atomic.smv benchmarks/AH_formulas/21.hq --log 
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/21_queue/concurrent.smv benchmarks/21_queue/atomic.smv benchmarks/AH_formulas/21.hq --log 
 
 
 
@@ -362,13 +362,15 @@ time AutoHyper/app/AutoHyper --nusmv benchmarks/21_queue/concurrent.smv benchmar
 
 #=== A-HLTL cases ===#
 
-# #=== ACDB-original ===#
-# time cargo run --release -- -n benchmarks/async/1_acdb/original/acdb_proc1.smv benchmarks/async/1_acdb/original/acdb_proc2.smv -f benchmarks/async/1_acdb/original/acdb_formula1.hq -k 10 -m 20 -s hpes
+# #=== Test ===#
+time cargo run --release -- -n benchmarks/async/0_test/m1.smv benchmarks/async/0_test/m2.smv -f benchmarks/async/0_test/formula.hq -k 4 -m 5 -s hpes
 
+# #=== ACDB-original ===#
+# time cargo run --release -- -n benchmarks/async/1_acdb/original/acdb_flattened.smv benchmarks/async/1_acdb/original/acdb_flattened.smv -f benchmarks/async/1_acdb/original/acdb_formula1.hq -k 6 -m 12 -s hpes
 
 
 #=== ACDB-with_ndet ===#
-# time cargo run --release -- -n benchmarks/async/1_acdb/with_ndet/acdb_proc1.smv benchmarks/async/1_acdb/with_ndet/acdb_proc2.smv -f benchmarks/async/1_acdb/with_ndet/acdb_formula2.hq -k 10 -m 20 -s hpes
+# time cargo run --release -- -n benchmarks/async/1_acdb/with_ndet/acdb_flattened.smv benchmarks/async/1_acdb/with_ndet/acdb_flattened.smv -f benchmarks/async/1_acdb/with_ndet/acdb_formula2.hq -k 8 -m 16 -s hpes
 
 
 
@@ -379,7 +381,7 @@ time AutoHyper/app/AutoHyper --nusmv benchmarks/21_queue/concurrent.smv benchmar
 
 
 #=== Optimization - LP ===#
-# time cargo run --release -- -n benchmarks/async/4_optimization/original/lp/LP_target.smv benchmarks/async/4_optimization/original/lp/LP_target.smv -f benchmarks/async/4_optimization/original/lp/LP.hq -k 22 -m 44 -s hpes
+# time cargo run --release -- -n benchmarks/async/4_optimization/original/lp/LP_source.smv benchmarks/async/4_optimization/original/lp/LP_target.smv -f benchmarks/async/4_optimization/original/lp/LP.hq -k 23 -m 45 -s hpes
 
 
 

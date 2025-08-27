@@ -1,1 +1,1 @@
-Forall A . Exists B . E t . F~(HIGH[A][t] = HIGH[B][t]) & G( (obs_printA[A][t] = obs_printA[B][t]) & (obs_printB[A][t] = obs_printB[B][t]) ) 
+Forall A . Exists B . E t . F~(in_HIGH[A][t] = in_HIGH[B][t]) & G( (obs_printA[A][t] = obs_printA[B][t]) & (obs_printB[A][t] = obs_printB[B][t]) &  (obs_printC[A][t] = obs_printC[B][t]) & (obs_printD[A][t] = obs_printD[B][t]) ) 

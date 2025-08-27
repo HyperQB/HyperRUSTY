@@ -52,8 +52,6 @@ MODULE program(initline, var_Y, var_size, offset)
 		var_temp_proc2: 0..4;
 		halt: boolean;
 
-
-
 	ASSIGN
 		init(halt):= FALSE;
 		next(halt):=

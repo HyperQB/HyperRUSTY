@@ -387,4 +387,4 @@
 
 
 #=== C program ===#
-time cargo run --release -- --cprog benchmarks/c/obliv_c/obliv_bits.c benchmarks/c/obliv_c/obliv_bits.c -f benchmarks/c/obliv_c/formula.hq -k 22 -s hpes -c
+./target/release/hyperrusty --cprog benchmarks/c/obliv_c/obliv_bits.c benchmarks/c/obliv_c/obliv_bits.c -f benchmarks/c/obliv_c/formula.hq -k 22 -s hpes -c

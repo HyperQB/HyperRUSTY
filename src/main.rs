@@ -1,10 +1,11 @@
 #![allow(warnings)]
 use std::fs;
 use std::mem;
-use std::io::{self, Write};
 use std::process;
+use std::path::Path;
 use std::path::PathBuf;
 use std::time::Instant;
+use std::io::{self, Write};
 use ir::*;
 use llvm::*;
 use parser::*;
@@ -318,7 +319,8 @@ fn main() {
                 Ok(path) => path,
                 Err(e) => panic!("Error generating LLVM IR: {}", e),
             };
-            println!("{:?}", ll_path);
+            let code: String = String::from("./tmp.ll");
+            let ll_path = Path::new(&code);
             let module = llvm_analyzer::load_module_from_path(ll_path).unwrap();
             let vars = llvm_analyzer::collect_vars(&module);
             // Flatten instructions and compute block entry PCs

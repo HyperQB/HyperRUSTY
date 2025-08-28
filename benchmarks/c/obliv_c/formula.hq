@@ -1,0 +1,1 @@
+Forall A . Forall B . G(%destUnknown[A] = %destUnknown[B]) & (%destKnown[A] = %destKnown[B])

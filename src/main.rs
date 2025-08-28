@@ -6,6 +6,7 @@ use std::process;
 use std::path::PathBuf;
 use std::time::Instant;
 use ir::*;
+use llvm::*;
 use parser::*;
 use enchelper::*;
 use encoder::*;
@@ -38,6 +39,14 @@ fn main() {
         .arg(
             arg!(
                 -n --nusmv <FILE> "NuSMV"
+            )
+            .required(false)
+            .num_args(1..)
+            .value_parser(value_parser!(PathBuf)),
+        )
+        .arg(
+            arg!(
+                --cprog <FILE> "C program"
             )
             .required(false)
             .num_args(1..)
@@ -105,7 +114,7 @@ fn main() {
             .value_parser(value_parser!(PathBuf)),
         )
         .group(ArgGroup::new("input")
-            .args(["verilog", "nusmv"])
+            .args(["verilog", "nusmv", "cprog"])
             .required(true)
             .multiple(false)
         );
@@ -273,6 +282,111 @@ fn main() {
             };
             println!("Solve Time: {}", val_str);
         }
+    }else if let Some(c_programs) = matches.get_many::<PathBuf>("cprog") {
+        // NuSMV Path
+        let program_paths: Vec<_> = c_programs.cloned().collect();
+
+        let formula = fs::read_to_string(formula_path).expect("Failed to read the formula");
+        let mut ast_node = parse(&formula).expect("Failed parsing the formula");
+
+        // Should we use the negation for counterexample generation?
+        let mut witness : bool = false;
+        if *matches.get_one::<bool>("counterexample").unwrap() {
+            witness = true;
+            ast_node = negate_formula(&ast_node);
+        }
+
+        let path_identifiers: Vec<&str> = get_path_identifiers(&ast_node);
+
+        if program_paths.len() != path_identifiers.len() {
+            panic!("ERROR: number of provided models and number of path quantifiers do not match!");
+        }
+
+        let mut cfg = Config::new();
+        cfg.set_model_generation(true);
+        let ctx = Context::new(&cfg);
+        
+        let mut parsed_modules = Vec::new();
+        let mut envs = Vec::new();
+
+        // Start the timer for model parsing
+        let start = Instant::now();
+
+        for i in 0..path_identifiers.len() {
+            let prog_path = &program_paths[i];
+            let ll_path = match clang::generate_tmp_ll_from_c(prog_path) {
+                Ok(path) => path,
+                Err(e) => panic!("Error generating LLVM IR: {}", e),
+            };
+            println!("{:?}", ll_path);
+            let module = llvm_analyzer::load_module_from_path(ll_path).unwrap();
+            let vars = llvm_analyzer::collect_vars(&module);
+            // Flatten instructions and compute block entry PCs
+            let (instr_list, map_bb_start_pc) = llvm_analyzer::flatten_instructions(&module);
+            // Compute successors (structured, uses module to resolve terminators)
+            let succs = llvm_analyzer::compute_successors(&module, &instr_list, &map_bb_start_pc);
+            // Build transitions
+            let transitions = llvm_analyzer::build_transitions(&module, &instr_list, &vars, &succs, &map_bb_start_pc);
+            parsed_modules.push((vars, transitions, instr_list.len()));
+        }
+
+        // Creating environments
+        for (vars, transitions, bound) in parsed_modules.iter() {
+            let env = c_parser::create_ts_from_c(&ctx, vars, transitions, *bound);
+            envs.push(env);
+        }
+        let duration = start.elapsed();
+        let secs = duration.as_secs_f64();
+        println!("Model Creation Time: {}", secs);
+
+        // Start the timer for encoding
+        let start = Instant::now();
+        let encoding = get_z3_encoding(&envs, &ast_node, unrolling_bound, None, semantics, witness);
+        let duration = start.elapsed();
+        let secs = duration.as_secs_f64();
+        println!("Encoding Time: {}", secs);
+
+        // Create a new solver
+        let solver = Solver::new(&ctx);
+        solver.assert(&encoding);
+        match solver.check() {
+            SatResult::Sat => {
+                // Is counterexample set?
+                if witness {
+                    println!("result: unsat.");
+                    let model = solver.get_model().unwrap();
+                    let grouped = extract_grouped_model(&model);
+                    for (state, entries) in grouped {
+                        println!("\nState {state}:");
+                        for (var, val) in entries {
+                            println!("  {var} = {val}");
+                        }
+                    }
+
+                }else {
+                    println!("result: sat.");
+                }
+            },
+            SatResult::Unsat => {
+                if witness {
+                    println!("result: sat.");
+                }else {
+                    println!("result: unsat.");
+                }
+            },
+            SatResult::Unknown => {
+                println!("result: unknown.");
+            }
+        };
+        // grab the statistics of the solver
+        let stats = solver.get_statistics();
+        let val_str = match stats.value("time").unwrap() {
+            StatisticsValue::UInt(u)   => u.to_string(),
+            StatisticsValue::Double(d) => d.to_string(),
+        };
+        println!("Solve Time: {}", val_str);
+
+
     } else {
         // Verilog Path
         // TODO: Duplicate code. Needs to be managed

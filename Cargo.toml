@@ -5,13 +5,13 @@ edition = "2024"
 
 [dependencies]
 z3 = "0.13.0"
-clap = { version = "4.5.40", features = ["cargo"] }
-parser = { path = "./parser" }
 ir = { path = "./ir" }
+llvm = { path = "./llvm" }
+parser = { path = "./parser" }
 encoder = { path = "./encoder" }
 enchelper = { path = "./enchelper" }
+hqb_verilog = { path = "./verilog" }
 parser_nusmv = { path = "./parser_nusmv" }
 unroller_qbf = { path = "./unroller_qbf" }
-hqb_verilog = { path = "./verilog" }
 loop_conditions = { path = "./loop_conditions" }
-fs = "0.0.5"
+clap = { version = "4.5.40", features = ["cargo"] }

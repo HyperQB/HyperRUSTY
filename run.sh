@@ -363,7 +363,7 @@
 #=== A-HLTL cases ===#
 
 # #=== Test ===#
-time cargo run --release -- -n benchmarks/async/0_test/m1.smv benchmarks/async/0_test/m2.smv -f benchmarks/async/0_test/formula.hq -k 4 -m 5 -s hpes
+# time cargo run --release -- -n benchmarks/async/0_test/m1.smv benchmarks/async/0_test/m2.smv -f benchmarks/async/0_test/formula.hq -k 4 -m 5 -s hpes
 
 # #=== ACDB-original ===#
 # time cargo run --release -- -n benchmarks/async/1_acdb/original/acdb_flattened.smv benchmarks/async/1_acdb/original/acdb_flattened.smv -f benchmarks/async/1_acdb/original/acdb_formula1.hq -k 6 -m 12 -s hpes
@@ -386,3 +386,5 @@ time cargo run --release -- -n benchmarks/async/0_test/m1.smv benchmarks/async/0
 
 
 
+#=== C program ===#
+time cargo run --release -- --cprog benchmarks/c/obliv_c/obliv_bits.c benchmarks/c/obliv_c/obliv_bits.c -f benchmarks/c/obliv_c/formula.hq -k 22 -s hpes -c

@@ -1,0 +1,10 @@
+[package]
+name = "llvm"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+z3 = "0.13"
+indexmap = "2.10"
+ir = { path = "../ir" }
+llvm-ir = { version = "0.11.3", features = ["llvm-17"] }

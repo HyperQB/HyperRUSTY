@@ -9,18 +9,16 @@ VAR
     LEFT : boolean;
     UP: boolean;
     DOWN: boolean;
-    FAIL : boolean;
+    fAIL : boolean;
     gOAL : boolean;
     RIGHT: boolean;
     
-
-
-
 ASSIGN
     init(gOAL) := FALSE;
     next(gOAL) := ((x_axis=7 & y_axis=5));
-    init(FAIL) := FALSE;
-    next(FAIL) := (x_axis=1 & y_axis=3)
+
+    init(fAIL) := FALSE;
+    next(fAIL) := (x_axis=1 & y_axis=3)
         | (x_axis=1 & y_axis=3)
         | (x_axis=1 & y_axis=5)
         | (x_axis=1 & y_axis=6)
@@ -694,7 +692,7 @@ ASSIGN
     next(y_axis) :=
         case
             (TOKEN=1) : y_axis;
-            -- (FAIL): y_axis;
+            -- (fAIL): y_axis;
             (y_axis=0 & UP) : {1};
 
             (y_axis=1 & UP & DOWN) : {2,0};
@@ -761,7 +759,7 @@ ASSIGN
 DEFINE
     -- gOAL := ((x_axis=7 & y_axis=5));
 
-    -- FAIL := (x_axis=1 & y_axis=3)
+    -- fAIL := (x_axis=1 & y_axis=3)
     --     | (x_axis=1 & y_axis=3)
     --     | (x_axis=1 & y_axis=5)
     --     | (x_axis=1 & y_axis=6)

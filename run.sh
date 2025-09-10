@@ -20,9 +20,15 @@
 # echo "bakery 7"
 # time cargo run --release -- -n benchmarks/1_bakery/bakery7.smv benchmarks/1_bakery/bakery7.smv -f benchmarks/1_bakery/symmetry7.hq -k 10 -s hpes
 
-#cargo run --release -- -n benchmarks/1_bakery/bakery9.smv benchmarks/1_bakery/bakery9.smv -f benchmarks/1_bakery/symmetry9.hq -k 10 -s hpes
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/1_bakery/bakery7.smv benchmarks/AH_formulas/1.7.hq --log --witness
+
+# cargo run --release -- -n benchmarks/1_bakery/bakery9.smv benchmarks/1_bakery/bakery9.smv -f benchmarks/1_bakery/symmetry9.hq -k 10 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/1_bakery/bakery9.smv benchmarks/AH_formulas/1.9.hq --log --witness
 
 # cargo run --release -- -n benchmarks/1_bakery/bakery11.smv benchmarks/1_bakery/bakery11.smv -f benchmarks/1_bakery/symmetry11.hq -k 10 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/1_bakery/bakery11.smv benchmarks/AH_formulas/1.11.hq --log --witness
 
 
 #=== Linearizability ===#
@@ -81,12 +87,12 @@
 #=== Robustness Planning ===#
 # time cargo run --release -- -n benchmarks/5_planning/robotic_robustness_100.smv benchmarks/5_planning/robotic_robustness_100.smv -f benchmarks/5_planning/robotic_robustness_formula.hq -k 20 -s hpes
 
-# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_robustness_100.smv benchmarks/AH_formulas/5.1.hq --log
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_robustness_100.smv benchmarks/AH_formulas/5.1.hq --log --incl-forq
 
 
 # time cargo run --release -- -n benchmarks/5_planning/robotic_robustness_400.smv benchmarks/5_planning/robotic_robustness_400.smv -f benchmarks/5_planning/robotic_robustness_formula.hq -k 40 -s hpes
 
-# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_robustness_400.smv benchmarks/AH_formulas/5.1.hq --log
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_robustness_400.smv benchmarks/AH_formulas/5.1.hq --log --incl-forq
 
 
 # time cargo run --release -- -n benchmarks/5_planning/robotic_robustness_1600.smv benchmarks/5_planning/robotic_robustness_1600.smv -f benchmarks/5_planning/robotic_robustness_formula.hq -k 40 -s hpes
@@ -108,9 +114,11 @@
 #=== Shortest Path Planning ===#
 # time cargo run --release -- -n benchmarks/5_planning/robotic_sp_100.smv benchmarks/5_planning/robotic_sp_100.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 20 -s hpes
 
-# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_sp_100.smv benchmarks/AH_formulas/5.2.hq
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_sp_100.smv benchmarks/AH_formulas/5.2.hq 
 
 # time cargo run --release -- -n benchmarks/5_planning/robotic_sp_400.smv benchmarks/5_planning/robotic_sp_400.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 40 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_sp_400.smv benchmarks/AH_formulas/5.2.hq --log
 
 # time cargo run --release -- -n benchmarks/5_planning/robotic_sp_1600.smv benchmarks/5_planning/robotic_sp_1600.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 80 -s hpes
 
@@ -145,7 +153,7 @@
 #=== Deniability ===#
 # time cargo run --release -- -n benchmarks/8_deniability/electronic_wallet.smv benchmarks/8_deniability/electronic_wallet.smv benchmarks/8_deniability/electronic_wallet.smv -f benchmarks/8_deniability/den.hq -k 10 -s hpes
 
-# time AutoHyper/app/AutoHyper --nusmv benchmarks/8_deniability/electronic_wallet.smv benchmarks/AH_formulas/8.hq --log
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/8_deniability/electronic_wallet.smv benchmarks/AH_formulas/8.hq --log --incl-forq
 
 
 
@@ -176,13 +184,13 @@
 #=== Non-determinism Experience ===#
 # time cargo run --release -- -n benchmarks/10_NIexp/ni_example.smv benchmarks/10_NIexp/ni_example.smv -f benchmarks/10_NIexp/tini.hq -k 10 -s hpes
 
-# time AutoHyper/app/AutoHyper --nusmv benchmarks/10_NIexp/ni_example.smv benchmarks/AH_formulas/10.1.hq
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/10_NIexp/ni_example.smv benchmarks/AH_formulas/10.1.hq --log --incl-forq
 
 
 
 # time cargo run --release -- -n benchmarks/10_NIexp/ni_example.smv benchmarks/10_NIexp/ni_example.smv -f benchmarks/10_NIexp/tsni.hq -k 10 -s hpes
 
-# time AutoHyper/app/AutoHyper --nusmv benchmarks/10_NIexp/ni_example.smv benchmarks/AH_formulas/10.2.hq
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/10_NIexp/ni_example.smv benchmarks/AH_formulas/10.2.hq --log --incl-forq
 
 
 
@@ -204,7 +212,7 @@
 # time cargo run --release -- -n benchmarks/12_mapsynth/msynth2_MM.smv  benchmarks/12_mapsynth/msynth2_MA.smv benchmarks/12_mapsynth/msynth2_MB.smv benchmarks/12_mapsynth/msynth2_MA.smv benchmarks/12_mapsynth/msynth2_MB.smv -f benchmarks/12_mapsynth/msynth2.hq -k 10 -s hpes
 
 
-# time AutoHyper/app/AutoHyper --nusmv benchmarks/12_mapsynth/msynth2_MM.smv  benchmarks/12_mapsynth/msynth2_MA.smv benchmarks/12_mapsynth/msynth2_MB.smv benchmarks/12_mapsynth/msynth2_MA.smv benchmarks/12_mapsynth/msynth2_MB.smv benchmarks/AH_formulas/12.2.hq --log
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/12_mapsynth/msynth2_MM.smv  benchmarks/12_mapsynth/msynth2_MA.smv benchmarks/12_mapsynth/msynth2_MB.smv benchmarks/12_mapsynth/msynth2_MA.smv benchmarks/12_mapsynth/msynth2_MB.smv benchmarks/AH_formulas/12.2.hq --log --incl-forq
 
 
 
@@ -224,15 +232,15 @@
 #=== NDET ===#
 # time cargo run --release -- -n benchmarks/14_ndet/NI_v1.smv benchmarks/14_ndet/NI_v1.smv -f benchmarks/14_ndet/NI.hq -k 10 -s hpes
 
-# time AutoHyper/app/AutoHyper --nusmv benchmarks/14_ndet/NI_v1.smv benchmarks/AH_formulas/14.hq --log --witness
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/14_ndet/NI_v1.smv benchmarks/AH_formulas/14.hq --log --witness --incl-forq 
 
 # time cargo run --release -- -n benchmarks/14_ndet/NI_v2.smv benchmarks/14_ndet/NI_v2.smv -f benchmarks/14_ndet/NI.hq -k 10 -s hpes
 
-# time AutoHyper/app/AutoHyper --nusmv benchmarks/14_ndet/NI_v2.smv benchmarks/AH_formulas/14.hq --log --witness
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/14_ndet/NI_v2.smv benchmarks/AH_formulas/14.hq --log --witness --incl-forq
 
 # time cargo run --release -- -n benchmarks/14_ndet/NI_v3.smv benchmarks/14_ndet/NI_v3.smv -f benchmarks/14_ndet/NI.hq -k 10 -s hpes
 
-# time AutoHyper/app/AutoHyper --nusmv benchmarks/14_ndet/NI_v3.smv benchmarks/AH_formulas/14.hq --log
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/14_ndet/NI_v3.smv benchmarks/AH_formulas/14.hq --log --incl-forq
 
 
 
@@ -368,16 +376,30 @@
 #=== A-HLTL cases ===#
 
 # #=== Test ===#
-# time cargo run --release -- -n benchmarks/async/0_test/m1.smv benchmarks/async/0_test/m2.smv -f benchmarks/async/0_test/formula.hq -k 4 -m 5 -s hpes
 
-# #=== ACDB-original ===#
-# time cargo run --release -- -n benchmarks/async/1_acdb/original/acdb_flattened.smv benchmarks/async/1_acdb/original/acdb_flattened.smv -f benchmarks/async/1_acdb/original/acdb_formula1.hq -k 6 -m 12 -s hpes
+time cargo run --release -- -n benchmarks/async/0_test/m1.smv benchmarks/async/0_test/m2.smv -f benchmarks/async/0_test/formula.hq -k 4 -m 8 -s hpes
 
 
-#=== ACDB-with_ndet ===#
-# time cargo run --release -- -n benchmarks/async/1_acdb/with_ndet/acdb_flattened.smv benchmarks/async/1_acdb/with_ndet/acdb_flattened.smv -f benchmarks/async/1_acdb/with_ndet/acdb_formula2.hq -k 8 -m 16 -s hpes
+#=== ACDB original ===#
+# time cargo run --release -- -n benchmarks/async/1_acdb/original/acdb_flattened.smv benchmarks/async/1_acdb/original/acdb_flattened.smv -f benchmarks/async/1_acdb/original/acdb.hq -k 6 -m 12 -s hpes
 
 
+#=== ACDB with_ndet ===#
+# time cargo run --release -- -n benchmarks/async/1_acdb/ndet/acdb_flattened.smv benchmarks/async/1_acdb/ndet/acdb_flattened.smv -f benchmarks/async/1_acdb/ndet/acdb_formula2.hq -k 8 -m 16 -s hpes
+
+
+#=== Concurrent Leak ===#
+# time cargo run --release -- -n benchmarks/async/2_concleaks/original/concleak_flatten.smv benchmarks/async/2_concleaks/original/concleak_flatten.smv -f benchmarks/async/2_concleaks/original/od.hq -k 11 -m 22 -s hpes
+
+
+
+#=== Speculative Execution - V1 ===#
+
+# time cargo run --release -- -n benchmarks/async/3_speculative/flattened/se_v1_nse.smv benchmarks/async/3_speculative/flattened/se_v1_nse.smv -f benchmarks/async/3_speculative/flattened/se_prop.hq -k 6 -m 12 -s hpes
+
+#=== Speculative Execution - V2 ===#
+
+# time cargo run --release -- -n benchmarks/async/3_speculative/flattened/se_v2_se.smv benchmarks/async/3_speculative/flattened/se_v2_nse.smv -f benchmarks/async/2_concleaks/original/se_prop.hq -k 6 -m 12 -s hpes
 
 
 
@@ -387,6 +409,22 @@
 
 #=== Optimization - LP ===#
 # time cargo run --release -- -n benchmarks/async/4_optimization/original/lp/LP_source.smv benchmarks/async/4_optimization/original/lp/LP_target.smv -f benchmarks/async/4_optimization/original/lp/LP.hq -k 23 -m 45 -s hpes
+
+
+#=== Optimization - EFLP ===#
+# time cargo run --release -- -n benchmarks/async/4_optimization/original/eflp/EFLP_source.smv benchmarks/async/4_optimization/original/eflp/EFLP_target.smv -f benchmarks/async/4_optimization/original/lp/LP.hq -k 32 -m 64 -s hpes
+
+
+
+#=== CACHE ===#
+# time cargo run --release -- -n benchmarks/async/5_cache/cache_flattened.smv benchmarks/async/5_cache/cache_flattened.smv -f benchmarks/async/5_cache/odnd.hq -k 13 -m 26 -s hpes
+
+
+
+
+
+
+
 
 
 

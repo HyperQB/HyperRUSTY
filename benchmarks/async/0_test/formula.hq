@@ -1,1 +1,2 @@
-Forall A . Exists B . E t . G~(obs_print[A][t] = obs_print[B][t]) 
+Forall A . Exists B . E t . 
+F(line[A][t] = 1) 

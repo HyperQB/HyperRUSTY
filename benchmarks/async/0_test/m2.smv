@@ -7,7 +7,6 @@ MODULE main
 	init(line) := 1;
 	next(line) :=
 		case
-			-- program2,diameter==5
 			(line=1) : {2}; 
 			(line=2) : {3}; 
 			TRUE: line;

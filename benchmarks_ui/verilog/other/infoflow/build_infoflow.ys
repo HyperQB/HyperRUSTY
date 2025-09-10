@@ -1,7 +1,0 @@
-# build.ys
-read_verilog -pwires verilog1.v
-hierarchy -check -top main
-proc
-flatten
-opt_clean -purge
-write_smt2 -stdt -wires model.smt2

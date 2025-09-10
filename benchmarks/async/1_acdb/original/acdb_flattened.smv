@@ -9,10 +9,13 @@ VAR
     in_HIGH  : boolean;
 
     -- flattened program instances
-    proc1_line : 1..5;
-    proc2_line : 6..11;
+    proc1.line : 1..5;
+    proc2.line : 6..11;
 
 ASSIGN
+    init(SCHEDULE) := 0;
+    next(SCHEDULE) := 0;
+
     init(in_HIGH) := {TRUE, FALSE};
     next(in_HIGH) := in_HIGH;
 
@@ -24,59 +27,58 @@ ASSIGN
     init(LOCKED):= FALSE;
     next(LOCKED) :=
         case
-            (proc1_line=2): TRUE;
-            (proc1_line=5): FALSE;
-            (proc2_line=9): TRUE;
-            (proc2_line=10): FALSE;
+            (proc1.line=2): TRUE;
+            (proc1.line=5): FALSE;
+            (proc2.line=9): TRUE;
+            (proc2.line=10): FALSE;
             TRUE: LOCKED;
         esac;
 
     ----------------------------------------------------------------
     -- proc1 instance (ID_one, initial line = 1)
     ----------------------------------------------------------------
-    init(proc1_line) := 1;
+    init(proc1.line) := 1;
 
-    next(proc1_line) :=
-        case
-            (!(SCHEDULE = ID_one)) : proc1_line;
-
-            -- program1, diameter = 4
-            (proc1_line = 1 & LOCKED)    : {1};   -- wait if LOCKED
-            (proc1_line = 1 & !LOCKED)   : {2};   -- else go to 2
-            (proc1_line = 2)             : {3};   -- LOCK it
-            (proc1_line = 3)             : {4};   -- print A
-            (proc1_line = 4)             : {5};   -- print B
-            (proc1_line = 5)             : {5};   -- UNLOCK, END
-
-            TRUE : proc1_line;
-        esac;
-
+    next(proc1.line) := 1;
+        -- case
+        --     (SCHEDULE = 0) : proc1.line;
+        --     -- (LOCKED) : proc1.line;
+        --     -- program1, diameter = 4
+        --     (proc1.line = 1 & LOCKED)    : {1};   -- wait if LOCKED
+        --     (proc1.line = 1 & !LOCKED)   : {2};   -- else go to 2
+        --     (proc1.line = 2)             : {3};   -- LOCK it
+        --     (proc1.line = 3)             : {4};   -- print A
+        --     (proc1.line = 4)             : {5};   -- print B
+        --     (proc1.line = 5)             : {5};   -- UNLOCK, END
+        --     TRUE : proc1.line;
+        -- esac;
     ----------------------------------------------------------------
     -- proc2 instance (ID_two, initline = 6)
     ----------------------------------------------------------------
-    init(proc2_line) := 6;
+    init(proc2.line) := 6;
 
-    next(proc2_line) :=
-        case
-            (!(SCHEDULE = ID_two)) : proc2_line;
-
-            -- program2, diameter = 5
-            (proc2_line = 6)             : {7};   -- print C
-            (proc2_line = 7 & in_HIGH)   : {8};   -- if in_HIGH, proceed
-            (proc2_line = 7 & !in_HIGH)  : {11};  -- skip to end
-            (proc2_line = 8 & LOCKED)    : {8};   -- wait if LOCKED
-            (proc2_line = 8 & !LOCKED)   : {9};   -- else proceed
-            (proc2_line = 9)             : {10};  -- LOCK
-            (proc2_line = 10)            : {11};  -- UNLOCK
-            (proc2_line = 11)            : {11};  -- print D, END
-
-            TRUE : proc2_line;
-        esac;
+    next(proc2.line) := 6;
+        -- case
+        --     (!(SCHEDULE = 1)) : proc2.line;
+        --     -- (LOCKED) : proc2.line;
+        --     -- program2, diameter = 5
+        --     (proc2.line = 6)             : {7};   -- print C
+        --     (proc2.line = 7 & in_HIGH)   : {8};   -- if in_HIGH, proceed
+        --     (proc2.line = 7 & !in_HIGH)  : {11};  -- skip to end
+        --     (proc2.line = 8 & LOCKED)    : {8};   -- wait if LOCKED
+        --     (proc2.line = 8 & !LOCKED)   : {9};   -- else proceed
+        --     (proc2.line = 9)             : {10};  -- LOCK
+        --     (proc2.line = 10)            : {11};  -- UNLOCK
+        --     (proc2.line = 11)            : {11};  -- print D, END
+        --     TRUE : proc2.line;
+        -- esac;
 
 	DEFINE
+        obs_printA := (proc1.line=3);
+		obs_printB := (proc1.line=4);
+		obs_printC := (proc2.line=6);
+		obs_printD := (proc2.line=11);
+
 		-- halting condition
-		halt := ((proc1_line=5) & (proc2_line=11));
-		obs_printA := (proc1_line=3);
-		obs_printB := (proc1_line=4);
-		obs_printC := (proc2_line=6);
-		obs_printD := (proc2_line=11);
+		halt := ((proc1.line=5) & (proc2.line=11));
+	

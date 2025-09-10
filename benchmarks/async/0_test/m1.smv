@@ -5,13 +5,12 @@ MODULE main
 
 	-- init(line) := 1;
 	init(line) := 1;
-	next(line) :=
-		case
-			-- program2,diameter==5
-			(line=1) : {2}; 
-			(line=2) : {3}; 
-			TRUE: line;
-		esac;
+	next(line) := 2;
+		-- case
+		-- 	(line=1) : 2; 
+		-- 	(line=2) : {3}; 
+		-- 	TRUE: line;
+		-- esac;
 
 	DEFINE
 		obs_print := (line=2) | (line=3);

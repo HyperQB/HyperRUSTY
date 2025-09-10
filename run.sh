@@ -1,10 +1,13 @@
-#!/bin/bash
+# !/bin/bash
 
 #cargo run --release -- -n mini.smv mini.smv -f mini.hq -k 3 -s pes 
 
 # AutoHyper/app/AutoHyper --nusmv mini.smv auto_mini.hq
 
-# cargo run --release -- -n benchmarks/0_infoflow/info.smv benchmarks/0_infoflow/info.smv -f benchmarks/0_infoflow/info.hq -k 10 -s hpes -q
+cargo run --release -- -n benchmarks/0_infoflow/info.smv benchmarks/0_infoflow/info.smv -f benchmarks/0_infoflow/info.hq -k 10 -s hpes -q 
+
+# time cargo run --release -- -n benchmarks/async/0_test/m1.smv benchmarks/async/0_test/m2.smv -f benchmarks/async/0_test/formula.hq -k 4 -m 8 -s hpes -q
+
 
 #=== BAKERY ===#
 
@@ -97,7 +100,7 @@
 
 # time cargo run --release -- -n benchmarks/5_planning/robotic_robustness_1600.smv benchmarks/5_planning/robotic_robustness_1600.smv -f benchmarks/5_planning/robotic_robustness_formula.hq -k 40 -s hpes
 
-# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_robustness_1600.smv benchmarks/AH_formulas/5.1.hq --log
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_robustness_1600.smv benchmarks/AH_formulas/5.1.hq --log --incl-forq
 
 
 # time cargo run --release -- -n benchmarks/5_planning/robotic_robustness_3600.smv benchmarks/5_planning/robotic_robustness_3600.smv -f benchmarks/5_planning/robotic_robustness_formula.hq -k 120 -s hpes
@@ -112,17 +115,17 @@
 
 
 #=== Shortest Path Planning ===#
-# time cargo run --release -- -n benchmarks/5_planning/robotic_sp_100.smv benchmarks/5_planning/robotic_sp_100.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 20 -s hpes
+# time cargo run --release -- -n benchmarks/5_planning/robotic_sp_100.smv benchmarks/5_planning/robotic_sp_100.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 20 -s hpes 
 
-# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_sp_100.smv benchmarks/AH_formulas/5.2.hq 
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_sp_100.smv benchmarks/AH_formulas/5.2.hq --witness
 
 # time cargo run --release -- -n benchmarks/5_planning/robotic_sp_400.smv benchmarks/5_planning/robotic_sp_400.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 40 -s hpes
 
-# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_sp_400.smv benchmarks/AH_formulas/5.2.hq --log
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_sp_400.smv benchmarks/AH_formulas/5.2.hq --log --witness
 
 # time cargo run --release -- -n benchmarks/5_planning/robotic_sp_1600.smv benchmarks/5_planning/robotic_sp_1600.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 80 -s hpes
 
-# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_sp_1600.smv benchmarks/AH_formulas/5.2.hq --log
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_sp_1600.smv benchmarks/AH_formulas/5.2.hq --log --witness
 
 # time cargo run --release -- -n benchmarks/5_planning/robotic_sp_3600.smv benchmarks/5_planning/robotic_sp_3600.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 120 -s hpes
 
@@ -175,7 +178,7 @@
 
 
 
-# time cargo run --release -- -n benchmarks/9_buffer/unscheduled_buffer.smv benchmarks/9_buffer/unscheduled_buffer.smv -f benchmarks/9_buffer/classic_OD.hq -k 10 -s hpes
+# time cargo run --release -- -n benchmarks/9_buffer/unscheduled_buffer.smv benchmarks/9_buffer/unscheduled_buffer.smv -f benchmarks/9_buffer/classic_OD.hq -k 10 -s hpes -c
 
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/9_buffer/unscheduled_buffer.smv benchmarks/AH_formulas/9.1.hq --log --witness
 
@@ -326,6 +329,23 @@
 
 
 
+#=== EMM_ABA ===#
+
+# time cargo run --release -- -n benchmarks/22_emm_aba/emm_aba_conc.smv benchmarks/22_emm_aba/emm_aba_seq.smv -f benchmarks/22_emm_aba/emm_aba.hq -k 6 -s hpes -c
+
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/22_emm_aba/emm_aba_conc.smv benchmarks/22_emm_aba/emm_aba_seq.smv benchmarks/AH_formulas/22.hq --log --witness --incl-forq 
+
+
+#=== Lazy list ===#
+
+# time cargo run --release -- -n benchmarks/23_lazy_list/lazy_list_conc.smv benchmarks/23_lazy_list/lazy_list_seq.smv -f benchmarks/23_lazy_list/lazy_list.hq -k 13 -s hpes -c
+
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/23_lazy_list/lazy_list_conc.smv benchmarks/23_lazy_list/lazy_list_seq.smv benchmarks/AH_formulas/23.hq --log --incl-forq
+
+
+
 
 #=== LOOP CONDITIONS EXAMPLES ===#
 
@@ -377,7 +397,7 @@
 
 # #=== Test ===#
 
-time cargo run --release -- -n benchmarks/async/0_test/m1.smv benchmarks/async/0_test/m2.smv -f benchmarks/async/0_test/formula.hq -k 4 -m 8 -s hpes
+# time cargo run --release -- -n benchmarks/async/0_test/m1.smv benchmarks/async/0_test/m2.smv -f benchmarks/async/0_test/formula.hq -k 4 -m 8 -s hpes
 
 
 #=== ACDB original ===#

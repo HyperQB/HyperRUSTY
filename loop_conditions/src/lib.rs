@@ -360,17 +360,37 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             }
             // Handle hyperLTL indexed propositions (e.g., a_state[A], b_state[B])
             AstNode::HIndexedProp { proposition, path_identifier } => {
-                let idx: &usize = mapping.get(path_identifier as &str).unwrap();
-                match idx {
-                    // Path identifier maps to model1
-                    0 => UnrollingReturn::Var(self.symstates1[i][proposition as &str].clone()),
-                    // Path identifier maps to model2
-                    1 => UnrollingReturn::Var(self.symstates2[j][proposition as & str].clone()),
-                    _ => panic!("wrong mapping")
+                // get idx (&usize -> usize)
+                let idx = *mapping
+                    .get(path_identifier.as_str())
+                    .expect("missing path_identifier in mapping");
+
+                // choose the state/env once, keep them alive after the match
+                let (curr_state, env) = match idx {
+                    0 => (&self.symstates1[i], &self.model1),
+                    1 => (&self.symstates2[j], &self.model2),
+                    _ => panic!("wrong mapping"),
+                };
+
+                // then use them
+                if let Some(v) = curr_state.get(proposition.as_str()) {
+                    if let Some(node) = v.as_bool() {
+                        UnrollingReturn::Bool(node)
+                    } else {
+                        UnrollingReturn::Var(v.clone())
+                    }
+                } else {
+                    match env.predicates.get(proposition.as_str()) {
+                        Some(predicate) => {
+                            // assuming signature like: fn(&Env, Ctx, &State) -> bool
+                            let clause = predicate(env, self.ctx, curr_state);
+                            UnrollingReturn::Bool(clause)
+                        }
+                        None => panic!("Undefined variable or predicate `{}`", proposition),
+                    }
                 }
             }
-
-        _ => unreachable!()
+            _ => unreachable!()
         }
     }
 

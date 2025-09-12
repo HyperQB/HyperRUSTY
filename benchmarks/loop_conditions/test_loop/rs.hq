@@ -1,1 +1,1 @@
-Forall A . Exists B . G(y[A] = x[B])
+Forall A . Exists B . G(secret[A] = secret[B])

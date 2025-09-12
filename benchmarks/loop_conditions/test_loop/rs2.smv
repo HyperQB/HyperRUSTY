@@ -6,6 +6,9 @@ ASSIGN
   init(x) := 1;
   next(x) := case
     x = 1 : {1, 2};
-    x = 2 : 1;
+    x = 2 : {1, 2};
     TRUE  : x;
   esac;
+
+  DEFINE
+    secret := (x = 2);

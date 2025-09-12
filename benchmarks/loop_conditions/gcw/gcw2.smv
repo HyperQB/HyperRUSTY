@@ -1,0 +1,14 @@
+MODULE main
+VAR
+  q : 0..4;
+
+ASSIGN
+  init(q) := 0;
+  next(q) := case
+    q = 0 : {1, 2, 3, 4};
+    q = 1 : 1;
+    q = 2 : 2;
+    q = 3 : 3;
+    q = 4 : 4;
+    TRUE  : q;
+  esac;

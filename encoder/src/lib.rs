@@ -258,6 +258,7 @@ pub fn complete_ahltl_encoding<'ctx>(ctx: &'ctx Context, formula: &AstNode, inne
 ****************************/
 
 fn generate_quantified_encoding<'ctx>(ctx: &'ctx Context, formula: &AstNode, paths: &Vec<Vec<EnvState<'ctx>>>, path_encodings: &Vec<Bool<'ctx>>, mapping: &HashMap<&str, usize>, inner: Bool<'ctx>) -> Bool<'ctx> {
+    println!("Formula: {:#?}", formula);
     match formula {
         AstNode::HAQuantifier {form, identifier} => {
             let idx = mapping.get(identifier as &str).unwrap();
@@ -293,7 +294,10 @@ fn generate_quantified_encoding<'ctx>(ctx: &'ctx Context, formula: &AstNode, pat
                 &generate_quantified_encoding(ctx, form, paths, path_encodings, mapping, inner)
             )
         }
-        _ => inner
+        _ => {
+            println!("{:#?}", inner);
+            inner
+        }
     }
 }
 

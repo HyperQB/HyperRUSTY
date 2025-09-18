@@ -1,0 +1,1 @@
+Exists A . Exists B . F ~(~(aeqb[A] | altb[A] | blta[A] | unordered[A]) & ~(aeqb[B] | altb[B] | blta[B] | unordered[B]) U ((aeqb[A] | altb[A] | blta[A] | unordered[A]) & (aeqb[B] | altb[B] | blta[B] | unordered[B])))

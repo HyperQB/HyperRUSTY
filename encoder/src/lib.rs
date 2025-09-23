@@ -295,7 +295,7 @@ fn generate_quantified_encoding<'ctx>(ctx: &'ctx Context, formula: &AstNode, pat
             )
         }
         _ => {
-            println!("{:#?}", inner);
+            //println!("{:#?}", inner);
             inner
         }
     }

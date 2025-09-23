@@ -15,12 +15,14 @@ pub fn unroll_from_smt_build(
     smt_path: &Path,
     bound: usize,
     trace_id: &str,
+    filter: Option<&Vec<String>>,
 ) -> Result<(String, Vec<String>, HashMap<String, String>), ExtractError> {
     yosys::run_yosys_with_build(_build_file_path)?;
     let smt_text = std::fs::read_to_string(&smt_path)?;
-    parser::unroll_in_place(&smt_text, top_module_name, bound, trace_id, None)
+    parser::unroll_in_place(&smt_text, top_module_name, bound, trace_id, filter)
 }
 
+// deprecated
 pub fn unroll_from_verilog(
     verilog_path: &Path,
     top_module_name: &str,

@@ -365,12 +365,11 @@
 
 #RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/build_infoflow.ys verilog_benchmarks/build_infoflow.ys -t main -o model.smt2 -f verilog_benchmarks/formula.hq -k 3 -s hpes
 
-#time cargo run --release -- -v verilog_benchmarks/LED/build.ys verilog_benchmarks/LED/build.ys -t light -o model.smt2 -f verilog_benchmarks/formula.hq -k 101 -s hpes
+#=== LED ===#
+#cargo run --release -- -v benchmarks/verilog/LED/build.ys benchmarks/verilog/LED/build.ys -t light -o model.smt2 -f benchmarks/verilog/LED/formula.hq -k 101 -s hpes
 
-# time cargo run --release -- -v verilog_benchmarks/LED/build.ys verilog_benchmarks/LED/build.ys -t light -o model.smt2 -f verilog_benchmarks/formula.hq -k 2 -s pes
-
-#=== True Random Number Generator ===#
-#RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/TRNG/build.ys verilog_benchmarks/TRNG/build.ys -t trng_wrap -o trng.smt2 -f verilog_benchmarks/TRNG/formula_1.hq -k 1 -s opt
+#=== TRNG ===#
+RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/TRNG/build.ys verilog_benchmarks/TRNG/build.ys -t trng_wrap -o trng.smt2 -f verilog_benchmarks/TRNG/formula_1.hq -k 1 -s opt
 
 #=== fmcp ===#
 #cargo run --release -- -v verilog_benchmarks/iodine-benchmarks/fpu/fcmp/verilog/build.ys verilog_benchmarks/iodine-benchmarks/fpu/fcmp/verilog/build.ys -t fcmp_top -o fcmp.smt2 -f verilog_benchmarks/iodine-benchmarks/fpu/fcmp/verilog/formula.hq -k 3 -s pes

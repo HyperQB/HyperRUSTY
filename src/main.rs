@@ -304,6 +304,9 @@ fn main() {
             ast_node = negate_formula(&ast_node);
         }
 
+        // Get propositions by path
+        let propositions = get_propositions_by_path(&ast_node);
+
         // Check if the number of models and quantifiers match
         let path_identifiers: Vec<&str> = get_path_identifiers(&ast_node);
         if build_paths.len() != path_identifiers.len() {
@@ -327,7 +330,7 @@ fn main() {
             let env = SMVEnv::new(&ctx);
             envs.push(env);
             // Get SMT2-LIB from each build file
-            let smt2_model = match unroll_from_smt_build(build_paths[i], top_module, yosys_out, unrolling_bound, path_identifiers[i]) {
+            let smt2_model = match unroll_from_smt_build(build_paths[i], top_module, yosys_out, unrolling_bound, path_identifiers[i], propositions.get(path_identifiers[i])) {
                 Ok((unrolled, a1, a2)) => {
                     unrolled
                 },

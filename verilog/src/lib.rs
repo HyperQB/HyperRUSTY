@@ -19,7 +19,7 @@ pub fn unroll_from_smt_build(
 ) -> Result<(String, Vec<String>, HashMap<String, String>), ExtractError> {
     yosys::run_yosys_with_build(_build_file_path)?;
     let smt_text = std::fs::read_to_string(&smt_path)?;
-    parser::unroll_in_place(&smt_text, top_module_name, bound, trace_id, filter)
+    parser::unroll_in_place(&smt_text, top_module_name, bound, trace_id, filter.cloned())
 }
 
 // deprecated

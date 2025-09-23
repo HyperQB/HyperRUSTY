@@ -56,6 +56,38 @@ pub fn is_ahltl(formula: &AstNode) -> bool {
     !is_hltl(formula)
 }
 
+// The formula must be quantifier-free
+fn get_propositions_for_paths(formula: &AstNode, map: &mut HashMap<&str, Vec<String>>) {
+    match formula {
+        AstNode::BinOp {operator: _, lhs, rhs} => {
+            get_propositions_for_paths(lhs, map);
+            get_propositions_for_paths(rhs, map);
+        },
+        AstNode::UnOp {operator: _, operand} => {
+            get_propositions_for_paths(operand, map);
+        },
+        AstNode::HIndexedProp {proposition, path_identifier} |
+        AstNode::AIndexedProp {proposition, path_identifier, ..} => {
+            map.get_mut(path_identifier as &str).unwrap().push(proposition.to_string());
+        },
+        _ => unreachable!(),
+    }
+}
+
+pub fn get_propositions_by_path(formula: &AstNode) -> HashMap<&str, Vec<String>> {
+    // Get inner LTL
+    let inner_formula = inner_ltl(formula);
+    // Get path identifiers
+    let path_identifiers = get_path_identifiers(formula);
+    let mut map: HashMap<&str, Vec<String>> = path_identifiers
+        .into_iter()
+        .map(|k| (k, Vec::new()))
+        .collect();
+    // Get propositions
+    get_propositions_for_paths(inner_formula, &mut map);
+    map
+}
+
 pub fn get_path_identifiers(formula: &AstNode) -> Vec<&str> {
     match formula {
         AstNode::HAQuantifier{identifier, form} |

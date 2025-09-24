@@ -1,10 +1,19 @@
 use std::collections::VecDeque;
-use expressions::{Expression, Literal};
+use expressions::{Expression, Literal as Lit, Variable, Quant};
+use expressions::expression_to_string;
 use std::fmt::Write as FmtWrite;
 use logging::Logger;
 use crate::parser::split_on_value;
 use crate::symbol_map::SymbolMap;
 use stacker;
+use std::collections::{HashMap, HashSet};
+
+
+// ---------- QCIR builder ----------
+// New version: Sep. 2025
+
+#[derive(Debug)]
+pub enum LowerError { Temporal(&'static str) }
 
 
 /// This function will take the CDF and create the gates
@@ -54,6 +63,11 @@ pub fn create_gates_from_cdf(
             let curr_expression     = curr_expres.0;
             let parent_string_index = curr_expres.1;
             let negation            = curr_expres.2;
+
+            // println!("{:?}", curr_expression);
+            // println!("{:?}", parent_string_index);
+            // println!("{:?}", negation);
+            
 
             match curr_expression {
                 Expression::MAnd(inner) | Expression::MOr(inner) => {
@@ -136,7 +150,7 @@ pub fn create_gates_from_cdf(
                 }
                 Expression::Literal(lit) => {
                     match lit {
-                        Literal::Atom(atom) => {
+                        Lit::Atom(atom) => {
                             let mut next_layer = layer;
                             if atom.contains("'") {
                                 next_layer += 1;
@@ -178,8 +192,15 @@ pub fn create_gates_from_cdf(
                 Expression::Neg(inner) => {
                     stack.push_back((inner, parent_string_index, !negation));
                 }
+                Expression::True => {
+                    // stack.push_back(curr_expression);
+                }
+                Expression::False => {
+                    // stack.push_back(!curr_expression);
+                }
                 _ => {
-                    println!("Not implemented yet");
+                    println!("{:?}", curr_expression);
+                    println!("Not implemented yet?");
                 }
             }
 
@@ -241,6 +262,24 @@ pub fn create_gates_from_cdf(
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////
 #[cfg(test)]
 mod tests {
     use super::*;

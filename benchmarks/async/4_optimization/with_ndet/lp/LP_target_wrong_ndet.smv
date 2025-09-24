@@ -51,7 +51,7 @@
   init(in_int_x) := 0;
   next(in_int_x) :=
     case
-      ((in_int_x+in_int_x)>9): 9;
+      (in_int_x>4): 9;
       (step=1) : secret;
       (step=2) : in_int_x;--error
       (step=7) : secret;

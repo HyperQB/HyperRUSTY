@@ -1,10 +1,12 @@
 use std::any::{Any};
 use expressions::{Expression, Literal};
+use expressions::expression_to_string;
 use std::collections::HashMap;
 use std::fmt::Write as FmtWrite;
 use crate::symbol_map::SymbolMap;
 use stacker;
 use logging::{Logger, raise_error};
+
 
 /// Helper function that splits a string on a value
 pub(crate) fn split_on_value(value: &str, split_char: char) -> (String, String){
@@ -524,15 +526,16 @@ impl Parser<'_>{
                 return (output, right_gate_num+1, false);
             }
 
-            Expression::Neg(inner_expr) => {
-                let (output,right_gate_num,mut neg) = self.process_g_expressions(inner_expr, &mut !(*negated));
-                // Negate the gate
-                neg = !neg;
+            // Expression::Neg(inner_expr) => {
+            //     let (output,right_gate_num,mut neg) = self.process_g_expressions(inner_expr, &mut !(*negated));
+            //     // Negate the gate
+            //     neg = !neg;
 
-                return (output, right_gate_num, neg);
-            }
+            //     return (output, right_gate_num, neg);
+            // }
             _ => {
-                println!("Not implemented yet: {:?}", expression);
+                let test = expression_to_string(expression);
+                println!("Test: {:?}", test);
                 unreachable!("Shouldn't have gotten here")}
         }
     }
@@ -541,6 +544,8 @@ impl Parser<'_>{
     pub fn ltl_parser(&mut self) -> (String, i32, bool) {
         // Now run to get the gates it will use
         let expression = &*self.expression.clone();
+        let test = expression_to_string(expression);
+        println!("Test: {:?}", test);
         return self.process_g_expressions(expression, &mut false);
     }
 }

@@ -10,7 +10,7 @@ use enchelper::*;
 use ir::*;
 use hltlunroller::*;
 use ahltlunroller::*;
-use parser::*;
+use parser::AstNode;
 
 /****************************
 *

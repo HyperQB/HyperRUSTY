@@ -16,6 +16,8 @@ mod parser;
 mod symbol_map;
 mod csv_parser;
 mod encoder;
+mod qcir_builder;
+mod hltl_unroller;
 // pub mod ir_parser;
 
 pub use unroller::unwrap;
@@ -26,4 +28,6 @@ pub use symbol_map::*;
 pub use gate_builder::*;
 pub use unroller::legacy_unwrap;
 pub use unroller::encoding_unroll;
+pub use qcir_builder::*;
+pub use hltl_unroller::*;
 // pub use ir_parser::parse_IL;

@@ -17,6 +17,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
 use std::ops::Add;
+use std::iter::Peekable;
+use std::str::Chars;
+use std::str::FromStr;
 
 use ir::int_var;
 use ir::bool_var;
@@ -25,6 +28,7 @@ use ir::to_dyn;
 use ir::choice_from_vec;
 use ir::choice;
 use ir::choice_int_to_dyn;
+use expressions::{Expression, Literal as Lit, Quant};
 
 use std::ops::Sub;
 
@@ -110,7 +114,6 @@ pub fn parse_args() -> Args {
         output_format,
     }
 }
-
 
 pub fn parse_block(lines: &[String]) -> Transition {
     let assign_re = Regex::new(r"^(\w+)\s*=\s*(TRUE|FALSE|\d+)$").unwrap();
@@ -619,7 +622,6 @@ impl From<ParsedVarType> for VarType {
     }
 }
 
-
 // Generate SMVEnv from the ParsedModel
 pub fn generate_smv_env_from_parsed<'ctx>(
     ctx: &'ctx Context,
@@ -631,6 +633,7 @@ pub fn generate_smv_env_from_parsed<'ctx>(
     // Step 1. Register variables
     for var in &parsed.variables {
         let init_val = parsed.inits.get(&var.name);
+        // println!("init value: {:?}", init_val);
         let vtype = match &var.sort {
             ParsedVarType::Bool { .. } => {
                 let init = match init_val {
@@ -639,7 +642,7 @@ pub fn generate_smv_env_from_parsed<'ctx>(
                         match upper.as_str() {
                             "TRUE" => Some(vec![true]),
                             "FALSE" => Some(vec![false]),
-                            _ => None,
+                            _ => Some(vec![true,false]), // otherwise, it's non-det choices
                         }
                     }
                     None => None,
@@ -651,7 +654,7 @@ pub fn generate_smv_env_from_parsed<'ctx>(
                 let init = match init_val {
                     Some(val) => {
                         let final_val = val
-                            .split("union")
+                            .split(",")
                             .filter_map(|s| s.trim().parse::<i64>().ok())
                             .last();
                         final_val.map(|v| vec![v])
@@ -672,7 +675,6 @@ pub fn generate_smv_env_from_parsed<'ctx>(
     }
 
 
-
     // Step 2: Register predicates
     for (name, expr) in parsed.predicates.clone() {
         let name_ref: &'ctx str = Box::leak(name.clone().into_boxed_str());
@@ -686,7 +688,7 @@ pub fn generate_smv_env_from_parsed<'ctx>(
                 let expr_str = expr_owned.to_owned();
                 let type_copy = var_type.clone();
                 let name_copy = var_name.to_string();
-                let dyn_fn = parse_condition(&env, &expr_str, &name_copy, &type_copy);
+                let dyn_fn = build_dyn_node(&env, &expr_str, &name_copy, &type_copy);
 
                 move |_env, ctx, state| {
                     dyn_fn(_env, ctx, state)
@@ -697,10 +699,7 @@ pub fn generate_smv_env_from_parsed<'ctx>(
         );
     }
 
-    // for (name, _) in &env.predicates {
-    //     println!("Predicate: {}", name);
-    // }
-
+    // for (name, _) in &env.predicates { println!("Predicate: {}", name); }
 
     // Step 3: Register transitions
     for (name, guard, update) in &parsed.transitions {
@@ -717,9 +716,8 @@ pub fn generate_smv_env_from_parsed<'ctx>(
         let name_guard = name.clone();
         let name_update = name.clone();
 
-        let guard_fn = parse_condition(&env, &guard_str, &name_guard, &var_type);
-
-        let update_fn = parse_condition(&env, &update_str, &name_update, &var_type);
+        let guard_fn = build_dyn_node(&env, &guard_str, &name_guard, &var_type);
+        let update_fn = build_dyn_node(&env, &update_str, &name_update, &var_type);
 
         if update_str.trim_start().starts_with('{') && update_str.trim_end().ends_with('}') {
             let nondet_choice = match var_type {
@@ -731,6 +729,7 @@ pub fn generate_smv_env_from_parsed<'ctx>(
                     let vals: Vec<bool> = parse_bool_braced_values(&update_str); // e.g., "{TRUE, FALSE}"
                     choice_from_vec!(Bool, vals)
                 }
+                // Ignore for NuSMV for now
                 // ParsedVarType::BVector { .. } => {
                 //     unimplemented!("Non-det BVector not yet supported")
                 // }
@@ -738,7 +737,7 @@ pub fn generate_smv_env_from_parsed<'ctx>(
             env.register_transition(
                 name_ref,
                 move |_env, _ctx, state| ReturnType::DynAst(guard_fn(_env, _ctx, state)),
-                move |_env, _ctx, state|   nondet_choice.clone(),
+                move |_env, _ctx, state| nondet_choice.clone(),
             );
             
         }else {
@@ -753,6 +752,7 @@ pub fn generate_smv_env_from_parsed<'ctx>(
     
     env
 }
+
 
 fn parse_nondet<'ctx>(
     raw: &'ctx str,
@@ -813,10 +813,8 @@ enum Choice {
     None,
 }
 
-
-// Return a dynamic node, given the condition (guard) string 
-
-pub fn parse_condition<'ctx>(
+// Return a dynamic node, given the condition (guard or update) string 
+pub fn build_dyn_node<'ctx>(
     smv_env: &SMVEnv<'ctx>,
     cond_str: &str,
     var_name: &str,
@@ -826,9 +824,7 @@ pub fn parse_condition<'ctx>(
     // println!("NOW parsing: {:?}", cond_str);
 
     let raw = preprocess_nondet_expr(var_name, cond_str.trim()); // preprocess once
-    // let raw = cond_str.trim().to_owned();
     let var_name = var_name.to_owned();
-
 
     move |smv_env: &SMVEnv<'ctx>, ctx: &'ctx Context, state: &EnvState<'ctx>| {
        fn recurse<'ctx>(
@@ -887,7 +883,8 @@ pub fn parse_condition<'ctx>(
                 return Int::from_i64(ctx, n).into();
             }
 
-            let precedence = vec!["|", "&", "!=", ">=", "<=", "=", ">", "<",  "*", "mod", "/", "+", "-"];
+            // trick: adding spaces for " mod " so it doesn't get confused with var name like "modifying"
+            let precedence = vec!["|", "&", "!=", ">=", "<=", "=", ">", "<",  "*", " mod ", "/", "+", "-"];
 
             for op in &precedence {
                 let mut depth = 0;
@@ -909,13 +906,11 @@ pub fn parse_condition<'ctx>(
                         }
                         _ => {}
                     }
-
                     // Check for operator match at top-level
                     if depth == 0 && &s[i..i + op.len()] == *op {
                         idx = Some(i);
                         break;
                     }
-
                     i += 1;
                 }
 
@@ -930,7 +925,7 @@ pub fn parse_condition<'ctx>(
                         "-" => lhs_expr.as_int().unwrap().sub(&rhs_expr.as_int().unwrap()).into(),
                         "*" => lhs_expr.as_int().unwrap().mul(&rhs_expr.as_int().unwrap()).into(),
                         "/" => lhs_expr.as_int().unwrap().div(&rhs_expr.as_int().unwrap()).into(),
-                        "mod" => lhs_expr.as_int().unwrap().modulo(&rhs_expr.as_int().unwrap()).into(),
+                        " mod " => lhs_expr.as_int().unwrap().modulo(&rhs_expr.as_int().unwrap()).into(),
                         "!=" => lhs_expr._eq(&rhs_expr).not().into(),
                         "=" => lhs_expr._eq(&rhs_expr).into(),
                         ">" => lhs_expr.as_int().unwrap().gt(&rhs_expr.as_int().unwrap()).into(),
@@ -947,7 +942,11 @@ pub fn parse_condition<'ctx>(
                             let r = rhs_expr.as_bool().unwrap();
                             Bool::or(ctx, &[&l, &r]).into()
                         }
-                        _ => unreachable!(),
+                        other => {
+                            panic!(
+                                "illegal operator '{other}' in expression '{lhs_expr}' and '{rhs_expr}'! please check the NuSMV model"
+                            );
+                        }
                     };
                 }
             }

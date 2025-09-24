@@ -28,7 +28,7 @@ MODULE main
  ASSIGN
 	init(location) := 1 ;
 	init(nondet) := {TRUE, FALSE};
-	init(x) := {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+	init(x) := {0, 1, 2, 3, 4, 5};
 	init(low) := {0, 1, 2, 3, 4, 5};
 	next(low) := low;
 	init(high) := {TRUE, FALSE};

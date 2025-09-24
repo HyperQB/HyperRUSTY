@@ -4,6 +4,7 @@ use std::mem;
 use std::io::{self, Write};
 use std::process;
 use std::path::PathBuf;
+use std::path::Path;
 use std::time::Instant;
 use ir::*;
 use parser::*;
@@ -159,8 +160,41 @@ fn main() {
         let ast_node = parse(&formula).expect("Failed parsing the formula");
 
         if *matches.get_one::<bool>("qbf_solver").unwrap() {
-            // gen_qcir(&model_paths, &String::from(formula_path.to_str().unwrap()), &env, *unrolling_bound as i32, false, semantics_as_str);
-            let output = process::Command::new("/Users/milad/Desktop/rust_tutorial/HyperRUSTY/quabs")
+            // QBF unrolling
+
+            // create ENV
+            let mut cfg = Config::new();
+            cfg.set_model_generation(true);
+            let ctx = Context::new(&cfg);
+            let mut envs = Vec::new();
+
+            let path_identifiers: Vec<&str> = get_path_identifiers(&ast_node);
+            if model_paths.len() != path_identifiers.len() {
+                panic!("ERROR: number of provided models and number of path quantifiers do not match!");
+            }
+
+            // Start the timer for model parsing
+            let start = Instant::now();
+
+            for i in 0..path_identifiers.len() {
+                // parse the smv for this model
+                let env = parse_smv(
+                    &ctx,
+                    model_paths[i],
+                    Some("output.txt".to_string()),
+                    false,
+                    "model",
+                    "ir",
+                );
+                envs.push(env);
+            }
+
+
+            let semantics = "hpes"; // temp, not sure what's wrong
+            gen_qcir(&envs, &model_paths, &formula, unrolling_bound, false, semantics, Path::new("outputs/HQ.qcir"));
+
+            let output = process::Command::new("./quabs")
+                .arg("--partial-assignment")
                 .arg("outputs/HQ.qcir")
                 .stdout(process::Stdio::piped())
                 .spawn()
@@ -205,6 +239,7 @@ fn main() {
                 );
                 envs.push(env);
             }
+
             let duration = start.elapsed();
             let secs = duration.as_secs_f64();
             println!("Model Creation Time: {}", secs);
@@ -239,12 +274,12 @@ fn main() {
                 }
             };
             // grab the statistics of the solver
-            let stats = solver.get_statistics();
-            let val_str = match stats.value("time").unwrap() {
-                StatisticsValue::UInt(u)   => u.to_string(),
-                StatisticsValue::Double(d) => d.to_string(),
-            };
-            println!("Solve Time: {}", val_str);
+            // let stats = solver.get_statistics();
+            // let val_str = match stats.value("time").unwrap() {
+            //     StatisticsValue::UInt(u)   => u.to_string(),
+            //     StatisticsValue::Double(d) => d.to_string(),
+            // };
+            // println!("Solve Time: {}", val_str);
         }
     } else {
         // Verilog Path

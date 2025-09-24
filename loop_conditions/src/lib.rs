@@ -505,7 +505,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
         let z3_encoding: Bool = self.build_loop_condition(formula);
         let mut max_bit_map: HashMap<String, usize> = self.build_max_bit_map();
         let dyn_root = Dynamic::from_ast(&z3_encoding);
-        dynamic_to_expression("", &dyn_root, /* is_primed */ false, &max_bit_map)
+        dyn_to_expr("", &dyn_root, /* is_primed */ false, &max_bit_map)
     }
 
 

@@ -2,9 +2,9 @@
  MODULE main
  VAR
     PC: 0..4;
-    in_secret: 0..1;
-    out_secret: 0..1;
-    out_public: 0..1;
+    in_secret: 0..3;
+    out_secret: 0..3;
+    out_public: 0..3;
 
   ASSIGN
 

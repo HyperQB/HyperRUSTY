@@ -41,9 +41,9 @@
   init(int_x) := 0;
   next(int_x) :=
     case
-      ((int_x+int_x)>15): 15;
+      (int_x > 7): 15;
       (step=5) : in_secret;
-      (step=6) : int_x+int_x;
+      (step=6) : int_x + int_x;
       TRUE: int_x;
     esac;
 
@@ -51,14 +51,15 @@
   next(int_k) :=
     case
       (int_k=3): 3;
-      (step=7) : int_k+1;
+      (step=7) : int_k + 1;
       TRUE: int_k;
     esac;
 
   init(out_public) := 0;
   next(out_public) :=
     case
-      ((step=8)& !(int_k=0)): (4 + (int_x - 4)) mod ((int_k - int_k) + 3);
+      -- ((step=8)& !(int_k=0)): (4 + (int_x - 4)) mod ((int_k - int_k) + 3);
+      ((step=8)& !(int_k=0)): int_x mod 3;
       TRUE: out_public;
     esac;
 

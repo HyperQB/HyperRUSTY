@@ -395,7 +395,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
                     let ith_state = &self.states[path_idx][i]; // Containts all variables
                     let proposition = match ith_state.get(proposition as &str) {
                         Some(v) => {
-                            println!("{:#?}", v);
+                            // println!("{:#?}", v);
                             v.as_bool().unwrap()
                         }, // variable exists
                         None => {

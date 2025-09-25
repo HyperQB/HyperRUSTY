@@ -433,7 +433,7 @@
 
 #=== Speculative Execution - V2 ===#
 
-time cargo run --release -- -n benchmarks/async/3_speculative/flattened/v2_se.smv benchmarks/async/3_speculative/flattened/v2_nse.smv -f benchmarks/async/3_speculative/flattened/se_prop.hq -k 6 -m 12 -s hpes -q
+# time cargo run --release -- -n benchmarks/async/3_speculative/flattened/v2_se.smv benchmarks/async/3_speculative/flattened/v2_nse.smv -f benchmarks/async/3_speculative/flattened/se_prop.hq -k 6 -m 12 -s hpes 
 
 # #=== Speculative Execution - V3 ===#
 
@@ -441,7 +441,7 @@ time cargo run --release -- -n benchmarks/async/3_speculative/flattened/v2_se.sm
 
 #=== Speculative Execution - V4 ===#
 
-# time cargo run --release -- -n benchmarks/async/3_speculative/flattened/v4_se.smv benchmarks/async/3_speculative/flattened/v4_nse.smv -f benchmarks/async/3_speculative/flattened/se_prop.hq -k 6 -m 12 -s hpes -q
+# time cargo run --release -- -n benchmarks/async/3_speculative/flattened/v4_se.smv benchmarks/async/3_speculative/flattened/v4_nse.smv -f benchmarks/async/3_speculative/flattened/se_prop.hq -k 6 -m 12 -s hpes 
 
 
 #=== Speculative Execution - V5 ===#
@@ -452,7 +452,7 @@ time cargo run --release -- -n benchmarks/async/3_speculative/flattened/v2_se.sm
 
 #=== Speculative Execution - V6 ===#
 
-# time cargo run --release -- -n benchmarks/async/3_speculative/flattened/v6_se.smv benchmarks/async/3_speculative/flattened/v6_nse.smv -f benchmarks/async/3_speculative/flattened/se_prop.hq -k 6 -m 12 -s hpes -q
+# time cargo run --release -- -n benchmarks/async/3_speculative/flattened/v6_se.smv benchmarks/async/3_speculative/flattened/v6_nse.smv -f benchmarks/async/3_speculative/flattened/se_prop.hq -k 6 -m 12 -s hpes 
 
 
 #=== Speculative Execution - V7 ===#
@@ -500,7 +500,7 @@ time cargo run --release -- -n benchmarks/async/3_speculative/flattened/v2_se.sm
 
 
 #=== CACHE -ndet ===#
-# time cargo run --release -- -n benchmarks/async/5_cache/flattened/cache_ndet.smv benchmarks/async/5_cache/flattened/cache_ndet.smv -f benchmarks/async/5_cache/flattened/odnd.hq -k 58 -m 116 -s hpes 
+time cargo run --release -- -n benchmarks/async/5_cache/flattened/cache_ndet.smv benchmarks/async/5_cache/flattened/cache_ndet.smv -f benchmarks/async/5_cache/flattened/odnd.hq -k 58 -m 116 -s hpes 
 
 
 #=== CACHE -ndet -loop ===#

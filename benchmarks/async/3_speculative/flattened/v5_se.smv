@@ -274,4 +274,6 @@ MODULE main
     next(proc2_arrB_pos4) := proc2_arrB_pos4;
 
   DEFINE
-    -- add DEFINEs here if you want, or leave empty
+
+    -- halting condition
+    halt := (proc1_halt & proc2_halt);

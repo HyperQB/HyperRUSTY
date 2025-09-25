@@ -51,7 +51,7 @@
   init(int_x) := 0;
   next(int_x) :=
     case
-      ((int_x+int_x)>15): 15;
+      (int_x > 7): 15;
       (step=4) : in_secret;
       (step=5) : (int_x + int_x);
       (step=10) : in_secret;

@@ -108,7 +108,8 @@
   init(int_x) := 0;
   next(int_x) :=
     case
-      ((int_x+int_x)>9): 9;
+      -- ((int_x+int_x)>9): 9;
+      (int_x > 4): 9;
       (step=4) : in_secret;
       (step=5) : int_x+int_x;
       (step=14) : in_secret;

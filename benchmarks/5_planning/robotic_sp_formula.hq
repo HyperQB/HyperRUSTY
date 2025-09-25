@@ -1,2 +1,2 @@
 Exists A . Forall B .
-F(gOAL[A]) & (G((~gOAL[A])->(~gOAL[B])))
+F(gOAL[A]) & G(( (~(gOAL[A]))) -> (~(gOAL[B])))

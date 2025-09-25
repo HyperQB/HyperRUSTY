@@ -53,7 +53,7 @@ VAR
 
 ASSIGN
 
-	init(halt) := FALSE;
+	init(halt) := {TRUE,FALSE};
 	next(halt) :=
 	case
 		((theta_line=0) & (MASK_2=0) & (MASK_1=0) & (MASK_0=0)) : TRUE;
@@ -80,6 +80,7 @@ ASSIGN
 	init(trigger_beta) := FALSE;
 
 	next(PIN_2) := PIN_2;
+
 	next(PIN_1) := PIN_1;
 	next(PIN_0) := PIN_0;
 

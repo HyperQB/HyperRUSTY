@@ -5,3 +5,6 @@ edition = "2021"
 
 [dependencies]
 z3 = "0.13.0"
+pest = "2.7"
+pest_derive = "2.7"
+regex = "1"

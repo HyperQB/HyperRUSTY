@@ -7,6 +7,170 @@ use crate::Literal;
 
 
 
+/// Parse an inner LTL formula into `Expression`.
+/// Supported:
+///   atoms: [A-Za-z_][A-Za-z0-9_\[\]]*
+///   consts: true / false   (mapped to Atom("true") / NegAtom("true"))
+///   unary:  !  G  F  X
+///   binary: U  R  &  |  ->  <->   (with the usual precedences)
+///   parens: ( ... )
+pub fn parse_inner_ltl(input: &str) -> Expression {
+    let mut p = Parser::new(input);
+    let expr = p.parse_equiv().expect("parse error"); // start at lowest precedence (<->)
+    p.skip_ws();
+    if !p.eof() {
+        panic!("unexpected trailing input at pos {}", p.i);
+    }
+    expr
+}
+
+struct Parser<'a> {
+    s: &'a [u8],
+    i: usize,
+}
+
+impl<'a> Parser<'a> {
+    fn new(s: &'a str) -> Self { Self { s: s.as_bytes(), i: 0 } }
+    fn eof(&self) -> bool { self.i >= self.s.len() }
+    fn peek(&self) -> Option<u8> { self.s.get(self.i).copied() }
+    fn bump(&mut self) -> Option<u8> {
+        if self.eof() { None } else { let c = self.s[self.i]; self.i += 1; Some(c) }
+    }
+    fn skip_ws(&mut self) { while matches!(self.peek(), Some(b' ' | b'\t' | b'\n' | b'\r')) { self.i += 1; } }
+
+    // ---------- lexical helpers ----------
+    fn starts_ident_byte(b: u8) -> bool { b.is_ascii_alphabetic() || b == b'_' }
+    fn is_ident_byte(b: u8) -> bool { b.is_ascii_alphanumeric() || matches!(b, b'_' | b'[' | b']') }
+
+    fn parse_ident(&mut self) -> Option<String> {
+        self.skip_ws();
+        let start = self.i;
+        if !self.peek().map_or(false, Self::starts_ident_byte) { return None; }
+        self.i += 1;
+        while let Some(b) = self.peek() {
+            if Self::is_ident_byte(b) { self.i += 1; } else { break; }
+        }
+        Some(String::from_utf8(self.s[start..self.i].to_vec()).unwrap())
+    }
+
+    fn eat(&mut self, tok: &str) -> bool {
+        self.skip_ws();
+        let bytes = tok.as_bytes();
+        if self.i + bytes.len() <= self.s.len() && &self.s[self.i..self.i + bytes.len()] == bytes {
+            self.i += bytes.len();
+            true
+        } else { false }
+    }
+
+    // ---------- precedence climbing ----------
+    // equiv (<->)
+    fn parse_equiv(&mut self) -> Result<Expression, String> {
+        let mut left = self.parse_implies()?;
+        loop {
+            self.skip_ws();
+            if self.eat("<->") {
+                let right = self.parse_implies()?;
+                left = Expression::Iff(Box::new(left), Box::new(right));
+            } else { break; }
+        }
+        Ok(left)
+    }
+
+    // implies (->)
+    fn parse_implies(&mut self) -> Result<Expression, String> {
+        let mut left = self.parse_or()?;
+        loop {
+            self.skip_ws();
+            if self.eat("->") {
+                let right = self.parse_or()?;
+                left = Expression::Implies(Box::new(left), Box::new(right));
+            } else { break; }
+        }
+        Ok(left)
+    }
+
+    // or (|)
+    fn parse_or(&mut self) -> Result<Expression, String> {
+        let mut parts = vec![ self.parse_and()? ];
+        loop {
+            self.skip_ws();
+            if self.peek() == Some(b'|') { self.i += 1; parts.push(self.parse_and()?); }
+            else { break; }
+        }
+        Ok(match parts.len() {
+            1 => parts.pop().unwrap(),
+            _ => Expression::MOr(parts.into_iter().map(Box::new).collect())
+        })
+    }
+
+    // and (&)
+    fn parse_and(&mut self) -> Result<Expression, String> {
+        let mut parts = vec![ self.parse_ur()? ];
+        loop {
+            self.skip_ws();
+            if self.peek() == Some(b'&') { self.i += 1; parts.push(self.parse_ur()?); }
+            else { break; }
+        }
+        Ok(match parts.len() {
+            1 => parts.pop().unwrap(),
+            _ => Expression::MAnd(parts.into_iter().map(Box::new).collect())
+        })
+    }
+
+    // until / release (U / R)
+    fn parse_ur(&mut self) -> Result<Expression, String> {
+        let mut left = self.parse_unary()?;
+        loop {
+            self.skip_ws();
+            if self.eat("U") {
+                let right = self.parse_unary()?;
+                left = Expression::U(Box::new(left), Box::new(right));
+            } else if self.eat("R") {
+                let right = self.parse_unary()?;
+                left = Expression::R(Box::new(left), Box::new(right));
+            } else { break; }
+        }
+        Ok(left)
+    }
+
+    // unary: !, G, F, X, primary
+    fn parse_unary(&mut self) -> Result<Expression, String> {
+        self.skip_ws();
+        if self.eat("!") { return Ok(Expression::Neg(Box::new(self.parse_unary()?))); }
+        if self.eat("G") { return Ok(Expression::G  (Box::new(self.parse_unary()?))); }
+        if self.eat("F") { return Ok(Expression::F  (Box::new(self.parse_unary()?))); }
+        if self.eat("X") { return Ok(Expression::X  (Box::new(self.parse_unary()?))); }
+        self.parse_primary()
+    }
+
+    // primary: ( ... )  |  true/false/ident
+    fn parse_primary(&mut self) -> Result<Expression, String> {
+        self.skip_ws();
+        if self.peek() == Some(b'(') {
+            self.i += 1;
+            let e = self.parse_equiv()?;
+            self.skip_ws();
+            if self.peek() != Some(b')') {
+                return Err(format!("expected ')' at pos {}", self.i));
+            }
+            self.i += 1;
+            return Ok(e);
+        }
+        if let Some(ident) = self.parse_ident() {
+            // Map "true"/"false" to Atom("true") / NegAtom("true")
+            if ident.eq_ignore_ascii_case("true") {
+                return Ok(Expression::Literal(Literal::Atom("true".to_string())));
+            } else if ident.eq_ignore_ascii_case("false") {
+                return Ok(Expression::Literal(Literal::NegAtom("true".to_string())));
+            } else {
+                return Ok(Expression::Literal(Literal::Atom(ident)));
+            }
+        }
+        Err(format!("unexpected token at pos {}", self.i))
+    }
+}
+
+
 // The next two functions are used to generate the expression for the initial states if using new smv
 // We do this because the legacy and encoding unroll are already built and tested. It is easier to adjust input
 // to fit into them then to rewrite the smv unroll.
@@ -175,20 +339,20 @@ pub fn expression_to_string(expr: &Expression) -> String {
     use crate::Expression::*;
     use crate::Literal::*;
     match expr {
-        True => "TRUE".to_string(),
+        True => "true".to_string(),
         False => "false".to_string(),
         Literal(Atom(var)) => var.clone(),
         Literal(NegAtom(var)) => format!("~{}", var),
         Neg(inner) => format!("~({})", expression_to_string(inner)),
-        And(left, right) => format!("({} /\\ {})", expression_to_string(left), expression_to_string(right)),
-        Or(left, right) => format!("({} \\/ {})", expression_to_string(left), expression_to_string(right)),
+        And(left, right) => format!("({} & {})", expression_to_string(left), expression_to_string(right)),
+        Or(left, right) => format!("({} | {})", expression_to_string(left), expression_to_string(right)),
         MAnd(inner) => {
             let parts: Vec<String> = inner.iter().map(|e| expression_to_string(e)).collect();
-            format!("({})", parts.join(" /\\ "))
+            format!("({})", parts.join(" & "))
         }
         MOr(inner) => {
             let parts: Vec<String> = inner.iter().map(|e| expression_to_string(e)).collect();
-            format!("({})", parts.join(" \\/ "))
+            format!("({})", parts.join(" | "))
         }
         Implies(a, b) => format!("({} -> {})", expression_to_string(a), expression_to_string(b)),
         Iff(a, b) => format!("({} <-> {})", expression_to_string(a), expression_to_string(b)),

@@ -6,6 +6,51 @@ pub enum Error {
     ErrorMergingLets,
 }
 
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Quant { Forall, Exists}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TrajQuant { TrajA, TrajE }
+
+impl Quant {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Quant::Forall => "forall",
+            Quant::Exists => "exists",
+        }
+    }
+
+    /// Convert a &str into a Quant. Returns None if not recognized.
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "Forall" | "forall" => Some(Quant::Forall),
+            "Exists" | "exists" => Some(Quant::Exists),
+            _ => None,
+        }
+    }
+}
+
+impl TrajQuant {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            TrajQuant::TrajA => "A",
+            TrajQuant::TrajE => "E",
+        }
+    }
+
+    /// Convert a &str into a Quant. Returns None if not recognized.
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "A" => Some(TrajQuant::TrajA),
+            "E" => Some(TrajQuant::TrajE),
+            _ => None,
+        }
+    }
+}
+
+
+
 pub type Variable = String; /// A variable is a string.
 pub type Ident = String;
 
@@ -16,10 +61,6 @@ pub enum Literal {
     /// An atom is a variable that can be true or false.
     Atom(Variable),
     NegAtom(Variable),
-    // Bool(Variable),
-    // Int(Variable),
-    // BitVector(Variable),
-    // Str(Variable),
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Default)]

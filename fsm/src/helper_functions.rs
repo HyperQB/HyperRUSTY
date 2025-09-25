@@ -45,7 +45,11 @@ pub fn create_file() -> File {
 
 /// function to help format the output string
 /// It gets the footer, the header, as well as ANDing the models together
-fn get_string_quantifiers_and_ends(model_map: &Vec<(String, i32)>, quantifiers: &Vec<(String,String)>, logger: &Logger, symbol_map: &mut SymbolMap) -> (String, String, Vec<String>) {
+fn get_string_quantifiers_and_ends(
+    model_map: &Vec<(String, i32)>, 
+    quantifiers: &Vec<(String,String)>, 
+    logger: &Logger, 
+    symbol_map: &mut SymbolMap) -> (String, String, Vec<String>) {
     let output_string = &mut String::new();
     let ending_headers = &mut String::new();
     let final_ands = &mut Vec::new();

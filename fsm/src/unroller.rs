@@ -20,19 +20,26 @@ pub fn legacy_unwrap(   expression: Vec<(String,String)>,
                         layers: i32, 
                         logger: &Logger, 
                         quantifiers: &Vec<(String,String)>,
-                        semantics: &String) {
+                        semantics: &String) 
+{
     let mut symbol_map = SymbolMap::new(expression.len() as i32, layers);
     symbol_map.setup_model_map(quantifiers);
     let mut model_map: Vec<(String, i32)> = Vec::new();
     let mut max_gate_number = 0;
     let mut conjunction_list: Vec<i32>;
     let mut output_str = String::new();
-    for (initial, express) in expression {
-        println!("INIT:  {}", initial);
-        println!("TRANS: {}", express);
+
+    for (initial, transitions) in expression {
+        println!("\nINIT:  {}", initial);
+
+        println!("\nTRANS: {}", transitions);
+
+        println!("quantifiers = {:?}", quantifiers);
+
         symbol_map.add_initials(&initial);
         logger.log("Starting input to expression", 1);
-        let fsm = input_to_expression(&express);
+        let fsm = input_to_expression(&transitions);
+
         //logger.log(&*format!("The fsm is: {:?}", fsm), 1);
         // output is (output_string, max_gate_number, symbol_map) for that model
         logger.log("Starting create gates from cdf", 1);
@@ -46,7 +53,7 @@ pub fn legacy_unwrap(   expression: Vec<(String,String)>,
         // println!("FSM: {:?}", fsm.clone());
         drop_expression(*fsm);
         logger.log("Dropping Expression", 1);
-        drop(express);
+        drop(transitions);
         logger.log(&*format!("Finished model {}", symbol_map.model -1), 1);
         //println!("Symbol map is: {:?}", symbol_map);
 
@@ -63,16 +70,20 @@ pub fn legacy_unwrap(   expression: Vec<(String,String)>,
 }
 
 
-
 /// Function will unwrap the expression. It should unwrap layers times.
-///
 /// We use the fact that the output is the same in every layer, simply different literal gates
 /// # Arguments
 /// * `expression`: The expression to unwrap
 /// * `file`: The file to write the output to
 /// * `layers`: The number of times to unwrap the expression
 /// * `debug`: Whether to print the fsm
-pub fn unwrap(expression: Vec<Box<Expression>>, formula: &str, quantifiers: &Vec<(String,String)>, semantics: &String, layers: i32, logger: &Logger) {
+pub fn unwrap(  expression: Vec<Box<Expression>>, 
+                formula: &str, 
+                layers: i32, 
+                logger: &Logger,
+                quantifiers: &Vec<(String,String)>, 
+                semantics: &String) 
+{
     let mut symbol_map = SymbolMap::new(quantifiers.len() as i32, layers);
     // add the models from quantifiers to the symbol map
     symbol_map.setup_model_map(quantifiers);
@@ -112,7 +123,14 @@ pub fn unwrap(expression: Vec<Box<Expression>>, formula: &str, quantifiers: &Vec
 /// * `logger`: The logger
 /// * `formula`: The formula for the models
 /// * `flags`: The flags for the program
-pub fn encoding_unroll(expression: Vec<(String, String)>, formula: &str, layers: i32, logger: &Logger, quantifiers: &Vec<(String, String)>, semantics: &String, model_flag: &String) {
+pub fn encoding_unroll(     expression: Vec<(String, String)>, 
+                            formula: &str, 
+                            layers: i32, 
+                            logger: &Logger, 
+                            quantifiers: &Vec<(String, String)>, 
+                            semantics: &String,
+                            model_flag: &String) 
+{
     // Used variables
     println!("Encoding unroll");
     let mut symbol_map = SymbolMap::new(expression.len() as i32, layers);

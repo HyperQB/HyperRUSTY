@@ -1,5 +1,7 @@
 extern crate regex;
 
+// use parser_nusmv::flattener::flatten_nusmv;
+
 use std::collections::HashMap;
 use std::ops::Mul;
 use z3::{Config, Context};
@@ -17,6 +19,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
 use std::ops::Add;
+use std::iter::Peekable;
+use std::str::Chars;
+use std::str::FromStr;
 
 use ir::int_var;
 use ir::bool_var;
@@ -25,6 +30,7 @@ use ir::to_dyn;
 use ir::choice_from_vec;
 use ir::choice;
 use ir::choice_int_to_dyn;
+use expressions::{Expression, Literal as Lit, Quant};
 
 use std::ops::Sub;
 
@@ -110,7 +116,6 @@ pub fn parse_args() -> Args {
         output_format,
     }
 }
-
 
 pub fn parse_block(lines: &[String]) -> Transition {
     let assign_re = Regex::new(r"^(\w+)\s*=\s*(TRUE|FALSE|\d+)$").unwrap();
@@ -402,6 +407,9 @@ pub fn parse_original_smv(input: &str) -> ParsedModel {
     let mut transitions: Vec<(String, String, String)> = vec![];
     let mut predicates = HashMap::new();
 
+    // let input = &flatten_nusmv(input);
+
+
     // Parse VAR section
     let var_decl_re = Regex::new(r"(?m)^\s*([\w.\[\]]+)\s*:\s*([\w{}\s.,]+);").unwrap();
 
@@ -619,7 +627,6 @@ impl From<ParsedVarType> for VarType {
     }
 }
 
-
 // Generate SMVEnv from the ParsedModel
 pub fn generate_smv_env_from_parsed<'ctx>(
     ctx: &'ctx Context,
@@ -631,6 +638,7 @@ pub fn generate_smv_env_from_parsed<'ctx>(
     // Step 1. Register variables
     for var in &parsed.variables {
         let init_val = parsed.inits.get(&var.name);
+        // println!("init value: {:?}", init_val);
         let vtype = match &var.sort {
             ParsedVarType::Bool { .. } => {
                 let init = match init_val {
@@ -639,7 +647,7 @@ pub fn generate_smv_env_from_parsed<'ctx>(
                         match upper.as_str() {
                             "TRUE" => Some(vec![true]),
                             "FALSE" => Some(vec![false]),
-                            _ => None,
+                            _ => Some(vec![true,false]), // otherwise, it's non-det choices
                         }
                     }
                     None => None,
@@ -651,7 +659,7 @@ pub fn generate_smv_env_from_parsed<'ctx>(
                 let init = match init_val {
                     Some(val) => {
                         let final_val = val
-                            .split("union")
+                            .split(",")
                             .filter_map(|s| s.trim().parse::<i64>().ok())
                             .last();
                         final_val.map(|v| vec![v])
@@ -672,7 +680,6 @@ pub fn generate_smv_env_from_parsed<'ctx>(
     }
 
 
-
     // Step 2: Register predicates
     for (name, expr) in parsed.predicates.clone() {
         let name_ref: &'ctx str = Box::leak(name.clone().into_boxed_str());
@@ -686,7 +693,7 @@ pub fn generate_smv_env_from_parsed<'ctx>(
                 let expr_str = expr_owned.to_owned();
                 let type_copy = var_type.clone();
                 let name_copy = var_name.to_string();
-                let dyn_fn = parse_condition(&env, &expr_str, &name_copy, &type_copy);
+                let dyn_fn = build_dyn_node(&env, &expr_str, &name_copy, &type_copy);
 
                 move |_env, ctx, state| {
                     dyn_fn(_env, ctx, state)
@@ -697,10 +704,7 @@ pub fn generate_smv_env_from_parsed<'ctx>(
         );
     }
 
-    // for (name, _) in &env.predicates {
-    //     println!("Predicate: {}", name);
-    // }
-
+    // for (name, _) in &env.predicates { println!("Predicate: {}", name); }
 
     // Step 3: Register transitions
     for (name, guard, update) in &parsed.transitions {
@@ -717,31 +721,65 @@ pub fn generate_smv_env_from_parsed<'ctx>(
         let name_guard = name.clone();
         let name_update = name.clone();
 
-        let guard_fn = parse_condition(&env, &guard_str, &name_guard, &var_type);
-
-        let update_fn = parse_condition(&env, &update_str, &name_update, &var_type);
+        let guard_fn = build_dyn_node(&env, &guard_str, &name_guard, &var_type);
+        let update_fn = build_dyn_node(&env, &update_str, &name_update, &var_type);
 
         if update_str.trim_start().starts_with('{') && update_str.trim_end().ends_with('}') {
-            let nondet_choice = match var_type {
-                ParsedVarType::Int { .. } => {
-                    let vals: Vec<i64> = parse_braced_values(&update_str); // e.g., "{1, 2}"
-                    choice_from_vec!(Int, vals)
+            let inner = update_str.trim().trim_start_matches('{').trim_end_matches('}').trim();
+
+            // Non-deterministic sets with commas stay as before:
+            if inner.contains(',') {
+                let nondet_choice = match var_type {
+                    ParsedVarType::Int { .. } => {
+                        let vals: Vec<i64> = parse_braced_values(&update_str);
+                        choice_from_vec!(Int, vals)
+                    }
+                    ParsedVarType::Bool { .. } => {
+                        let vals: Vec<bool> = parse_bool_braced_values(&update_str);
+                        choice_from_vec!(Bool, vals)
+                    }
+                };
+                env.register_transition(
+                    name_ref,
+                    move |env_, ctx_, state_| ReturnType::DynAst(guard_fn(env_, ctx_, state_)),
+                    move |_env, _ctx, _state| nondet_choice.clone(),
+                );
+            } else {
+                // Single element inside braces: {TRUE}/{FALSE}/{42}/{var_name}
+                if let Ok(n) = inner.parse::<i64>() {
+                    let upd = mk_update_single_int(n);
+                    env.register_transition(
+                        name_ref,
+                        move |env_, ctx_, state_| ReturnType::DynAst(guard_fn(env_, ctx_, state_)),
+                        upd,
+                    );
+                } else {
+                    let upper = inner.to_ascii_uppercase();
+                    if upper == "TRUE" || upper == "FALSE" {
+                        let upd = mk_update_single_bool(upper);
+                        env.register_transition(
+                            name_ref,
+                            move |env_, ctx_, state_| ReturnType::DynAst(guard_fn(env_, ctx_, state_)),
+                            upd,
+                        );
+                    } else {
+                        // treat as {var_name}
+                        let update_fn = build_dyn_node(&env, &inner, &name_update, &var_type);
+                        env.register_transition(
+                            name_ref,
+                            move |_env, _ctx, state| ReturnType::DynAst(guard_fn(_env, _ctx, state)),
+                            move |_env, _ctx, state| ReturnType::DynAst(update_fn(_env, _ctx, state)),
+                        );
+                        // let upd = mk_update_single_var(inner.to_string(), var_type.clone());
+                        // env.register_transition(
+                        //     name_ref,
+                        //     move |env_, ctx_, state_| ReturnType::DynAst(guard_fn(env_, ctx_, state_)),
+                        //     upd,
+                        // );
+                    }
                 }
-                ParsedVarType::Bool { .. } => {
-                    let vals: Vec<bool> = parse_bool_braced_values(&update_str); // e.g., "{TRUE, FALSE}"
-                    choice_from_vec!(Bool, vals)
-                }
-                // ParsedVarType::BVector { .. } => {
-                //     unimplemented!("Non-det BVector not yet supported")
-                // }
-            };
-            env.register_transition(
-                name_ref,
-                move |_env, _ctx, state| ReturnType::DynAst(guard_fn(_env, _ctx, state)),
-                move |_env, _ctx, state|   nondet_choice.clone(),
-            );
-            
-        }else {
+            }
+        } else {
             env.register_transition(
                 name_ref,
                 move |_env, _ctx, state| ReturnType::DynAst(guard_fn(_env, _ctx, state)),
@@ -754,30 +792,55 @@ pub fn generate_smv_env_from_parsed<'ctx>(
     env
 }
 
-fn parse_nondet<'ctx>(
-    raw: &'ctx str,
-    var_name: &'ctx str,
-    var_type: &'ctx ParsedVarType
-) -> ReturnType<'ctx> {
-    match var_type {
-        ParsedVarType::Int { .. } => {
-            let vals: Vec<i64> = parse_braced_values(raw); // e.g., "{1, 2}"
-            choice_from_vec!(Int, vals)
-        }
-        ParsedVarType::Bool { .. } => {
-            let vals: Vec<bool> = parse_bool_braced_values(raw); // e.g., "{TRUE, FALSE}"
-            choice_from_vec!(Bool, vals)
-        }
-        // ParsedVarType::BVector { .. } => {
-        //     unimplemented!("Non-det BVector not yet supported")
-        // }
+
+// Make a Bool literal updater: {TRUE} or {FALSE}
+fn mk_update_single_bool(upper: String)
+-> impl for<'ctx> Fn(&SMVEnv<'ctx>, &'ctx z3::Context, &EnvState<'ctx>) -> ReturnType<'ctx> + Clone
+{
+    // Capture by value
+    let is_true = upper.eq_ignore_ascii_case("TRUE");
+    move |_env, ctx, _state| {
+        let b = z3::ast::Bool::from_bool(ctx, is_true);
+        ReturnType::DynAst(b.into())
+    }
+}
+
+// Make an Int literal updater: {42}
+fn mk_update_single_int(n: i64)
+-> impl for<'ctx> Fn(&SMVEnv<'ctx>, &'ctx z3::Context, &EnvState<'ctx>) -> ReturnType<'ctx> + Clone
+{
+    move |_env, ctx, _state| {
+        let i = z3::ast::Int::from_i64(ctx, n);
+        ReturnType::DynAst(i.into())
+    }
+}
+
+// Make a “just use that variable” updater: {var_name}
+fn mk_update_single_var(var_sym: String, var_type: ParsedVarType)
+-> impl for<'ctx> Fn(&SMVEnv<'ctx>, &'ctx z3::Context, &EnvState<'ctx>) -> ReturnType<'ctx> + Clone
+{
+    move |_env, _ctx, state| {
+        let name: &str = var_sym.as_str(); // pass &str to your macros
+        let dyn_ast = match var_type {
+            ParsedVarType::Int { .. }  => to_dyn!(int_var!(state, name)),
+            ParsedVarType::Bool { .. } => to_dyn!(bool_var!(state, name)),
+            // ParsedVarType::BVector { .. } => to_dyn!(bv_var!(state, name)),
+        };
+        ReturnType::DynAst(dyn_ast)
     }
 }
 
 pub fn parse_braced_values(raw: &str) -> Vec<i64> {
     raw.trim_matches(|c| c == '{' || c == '}')
         .split(',')
-        .map(|s| s.trim().parse::<i64>().expect("Invalid integer in brace list"))
+        .map(|s| {
+            s.trim().parse::<i64>().unwrap_or_else(|_| {
+                panic!(
+                    "\n[Error in NuSMV] Invalid integer in brace list: '{}'\n",
+                    s.trim()
+                )
+            })
+        })
         .collect()
 }
 
@@ -813,10 +876,8 @@ enum Choice {
     None,
 }
 
-
-// Return a dynamic node, given the condition (guard) string 
-
-pub fn parse_condition<'ctx>(
+// Return a dynamic node, given the condition (guard or update) string 
+pub fn build_dyn_node<'ctx>(
     smv_env: &SMVEnv<'ctx>,
     cond_str: &str,
     var_name: &str,
@@ -826,9 +887,7 @@ pub fn parse_condition<'ctx>(
     // println!("NOW parsing: {:?}", cond_str);
 
     let raw = preprocess_nondet_expr(var_name, cond_str.trim()); // preprocess once
-    // let raw = cond_str.trim().to_owned();
     let var_name = var_name.to_owned();
-
 
     move |smv_env: &SMVEnv<'ctx>, ctx: &'ctx Context, state: &EnvState<'ctx>| {
        fn recurse<'ctx>(
@@ -871,7 +930,7 @@ pub fn parse_condition<'ctx>(
                 &expr[start..end]
             }
 
-            let s = strip_parens(s);
+            let s = strip_parens(s).trim();
 
 
             if let Some(inner) = s.strip_prefix('!') {
@@ -887,7 +946,8 @@ pub fn parse_condition<'ctx>(
                 return Int::from_i64(ctx, n).into();
             }
 
-            let precedence = vec!["|", "&", "!=", ">=", "<=", "=", ">", "<",  "*", "mod", "/", "+", "-"];
+            // trick: adding spaces for " mod " so it doesn't get confused with var name like "modifying"
+            let precedence = vec!["|", "&", "!=", ">=", "<=", "=", ">", "<",  "*", " mod ", "/", "+", "-"];
 
             for op in &precedence {
                 let mut depth = 0;
@@ -909,13 +969,11 @@ pub fn parse_condition<'ctx>(
                         }
                         _ => {}
                     }
-
                     // Check for operator match at top-level
                     if depth == 0 && &s[i..i + op.len()] == *op {
                         idx = Some(i);
                         break;
                     }
-
                     i += 1;
                 }
 
@@ -930,7 +988,7 @@ pub fn parse_condition<'ctx>(
                         "-" => lhs_expr.as_int().unwrap().sub(&rhs_expr.as_int().unwrap()).into(),
                         "*" => lhs_expr.as_int().unwrap().mul(&rhs_expr.as_int().unwrap()).into(),
                         "/" => lhs_expr.as_int().unwrap().div(&rhs_expr.as_int().unwrap()).into(),
-                        "mod" => lhs_expr.as_int().unwrap().modulo(&rhs_expr.as_int().unwrap()).into(),
+                        " mod " => lhs_expr.as_int().unwrap().modulo(&rhs_expr.as_int().unwrap()).into(),
                         "!=" => lhs_expr._eq(&rhs_expr).not().into(),
                         "=" => lhs_expr._eq(&rhs_expr).into(),
                         ">" => lhs_expr.as_int().unwrap().gt(&rhs_expr.as_int().unwrap()).into(),
@@ -947,7 +1005,11 @@ pub fn parse_condition<'ctx>(
                             let r = rhs_expr.as_bool().unwrap();
                             Bool::or(ctx, &[&l, &r]).into()
                         }
-                        _ => unreachable!(),
+                        other => {
+                            panic!(
+                                "illegal operator '{other}' in expression '{lhs_expr}' and '{rhs_expr}'! please check the NuSMV model"
+                            );
+                        }
                     };
                 }
             }
@@ -1077,5 +1139,354 @@ pub fn parse_smv<'ctx>(
             generate_smv_env_from_parsed(ctx, parsed_model)
         }
         other => panic!("Unknown output format: {}", other),
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug)]
+struct Module {
+    name: String,
+    formals: Vec<String>,        // e.g., ["x","y"]
+    body: String,                // full text of the module body
+    vars: Vec<(String, String)>, // (name, sort)  sort is "boolean" or "lo..hi" (raw)
+    defines: Vec<(String, String)>, // (lhs, rhs)
+    inits: Vec<(String, String)>,   // init(var) := expr;
+    nexts: Vec<(String, String)>,   // next(var) := expr;
+}
+
+/// Top-level flattening entry: returns a flattened NuSMV (single MODULE main).
+pub fn flatten_nusmv(input: &str) -> String {
+    // 1) Parse modules
+    let modules = parse_modules(input);
+
+    // 2) Find main
+    let main = modules.get("main").unwrap_or_else(|| {
+        panic!("No MODULE main found");
+    });
+
+    // 3) In main, collect:
+    //    - its own base VAR/DEFINE/ASSIGN (non-instantiations)
+    //    - all instantiations: inst_name : ModName(actuals...)
+    let inst_re = Regex::new(r"(?m)^\s*([A-Za-z_]\w*)\s*:\s*([A-Za-z_]\w*)\s*\(([^)]*)\)\s*;").unwrap();
+    // simple var decl (non-instance) inside main
+    let simple_var_re = Regex::new(r"(?m)^\s*([\w.\[\]]+)\s*:\s*([A-Za-z_]\w*|[0-9]+\.\.[0-9]+)\s*;").unwrap();
+
+    // Extract blocks from main
+    let main_vars_block = extract_block(&main.body, "VAR");
+    let main_def_block  = extract_block(&main.body, "DEFINE");
+    let main_ass_block  = extract_block(&main.body, "ASSIGN");
+
+    // Parse main non-instantiation vars
+    let mut flat_vars: BTreeMap<String, String> = BTreeMap::new(); // name->sort
+    for cap in simple_var_re.captures_iter(&main_vars_block) {
+        let lhs = cap[1].trim();
+        let rhs = cap[2].trim();
+        // skip lines that are actually instantiations (we’ll add those separately)
+        if inst_re.is_match(&cap[0]) { continue; }
+        let lname = sanitize(lhs);
+        flat_vars.insert(lname.clone(), rhs.to_string());
+    }
+
+    // Parse main DEFINE/ASSIGN (keep, just sanitize names + dotted refs)
+    let parsed_main_defines = parse_defines(&main_def_block);
+    let parsed_main_inits   = parse_inits(&main_ass_block);
+    let parsed_main_nexts   = parse_nexts(&main_ass_block);
+
+    // 4) Process each instantiation line in main VAR
+    let mut flat_defines: Vec<(String, String)> = parsed_main_defines
+        .into_iter()
+        .map(|(l, r)| (sanitize(&l), rewrite_expr(&r, &HashMap::new())))
+        .collect();
+
+    let mut flat_inits: Vec<(String, String)> = parsed_main_inits
+        .into_iter()
+        .map(|(l, r)| (sanitize(&l), rewrite_expr(&r, &HashMap::new())))
+        .collect();
+
+    let mut flat_nexts: Vec<(String, String)> = parsed_main_nexts
+        .into_iter()
+        .map(|(l, r)| (sanitize(&l), rewrite_expr(&r, &HashMap::new())))
+        .collect();
+
+    for cap in inst_re.captures_iter(&main_vars_block) {
+        let inst_name   = cap[1].trim().to_string();      // e.g., proc1
+        let module_name = cap[2].trim().to_string();      // e.g., Proc
+        let actuals_str = cap[3].trim();                  // e.g., a, b
+
+        let module = modules.get(&module_name.to_lowercase()).unwrap_or_else(|| {
+            panic!("Unknown module {} used by instance {}", module_name, inst_name);
+        });
+
+        // Build formal→actual map (sanitized)
+        let actuals: Vec<String> = if actuals_str.is_empty() {
+            vec![]
+        } else {
+            actuals_str.split(',')
+                .map(|s| sanitize(s.trim()))
+                .collect()
+        };
+        if actuals.len() != module.formals.len() {
+            panic!("Instance {} : {} expects {} params but got {}",
+                   inst_name, module_name, module.formals.len(), actuals.len());
+        }
+        let mut subst: HashMap<String, String> = HashMap::new();
+        for (f, a) in module.formals.iter().zip(actuals.iter()) {
+            subst.insert(f.clone(), a.clone());
+        }
+
+        // 4a) bring over vars with inst_ prefix
+        for (v, sort) in &module.vars {
+            let flat_name = format!("{}_{}", inst_name, sanitize(v));
+            flat_vars.insert(flat_name, sort.clone());
+        }
+
+        // 4b) bring over defines
+        for (lhs, rhs) in &module.defines {
+            let lhs_flat = format!("{}_{}", inst_name, sanitize(lhs));
+            let rhs_flat = rewrite_with_ctx(rhs, &inst_name, &module.vars, &subst);
+            flat_defines.push((lhs_flat, rhs_flat));
+        }
+
+        // 4c) bring over ASSIGN init/next
+        for (lhs, rhs) in &module.inits {
+            let lhs_flat = format!("{}_{}", inst_name, sanitize(lhs));
+            let rhs_flat = rewrite_with_ctx(rhs, &inst_name, &module.vars, &subst);
+            flat_inits.push((lhs_flat, rhs_flat));
+        }
+        for (lhs, rhs) in &module.nexts {
+            let lhs_flat = format!("{}_{}", inst_name, sanitize(lhs));
+            let rhs_flat = rewrite_with_ctx(rhs, &inst_name, &module.vars, &subst);
+            flat_nexts.push((lhs_flat, rhs_flat));
+        }
+    }
+
+    // 5) Emit flattened main
+    let mut out = String::new();
+    out.push_str("MODULE main\n\n");
+
+    // VAR
+    out.push_str("VAR\n");
+    for (name, sort) in &flat_vars {
+        out.push_str(&format!("  {} : {};\n", name, sort));
+    }
+    out.push('\n');
+
+    // DEFINE
+    if !flat_defines.is_empty() {
+        out.push_str("DEFINE\n");
+        for (lhs, rhs) in &flat_defines {
+            out.push_str(&format!("  {} := {};\n", lhs, rhs));
+        }
+        out.push('\n');
+    }
+
+    // ASSIGN
+    if !flat_inits.is_empty() || !flat_nexts.is_empty() {
+        out.push_str("ASSIGN\n");
+        for (lhs, rhs) in &flat_inits {
+            out.push_str(&format!("  init({}) := {};\n", lhs, rhs));
+        }
+        for (lhs, rhs) in &flat_nexts {
+            out.push_str(&format!("  next({}) := {};\n", lhs, rhs));
+        }
+        out.push('\n');
+    }
+
+    out
+}
+
+/* ----------------- parsing helpers ----------------- */
+
+fn parse_modules(input: &str) -> HashMap<String, Module> {
+    // Capture MODULE name (optionally with params) + body up to next MODULE or EOF
+    let mod_re = Regex::new(r"(?s)MODULE\s+([A-Za-z_]\w*)\s*(?:\(([^)]*)\))?\s*(.*?)(?=^\s*MODULE\s+[A-Za-z_]\w*|\z)").unwrap();
+
+    let mut map = HashMap::<String, Module>::new();
+
+    for cap in mod_re.captures_iter(input) {
+        let name = cap[1].to_string();
+        let params = cap.get(2).map(|m| m.as_str().trim()).unwrap_or("");
+        let body = cap[3].to_string();
+
+        let formals: Vec<String> = if params.is_empty() {
+            vec![]
+        } else {
+            params.split(',').map(|s| sanitize(s.trim())).collect()
+        };
+
+        let vars = parse_vars(&body);
+        let defines = parse_defines(&body);
+        let inits = parse_inits(&body);
+        let nexts = parse_nexts(&body);
+
+        map.insert(
+            name.to_lowercase(),
+            Module { name, formals, body, vars, defines, inits, nexts },
+        );
+    }
+
+    map
+}
+
+fn extract_block(body: &str, kw: &str) -> String {
+    // grab the section between KW and the next top-level keyword (MODULE/VAR/DEFINE/ASSIGN/INIT/TRANS) or EOF
+    let re = Regex::new(&format!(
+        r"(?s)^\s*{}\b(.*?)(?=^\s*(MODULE|VAR|DEFINE|ASSIGN|INIT|TRANS)\b|\z)",
+        regex::escape(kw)
+    )).unwrap();
+    if let Some(c) = re.captures(body) {
+        c.get(1).map(|m| m.as_str().to_string()).unwrap_or_default()
+    } else {
+        String::new()
+    }
+}
+
+fn parse_vars(body: &str) -> Vec<(String, String)> {
+    let block = extract_block(body, "VAR");
+    let var_decl_re = Regex::new(r"(?m)^\s*([\w.\[\]]+)\s*:\s*([A-Za-z_]\w*|[0-9]+\.\.[0-9]+)\s*;").unwrap();
+    var_decl_re
+        .captures_iter(&block)
+        .map(|cap| (cap[1].trim().to_string(), cap[2].trim().to_string()))
+        .collect()
+}
+
+fn parse_defines(body: &str) -> Vec<(String, String)> {
+    let block = extract_block(body, "DEFINE");
+    let define_re = Regex::new(r"(?m)^\s*([\w.\[\]]+)\s*:=\s*(.+?)\s*;").unwrap();
+    define_re
+        .captures_iter(&block)
+        .map(|c| (c[1].trim().to_string(), c[2].trim().to_string()))
+        .collect()
+}
+
+fn parse_inits(body: &str) -> Vec<(String, String)> {
+    let block = extract_block(body, "ASSIGN"); // INIT often lives in ASSIGN block via init(x) :=
+    let init_re = Regex::new(r"(?m)^\s*init\(([\w.\[\]]+)\)\s*:=\s*(.+?)\s*;").unwrap();
+    init_re
+        .captures_iter(&block)
+        .map(|c| (c[1].trim().to_string(), c[2].trim().to_string()))
+        .collect()
+}
+
+fn parse_nexts(body: &str) -> Vec<(String, String)> {
+    let block = extract_block(body, "ASSIGN");
+    let next_re = Regex::new(r"(?m)^\s*next\(([\w.\[\]]+)\)\s*:=\s*(.+?)\s*;").unwrap();
+    next_re
+        .captures_iter(&block)
+        .map(|c| (c[1].trim().to_string(), c[2].trim().to_string()))
+        .collect()
+}
+
+/* ----------------- rewriting helpers ----------------- */
+
+fn sanitize(s: &str) -> String {
+    // NuSMV allows dots in names; we flatten them with underscores.
+    s.replace('.', "_")
+}
+
+/// Rewrite an expression with only dotted-name → underscored-name cleaning.
+fn rewrite_expr(expr: &str, extra_map: &HashMap<String, String>) -> String {
+    // Replace identifiers by sanitizing and optional substitution
+    let id_re = Regex::new(r"(?x)
+        (?P<kw>next|init)
+        \s*\(
+            (?P<inside>[^)]+)
+        \)
+        |
+        (?P<ident>\b[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*\b)
+    ").unwrap();
+
+    id_re.replace_all(expr, |caps: &regex::Captures| {
+        if let Some(m) = caps.name("kw") {
+            // next(...) or init(...)
+            let kw = m.as_str();
+            let inside = caps.name("inside").unwrap().as_str();
+            let cleaned_inside = rewrite_expr(inside, extra_map);
+            format!("{kw}({cleaned_inside})")
+        } else if let Some(id) = caps.name("ident") {
+            let raw = id.as_str();
+            let candidate = sanitize(raw);
+            extra_map.get(&candidate).cloned().unwrap_or(candidate)
+        } else {
+            // shouldn't happen
+            caps.get(0).unwrap().as_str().to_string()
+        }
+    }).to_string()
+}
+
+/// Rewrite using module-local context:
+/// - local var `v` → `inst_v`
+/// - formal `x`    → actual
+/// - sanitize dotted names everywhere.
+/// Also handles nested next()/init() arguments.
+fn rewrite_with_ctx(
+    expr: &str,
+    inst: &str,
+    mod_locals: &[(String, String)],
+    formal_to_actual: &HashMap<String, String>,
+) -> String {
+    // Build a map for quick local var detection (sanitized)
+    let mut locals: HashMap<String, String> = HashMap::new();
+    for (v, _) in mod_locals {
+        let v_clean = sanitize(v);
+        locals.insert(v_clean.clone(), format!("{}_{}", inst, v_clean));
+    }
+
+    // Combined map (formals first, then locals)
+    let mut extra = formal_to_actual.clone();
+    extra.extend(locals);
+
+    rewrite_expr(expr, &extra)
+}
+
+/* ----------------- Example ----------------- */
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn flatten_simple() {
+        let src = r#"
+MODULE main
+VAR
+  proc1 : Proc(a, b);
+  proc2 : Proc(a, b);
+  a : 0..3;
+  b : boolean;
+DEFINE
+  alive := b;
+ASSIGN
+  init(a) := 0;
+  next(a) := a + 1;
+
+MODULE Proc(x, y)
+VAR
+  line : 0..8;
+  flag : boolean;
+DEFINE
+  good := (flag & y);
+ASSIGN
+  init(line) := 0;
+  next(line) := x + 1;
+  next(flag) := !flag;
+"#;
+
+        let flat = flatten_nusmv(src);
+        println!("{flat}");
+        assert!(flat.contains("MODULE main"));
+        assert!(flat.contains("proc1_line : 0..8;"));
+        assert!(flat.contains("proc2_flag : boolean;"));
+        assert!(flat.contains("init(proc1_line) := 0;"));
+        assert!(flat.contains("next(proc2_line) := a + 1;")); // x→a substitution
     }
 }

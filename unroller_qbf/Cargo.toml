@@ -8,7 +8,6 @@ z3 = "0.13"
 regex = "1"
 ir = { path = "../ir" }
 expressions = { path = "../expressions" }
-parser_nusmv = { path = "../parser_nusmv" }
 fsm = { path = "../fsm" }
 flags = { path = "../flags" }
 logging = { path = "../logging" }

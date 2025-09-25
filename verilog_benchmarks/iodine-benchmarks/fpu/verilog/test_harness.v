@@ -1,114 +1,133 @@
-// FILE: fdiv_harness.v
-// A minimal test harness to expose the fdiv constant-time violation.
+// fpu_small_tb_min_lock_clean.v
+`timescale 1ns/1ps
 
-`timescale 1ns / 100ps
-
-// Include only the necessary dependencies
-`include "except.v"
-`include "pre_norm_fmul.v"
-// Assuming div_r2 is in primitives.v
-`include "primitives.v"
-
-module fdiv_harness(
-    input           clk,
-    input   [31:0]  opa,
-    input   [31:0]  opb,
-    output          done // Our new, explicit done signal
+module fpu_small_tb (
+  input clk,
+  input clear_done   // pulse to clear sticky done
 );
 
-    // Internal wires to connect the modules
-    wire    opb_00;         // From except: Is operand B zero?
-    wire    [23:0]  fracta_mul;   // From pre_norm_fmul
-    wire    [23:0]  fractb_mul;   // From pre_norm_fmul
-    wire    [49:0]  quo;          // From div_r2
-    wire    [49:0]  rem;          // From div_r2
+  // ============================================
+  // Fixed rounding mode: nearest-even
+  localparam [1:0] RMODE_FIXED = 2'd0;
 
-    // For simplicity, we hardcode the fpu_op to DIV (3'b011)
-    // and other inputs like rmode.
-    localparam FPU_OP_DIV = 3'b011;
+  // ============================================
+  // Operand selectors and operation:
+  // symbolic at init, then self-holding
+  (* keep, public = "true" *) reg [1:0] opa_sel_q;
+  (* keep, public = "true" *) reg [1:0] opb_sel_q;
+  (* keep, public = "true" *) reg       is_div_q;
 
-    // Registers for the inputs, mimicking the first pipeline stage
-    reg [31:0] opa_r, opb_r;
-    always @(posedge clk) begin
-        opa_r <= opa;
-        opb_r <= opb;
-    end
+  // mirrors
+  (* keep, public = "true" *) reg [2:0] fpu_op_q;
+  (* keep, public = "true" *) reg [1:0] rmode_q;
 
-    //=============== 1. Instantiate Essential Modules ===============
+  always @(posedge clk) begin
+    opa_sel_q <= opa_sel_q;
+    opb_sel_q <= opb_sel_q;
+    is_div_q  <= is_div_q;
+    fpu_op_q  <= fpu_op_q;
+    rmode_q   <= rmode_q;
+  end
 
-    // We need the 'except' module to detect if opb is zero.
-    except u_except(
-        .clk(clk),
-        .opa(opa_r),
-        .opb(opb_r),
-        .opb_00(opb_00), // This is the signal that triggers the fast path
-        // Other outputs are not needed for this test
-        .inf(), .ind(), .qnan(), .snan(), .opa_nan(), .opb_nan(),
-        .opa_00(), .opa_inf(), .opb_inf(), .opa_dn(), .opb_dn()
-    );
+  // ============================================
+  // LUT: 4 entries
+  function [31:0] fp_lut(input [1:0] s);
+    case (s)
+      2'd0: fp_lut = 32'h0000_0000; // +0.0
+      2'd1: fp_lut = 32'h3f80_0000; // +1.0
+      2'd2: fp_lut = 32'h4000_0000; // +2.0
+      default: fp_lut = 32'h7f80_0000; // +Inf
+    endcase
+  endfunction
 
-    // We need the 'pre_norm_fmul' module to prepare operands for the slow path.
-    pre_norm_fmul u_prenorm(
-        .clk(clk),
-        .fpu_op(FPU_OP_DIV),
-        .opa(opa_r),
-        .opb(opb_r),
-        .fracta(fracta_mul),
-        .fractb(fractb_mul),
-        // Other outputs are not needed
-        .exp_out(), .sign(), .sign_exe(), .inf(), .exp_ovf(), .underflow()
-    );
+  wire [31:0] opa_w    = fp_lut(opa_sel_q);
+  wire [31:0] opb_w    = fp_lut(opb_sel_q);
+  wire [2:0]  fpu_op_w = is_div_q ? 3'd3 : 3'd2;
 
-    // We need the 'div_r2' module, which is the slow iterative divider.
-    // NOTE: The 'div_r2' module takes many cycles. The exact number is
-    // the latency of the slow path.
-    div_r2 u_divider(
-        .clk(clk),
-        // The original design has complex logic for the 'opa' to the divider.
-        // We simplify it here, as it's not essential for the timing leak.
-        .opa({fracta_mul, 26'd0}),
-        .opb(fractb_mul),
-        .quo(quo),
-        .rem(rem)
-    );
+  // ============================================
+  // DUT
+  wire [31:0] out_w;
+  wire inf_w, snan_w, qnan_w, ine_w, overflow_w, underflow_w, zero_w, div_by_zero_w;
 
-    //=============== 2. Model the Timing Violation Explicitly ===============
+  fpu dut (
+    .clk(clk),
+    .rmode(RMODE_FIXED),
+    .fpu_op(fpu_op_w),
+    .opa(opa_w),
+    .opb(opb_w),
+    .out(out_w),
+    .inf(inf_w), .snan(snan_w), .qnan(qnan_w),
+    .ine(ine_w),
+    .overflow(overflow_w), .underflow(underflow_w),
+    .zero(zero_w),
+    .div_by_zero(div_by_zero_w)
+  );
 
-    // The flaw is the data-dependent execution path. We model this with two
-    // 'done' signals representing the fast and slow paths.
+  // ============================================
+  // Registered observable outputs
+  (* keep, public = "true" *) reg [31:0] opa_q, opb_q, out_q;
+  (* keep, public = "true" *) reg        inf_q, snan_q, qnan_q;
+  (* keep, public = "true" *) reg        ine_q, overflow_q, underflow_q;
+  (* keep, public = "true" *) reg        zero_q, div_by_zero_q;
+  (* keep, public = "true" *) reg        done;
 
-    // The FAST path finishes in just a few cycles if opb is zero.
-    // We can model this with a simple pipeline delay.
-    reg opb_00_r1, opb_00_r2;
-    always @(posedge clk) begin
-        opb_00_r1 <= opb_00;
-        opb_00_r2 <= opb_00_r1;
-    end
-    wire done_fast = opb_00_r2; // Done in 2 cycles if opb is zero
+  wire changed =
+        (out_q         != out_w)      ||
+        (inf_q         != inf_w)      ||
+        (snan_q        != snan_w)     ||
+        (qnan_q        != qnan_w)     ||
+        (ine_q         != ine_w)      ||
+        (overflow_q    != overflow_w) ||
+        (underflow_q   != underflow_w)||
+        (zero_q        != zero_w)     ||
+        (div_by_zero_q != div_by_zero_w);
 
-    // The SLOW path takes as long as the 'div_r2' module.
-    // The latency of div_r2 is fixed but long. Let's assume it's ~30 cycles.
-    // We can model this with a counter.
-    reg [5:0] slow_path_counter;
-    reg done_slow_reg;
+  // ============================================
+  // Initial state: outputs and flags cleared
+  initial begin
+    //opa_q         = 32'h0000_0000;
+    //opb_q         = 32'h0000_0000;
+    out_q         = 32'h0000_0000;
+    inf_q         = 1'b0;
+    snan_q        = 1'b0;
+    qnan_q        = 1'b0;
+    ine_q         = 1'b0;
+    overflow_q    = 1'b0;
+    underflow_q   = 1'b0;
+    zero_q        = 1'b0;
+    div_by_zero_q = 1'b0;
+    done          = 1'b0;
 
-    always @(posedge clk) begin
-        if (!opb_00) begin // Only start the counter for the slow path
-            if (slow_path_counter == 30) begin
-                done_slow_reg <= 1'b1;
-                slow_path_counter <= 0;
-            end else begin
-                done_slow_reg <= 1'b0;
-                slow_path_counter <= slow_path_counter + 1;
-            end
-        end else begin
-            slow_path_counter <= 0;
-            done_slow_reg <= 1'b0;
-        end
-    end
-    wire done_slow = done_slow_reg;
+    //force division
+    is_div_q      = 1'b1;
+    fpu_op_q      = 3'd3; 
 
-    // The final 'done' signal depends on which path was taken.
-    assign done = done_fast | done_slow;
+
+    // mirrors default to fixed values
+    //fpu_op_q      = 3'd0;
+    rmode_q       = RMODE_FIXED;
+  end
+
+  // ============================================
+  // Sequential update
+  always @(posedge clk) begin
+    opa_q <= opa_w;
+    opb_q <= opb_w;
+
+    out_q         <= out_w;
+    inf_q         <= inf_w;
+    snan_q        <= snan_w;
+    qnan_q        <= qnan_w;
+    ine_q         <= ine_w;
+    overflow_q    <= overflow_w;
+    underflow_q   <= underflow_w;
+    zero_q        <= zero_w;
+    div_by_zero_q <= div_by_zero_w;
+
+    if (clear_done)
+      done <= 1'b0;
+    else
+      done <= done | changed;
+  end
 
 endmodule

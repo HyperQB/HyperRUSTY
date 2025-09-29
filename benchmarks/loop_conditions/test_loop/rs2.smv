@@ -1,14 +1,22 @@
 MODULE main 
 VAR
-  x : 1..2;
+  y : 1..10;
 
 ASSIGN
-  init(x) := 1;
-  next(x) := case
-    x = 1 : {1, 2};
-    x = 2 : {1, 2};
-    TRUE  : x;
+  init(y) := 1;
+  next(y) := case
+    y = 1 : {2, 3, 4, 5, 6, 7, 8, 9, 10};
+    y = 10 : 1;
+    y = 2 : 1;
+    y = 3 : 1;
+    y = 4 : 1;
+    y = 5 : 1;
+    y = 6 : 1;
+    y = 7 : 1;
+    y = 8 : 1;
+    y = 9 : 1;
+
   esac;
 
-  DEFINE
-    secret := (x = 2);
+DEFINE
+  secret := (y = 2 | y = 3 | y = 4 | y = 5 | y = 6 | y = 7 | y = 8 | y = 9 | y = 10);

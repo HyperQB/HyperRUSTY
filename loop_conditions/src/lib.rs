@@ -60,6 +60,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
         }
     }
 
+
     /// Generates constraints ensuring all symbolic states are legal/valid
     /// Includes scope constraints for variables and initial state constraints
     pub fn legal_state(&self) -> Vec<Bool<'env>> {
@@ -81,6 +82,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
         valid_states.extend(self.model1.generate_initial_constraints(&self.symstates1));
         valid_states.extend(self.model2.generate_initial_constraints(&self.symstates2));
         
+        println!("{:#?}", valid_states);
         valid_states
     }
 
@@ -123,6 +125,8 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
                 constraints.push(and_expr.implies(&distinct));
             }
         }
+
+        println!("{:#?}", constraints);
         constraints
     }
 
@@ -282,6 +286,8 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
                 constraints.push(transition_x_constraint.implies(&inner_implication));
             }
         }
+        // print the constrains
+        
         constraints
     }
 
@@ -433,6 +439,8 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             panic!("The formula must not contain Until or Release operators");
         }
         
+        self.model1.generate_explicit_states(&self.symstates1);
+        
         // Detect quantifier pattern (AE or EA)
         let check = detect_quantifier_order(formula);
         match check {
@@ -473,50 +481,6 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
         }
     }
 
-
-    // HELPERS of QCIR conversion
-
-pub fn build_max_bit_map(&self) -> HashMap<String, usize> {
-    fn bits_from_upper(hi: i64) -> usize {
-        // ignoring lower bound entirely; treat values as unsigned 0..=hi
-        let u = hi.max(0) as u64;
-        if u == 0 { 1 } else { 64 - u.leading_zeros() as usize }
-    }
-
-    let mut map = HashMap::<String, usize>::new();
-
-    for env in [&self.model1, &self.model2] {
-        for (name, var) in env.get_variables().iter() {
-            let bits = match &var.sort {
-                VarType::Bool { .. } => 1,
-
-                // ignore `lower`; only use `upper`
-                VarType::Int     { upper: Some(hi), .. }
-                | VarType::BVector{ upper: Some(hi), .. } => bits_from_upper(*hi),
-
-                VarType::Int     { upper: None, .. } =>
-                    panic!("Int var `{}` must have an upper bound to size bits", name),
-                VarType::BVector { upper: None, .. } =>
-                    panic!("BV var `{}` must have an upper bound to size bits", name),
-            };
-
-            map.entry(name.to_string())
-               .and_modify(|old| *old = (*old).max(bits))
-               .or_insert(bits);
-        }
-    }
-    map
-}
-    
-    pub fn build_qbf_loop_condition(&self, formula: &AstNode) {
-        let z3_encoding: Bool = self.build_loop_condition(formula);
-        let mut max_bit_map: HashMap<String, usize> = self.build_max_bit_map();
-        let dyn_root = Dynamic::from_ast(&z3_encoding);
-        let expression = dynamic_to_expression("", &dyn_root, /* is_primed */ false, &max_bit_map);
-        let final_string = expression_to_string(&expression);
-        let mut file = create_file();
-        file.write_all(final_string.as_bytes()).expect("Should have been able to write to file");
-    }
 
 
 }

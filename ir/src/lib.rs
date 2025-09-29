@@ -402,20 +402,16 @@ impl<'ctx> SMVEnv<'ctx> {
     }
 
     
-       
 
+    pub fn generate_transition_relation(
+    &self,
+    curr_state: &EnvState<'ctx>,
+    next_state: &EnvState<'ctx>,
+) -> Vec<Bool<'ctx>> {
+    use z3::ast::{Bool, Int, BV};
 
-
-
-
-
-
-
-
-
-
-    pub fn generate_transition_relation(& self, curr_state: &EnvState<'ctx>, next_state: &EnvState<'ctx>) -> Vec<Bool> {
-        let mut constraints = Vec::new();
+    let mut constraints: Vec<Bool> = Vec::new();
+    let mut change_flags: Vec<Bool> = Vec::new(); // track (next != curr) per variable
 
         for (name, variable) in self.variables.iter() {
             // If transitions have been defined for this variable, build a nested if-expression.
@@ -703,6 +699,18 @@ impl<'ctx> SMVEnv<'ctx> {
         }
 
         constraints
+    }
+
+
+    pub fn generate_explicit_states(&self, states: &Vec<EnvState<'ctx>>){
+        let init_constrain = self.generate_initial_constraints(&states);
+        println!("Initial Constraints: {:?}", init_constrain);
+        println!("-----------------------------------------------------");
+        let transition_constrain = self.generate_transition_relation(&states[0], &states[1]);
+        println!("Transition Constraints: {:?}", transition_constrain);
+        println!("-----------------------------------------------------");
+
+
     }
 
 

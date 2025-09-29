@@ -189,7 +189,7 @@ fn main() {
                 let secs = duration.as_secs_f64();
                 println!("Model Creation Time: {}", secs);
                 let lp = LoopCondition::new(&ctx, &envs[0], &envs[1]);
-                lp.build_qbf_loop_condition(&ast_node);
+                //lp.build_qbf_loop_condition(&ast_node);
             }
             // gen_qcir(&model_paths, &String::from(formula_path.to_str().unwrap()), &env, *unrolling_bound as i32, false, semantics_as_str);
             let output = process::Command::new("/Users/milad/Desktop/rust_tutorial/HyperRUSTY/quabs")
@@ -258,6 +258,20 @@ fn main() {
             // Create a new solver
             let solver = Solver::new(&ctx);
             solver.assert(&encoding);
+
+
+            let mut smt = String::new();
+            smt.push_str("(set-logic ALL)\n");
+            smt.push_str("(set-option :produce-models true)\n");
+            // Snapshot of all decls + assertions currently in the solver:
+            smt.push_str(&solver.to_smt2());
+            // Make it self-contained and executable:
+            smt.push_str("(check-sat)\n(get-model)\n(exit)\n");
+
+            // Choose your output path:
+            let out_path = "encoding.smt2";
+            std::fs::write(out_path, smt).expect("failed to write SMT-LIB2 file");
+            println!("Wrote SMT-LIB2 to {}", out_path);
 
             match solver.check() {
                 SatResult::Sat => {

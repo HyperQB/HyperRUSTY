@@ -1,36 +1,31 @@
 MODULE main
-VAR
-  s : 0..26;
-ASSIGN
-  init(s) := 0;
-  next(s) :=
-    case
-      s = 0  : 1;
-      s = 1  : {2, 26};
-      s = 2  : 3;
-      s = 3  : 4;
-      s = 4  : 5;
-      s = 5  : 6;
-      s = 6  : {7, 24};
-      s = 7  : 8;
-      s = 8  : 9;
-      s = 9  : 10;
-      s = 10 : 11;
-      s = 11 : {12, 21};
-      s = 12 : 13;
-      s = 13 : 14;
-      s = 14 : 15;
-      s = 15 : {16, 17, 18, 19};
-      s = 16 : 20;
-      s = 17 : 20;
-      s = 18 : 20;
-      s = 19 : 20;
-      s = 20 : 11;
-      s = 21 : 22;
-      s = 22 : 23;
-      s = 23 : 6;
-      s = 24 : 25;
-      s = 25 : 1;
-      s = 26 : 26;
-      TRUE   : s;  -- totalize with self-loop
-    esac;
+  VAR
+    pc : 0..8;  -- program counter (single state var)
+                -- 0: WHI    -- while (i < m)
+                -- 1: WHJ    -- while (j < p)
+                -- 2: RESET  -- k := 0; C[i,j] := 0
+                -- 3: WHK    -- while (k < n)
+                -- 4: MAC    -- C[i,j] += A[i,k] * B[k,j]
+                -- 5: KPP    -- k++
+                -- 6: JPP    -- j++
+                -- 7: IPP    -- i++
+                -- 8: RET    -- return / done
+
+  -- Atomic propositions (derived from the integer pc; convenient for HyperLTL)
+
+  ASSIGN
+    init(pc) := 0;  -- start at WHI
+
+    -- Canonical triple-loop shape (no stuttering here)
+    next(pc) :=
+      case
+        pc = 0 : {1, 8};   -- if (i < m) -> WHJ; else -> RET
+        pc = 1 : {2, 7};   -- if (j < p) -> RESET; else -> IPP
+        pc = 2 : 3;        -- initialize inner dot-product, then WHK
+        pc = 3 : {4, 6};   -- if (k < n) -> MAC; else -> JPP
+        pc = 4 : 5;        -- one MAC step, then k++
+        pc = 5 : 3;        -- re-check while(k < n)
+        pc = 6 : 1;        -- next column, re-check while(j < p)
+        pc = 7 : 0;        -- next row, re-check while(i < m)
+        pc = 8 : 8;        -- done (absorbing)
+      esac;

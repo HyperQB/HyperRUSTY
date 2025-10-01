@@ -383,7 +383,7 @@
 #============= WIP =================#
 
 #=== fpu ===#
-cargo run --release -- -v verilog_benchmarks/iodine-benchmarks/fpu/verilog/build.ys verilog_benchmarks/iodine-benchmarks/fpu/verilog/build.ys -t fpu_small_tb -o fpu.smt2 -f verilog_benchmarks/iodine-benchmarks/fpu/verilog/formula.hq -k 1 -s pes
+cargo run --release -- -v verilog_benchmarks/iodine-benchmarks/fpu/verilog/build.ys verilog_benchmarks/iodine-benchmarks/fpu/verilog/build.ys -t fpu_small_tb -o fpu.smt2 -f verilog_benchmarks/iodine-benchmarks/fpu/verilog/formula_test.hq -k 10 -s pes
 
 #=== TRNG ===#
 #RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/TRNG/build.ys verilog_benchmarks/TRNG/build.ys -t trng_wrap -o trng.smt2 -f verilog_benchmarks/TRNG/formula_1.hq -k 10 -s opt

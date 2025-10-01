@@ -13,8 +13,8 @@ module fpu_small_tb (
   // ============================================
   // Operand selectors and operation:
   // symbolic at init, then self-holding
-  (* keep, public = "true" *) reg [1:0] opa_sel_q;
-  (* keep, public = "true" *) reg [1:0] opb_sel_q;
+  (* keep, public = "true" *) reg [2:0] opa_sel_q;
+  (* keep, public = "true" *) reg [2:0] opb_sel_q;
   (* keep, public = "true" *) reg       is_div_q;
 
   // mirrors
@@ -31,14 +31,21 @@ module fpu_small_tb (
 
   // ============================================
   // LUT: 4 entries
-  function [31:0] fp_lut(input [1:0] s);
+    function [31:0] fp_lut(input [2:0] s);
     case (s)
-      2'd0: fp_lut = 32'h0000_0000; // +0.0
-      2'd1: fp_lut = 32'h3f80_0000; // +1.0
-      2'd2: fp_lut = 32'h4000_0000; // +2.0
-      default: fp_lut = 32'h7f80_0000; // +Inf
+        3'd0: fp_lut = 32'h0000_0000; // +0.0     (exact zero)
+        3'd1: fp_lut = 32'h3f80_0000; // +1.0     (exact integer)
+        3'd2: fp_lut = 32'h4000_0000; // +2.0     (exact power of two)
+        3'd3: fp_lut = 32'h3f00_0000; // +0.5     (exact fraction)
+
+        // "Difficult" / non-terminating binary fractions (rounded)
+        3'd4: fp_lut = 32'h3eaa_aaab; // ≈0.3333... (1/3)
+        3'd5: fp_lut = 32'h3f2a_aaab; // ≈0.6666... (2/3)
+        3'd6: fp_lut = 32'h3e4c_cccd; // ≈0.2       (1/5)
+        3'd7: fp_lut = 32'h3f4c_cccd; // ≈0.8       (4/5)
     endcase
-  endfunction
+    endfunction
+
 
   wire [31:0] opa_w    = fp_lut(opa_sel_q);
   wire [31:0] opb_w    = fp_lut(opb_sel_q);

@@ -397,6 +397,11 @@ fn main() {
         let solver = Solver::new(&ctx);
         solver.assert(&encoding);
 
+        //DEBUG
+        let smtdump = solver.to_smt2();
+        let mut file = fs::File::create("smt_dump.smt2").expect("Could not create SMT dump file");
+        file.write_all(smtdump.as_bytes()).expect("Could not write SMT dump file");
+
         match solver.check() {
             SatResult::Sat => {
                 // Is counterexample set?

@@ -1,0 +1,250 @@
+Parsing: benchmarks/9_buffer/unscheduled_buffer.smv
+
+Parsing: benchmarks/9_buffer/unscheduled_buffer.smv
+
+Model Creation Time: 0.006012
+Encoding Time: 0.001329833
+result: unsat.
+
+State 0:
+  P1_sec_in_0_A = 2
+  P1_sec_in_0_B = 1
+  P1_sec_out_0_A = 0
+  P1_sec_out_0_B = 0
+  P2_unclass_in_0_A = 0
+  P2_unclass_in_0_B = 0
+  P2_unclass_out_0_A = 0
+  P2_unclass_out_0_B = 0
+  PC_0_A = 1
+  PC_0_B = 1
+  sec_read_0_A = true
+  sec_read_0_B = true
+  sec_write_0_A = true
+  sec_write_0_B = true
+  shared_buffer_0_A = 0
+  shared_buffer_0_B = 0
+  unclass_read_0_A = true
+  unclass_read_0_B = true
+  unclass_write_0_A = false
+  unclass_write_0_B = false
+
+State 1:
+  P1_sec_in_1_A = 2
+  P1_sec_in_1_B = 1
+  P1_sec_out_1_A = 0
+  P1_sec_out_1_B = 0
+  P2_unclass_in_1_A = 0
+  P2_unclass_in_1_B = 0
+  P2_unclass_out_1_A = 0
+  P2_unclass_out_1_B = 0
+  PC_1_A = 2
+  PC_1_B = 2
+  sec_read_1_A = true
+  sec_read_1_B = true
+  sec_write_1_A = true
+  sec_write_1_B = true
+  shared_buffer_1_A = 0
+  shared_buffer_1_B = 0
+  unclass_read_1_A = true
+  unclass_read_1_B = true
+  unclass_write_1_A = false
+  unclass_write_1_B = false
+
+State 2:
+  P1_sec_in_2_A = 2
+  P1_sec_in_2_B = 1
+  P1_sec_out_2_A = 0
+  P1_sec_out_2_B = 0
+  P2_unclass_in_2_A = 0
+  P2_unclass_in_2_B = 0
+  P2_unclass_out_2_A = 0
+  P2_unclass_out_2_B = 0
+  PC_2_A = 3
+  PC_2_B = 3
+  sec_read_2_A = true
+  sec_read_2_B = true
+  sec_write_2_A = true
+  sec_write_2_B = true
+  shared_buffer_2_A = 2
+  shared_buffer_2_B = 1
+  unclass_read_2_A = true
+  unclass_read_2_B = true
+  unclass_write_2_A = false
+  unclass_write_2_B = false
+
+State 3:
+  P1_sec_in_3_A = 2
+  P1_sec_in_3_B = 1
+  P1_sec_out_3_A = 2
+  P1_sec_out_3_B = 1
+  P2_unclass_in_3_A = 0
+  P2_unclass_in_3_B = 0
+  P2_unclass_out_3_A = 2
+  P2_unclass_out_3_B = 1
+  PC_3_A = 3
+  PC_3_B = 3
+  sec_read_3_A = true
+  sec_read_3_B = true
+  sec_write_3_A = true
+  sec_write_3_B = true
+  shared_buffer_3_A = 2
+  shared_buffer_3_B = 1
+  unclass_read_3_A = true
+  unclass_read_3_B = true
+  unclass_write_3_A = false
+  unclass_write_3_B = false
+
+State 4:
+  P1_sec_in_4_A = 2
+  P1_sec_in_4_B = 1
+  P1_sec_out_4_A = 2
+  P1_sec_out_4_B = 1
+  P2_unclass_in_4_A = 0
+  P2_unclass_in_4_B = 0
+  P2_unclass_out_4_A = 2
+  P2_unclass_out_4_B = 1
+  PC_4_A = 3
+  PC_4_B = 3
+  sec_read_4_A = true
+  sec_read_4_B = true
+  sec_write_4_A = true
+  sec_write_4_B = true
+  shared_buffer_4_A = 2
+  shared_buffer_4_B = 1
+  unclass_read_4_A = true
+  unclass_read_4_B = true
+  unclass_write_4_A = false
+  unclass_write_4_B = false
+
+State 5:
+  P1_sec_in_5_A = 2
+  P1_sec_in_5_B = 1
+  P1_sec_out_5_A = 2
+  P1_sec_out_5_B = 1
+  P2_unclass_in_5_A = 0
+  P2_unclass_in_5_B = 0
+  P2_unclass_out_5_A = 2
+  P2_unclass_out_5_B = 1
+  PC_5_A = 3
+  PC_5_B = 3
+  sec_read_5_A = true
+  sec_read_5_B = true
+  sec_write_5_A = true
+  sec_write_5_B = true
+  shared_buffer_5_A = 2
+  shared_buffer_5_B = 1
+  unclass_read_5_A = true
+  unclass_read_5_B = true
+  unclass_write_5_A = false
+  unclass_write_5_B = false
+
+State 6:
+  P1_sec_in_6_A = 2
+  P1_sec_in_6_B = 1
+  P1_sec_out_6_A = 2
+  P1_sec_out_6_B = 1
+  P2_unclass_in_6_A = 0
+  P2_unclass_in_6_B = 0
+  P2_unclass_out_6_A = 2
+  P2_unclass_out_6_B = 1
+  PC_6_A = 3
+  PC_6_B = 3
+  sec_read_6_A = true
+  sec_read_6_B = true
+  sec_write_6_A = true
+  sec_write_6_B = true
+  shared_buffer_6_A = 2
+  shared_buffer_6_B = 1
+  unclass_read_6_A = true
+  unclass_read_6_B = true
+  unclass_write_6_A = false
+  unclass_write_6_B = false
+
+State 7:
+  P1_sec_in_7_A = 2
+  P1_sec_in_7_B = 1
+  P1_sec_out_7_A = 2
+  P1_sec_out_7_B = 1
+  P2_unclass_in_7_A = 0
+  P2_unclass_in_7_B = 0
+  P2_unclass_out_7_A = 2
+  P2_unclass_out_7_B = 1
+  PC_7_A = 3
+  PC_7_B = 3
+  sec_read_7_A = true
+  sec_read_7_B = true
+  sec_write_7_A = true
+  sec_write_7_B = true
+  shared_buffer_7_A = 2
+  shared_buffer_7_B = 1
+  unclass_read_7_A = true
+  unclass_read_7_B = true
+  unclass_write_7_A = false
+  unclass_write_7_B = false
+
+State 8:
+  P1_sec_in_8_A = 2
+  P1_sec_in_8_B = 1
+  P1_sec_out_8_A = 2
+  P1_sec_out_8_B = 1
+  P2_unclass_in_8_A = 0
+  P2_unclass_in_8_B = 0
+  P2_unclass_out_8_A = 2
+  P2_unclass_out_8_B = 1
+  PC_8_A = 3
+  PC_8_B = 3
+  sec_read_8_A = true
+  sec_read_8_B = true
+  sec_write_8_A = true
+  sec_write_8_B = true
+  shared_buffer_8_A = 2
+  shared_buffer_8_B = 1
+  unclass_read_8_A = true
+  unclass_read_8_B = true
+  unclass_write_8_A = false
+  unclass_write_8_B = false
+
+State 9:
+  P1_sec_in_9_A = 2
+  P1_sec_in_9_B = 1
+  P1_sec_out_9_A = 2
+  P1_sec_out_9_B = 1
+  P2_unclass_in_9_A = 0
+  P2_unclass_in_9_B = 0
+  P2_unclass_out_9_A = 2
+  P2_unclass_out_9_B = 1
+  PC_9_A = 3
+  PC_9_B = 3
+  sec_read_9_A = true
+  sec_read_9_B = true
+  sec_write_9_A = true
+  sec_write_9_B = true
+  shared_buffer_9_A = 2
+  shared_buffer_9_B = 1
+  unclass_read_9_A = true
+  unclass_read_9_B = true
+  unclass_write_9_A = false
+  unclass_write_9_B = false
+
+State 10:
+  P1_sec_in_10_A = 2
+  P1_sec_in_10_B = 1
+  P1_sec_out_10_A = 2
+  P1_sec_out_10_B = 1
+  P2_unclass_in_10_A = 0
+  P2_unclass_in_10_B = 0
+  P2_unclass_out_10_A = 2
+  P2_unclass_out_10_B = 1
+  PC_10_A = 3
+  PC_10_B = 3
+  sec_read_10_A = true
+  sec_read_10_B = true
+  sec_write_10_A = true
+  sec_write_10_B = true
+  shared_buffer_10_A = 2
+  shared_buffer_10_B = 1
+  unclass_read_10_A = true
+  unclass_read_10_B = true
+  unclass_write_10_A = false
+  unclass_write_10_B = false
+Solve Time: 0.014

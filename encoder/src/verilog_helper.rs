@@ -58,6 +58,9 @@ fn extract_variables_rec<'ctx, T: Ast<'ctx>>(
         let (before_part3, _part3) = after_prefix.rsplit_once('_').unwrap();
         let (variable_name_ast, _part2) = before_part3.rsplit_once('_').unwrap();
         if let Some(variable_name) = variables.get(variable_name_ast) {
+            // Also, add the probe to the bounded variables
+            bounded[state_idx].insert(*variable_name, Dynamic::from_ast(left_subtree));
+            // Insert the right hand side as the desired node
             states[state_idx].insert(*variable_name, Dynamic::from_ast(right_subtree));
         }
 

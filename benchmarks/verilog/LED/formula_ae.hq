@@ -1,1 +1,1 @@
-Forall p . Exists q . F (~(light_out[p] = light_out[q]))
+Forall A . Exists B . F ~(LEDs[A] = LEDs[B])

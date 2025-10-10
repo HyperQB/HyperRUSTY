@@ -1,1 +1,1 @@
-Forall A . Forall B . G ((fpu_op_q[A] = fpu_op_q[B]) & (fpu_op_q[A] = fpu_op_q[B]) & (out_q[B] = out_q[A]) & (inf_q[A] = inf_q[B]) & (snan_q[A] = snan_q[B]) & (qnan_q[A] = qnan_q[B]) & (overflow_q[A] = overflow_q[B]) & (underflow_q[A] = underflow_q[B]) & (done[A] = done[B]) & (rmode_q[A] = rmode_q[B]) & (opa_q[A] = opa_q[B]) & (opb_q[A] = opb_q[B]) & (div_by_zero_q[A] = div_by_zero_q[B]))
+Forall A . Forall B . G ((fpu_op_q[A] = fpu_op_q[B]) & (out_q[B] = out_q[A]))

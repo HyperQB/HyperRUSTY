@@ -366,24 +366,26 @@
 
 #=== LED EE===#
 #unsat
-#cargo run --release -- -v benchmarks/verilog/LED/build_ee.ys benchmarks/verilog/LED/build_ee.ys -t light -o model.smt2 -f benchmarks/verilog/LED/formula_ee_t.hq -k 101 -s hpes
+# cargo run --release -- -v benchmarks/verilog/LED/build_ee.ys benchmarks/verilog/LED/build_ee.ys -t light -o model.smt2 -f benchmarks/verilog/LED/formula_ee_t.hq -k 101 -s hpes
 
 #sat
 #cargo run --release -- -v benchmarks/verilog/LED/build_ee.ys benchmarks/verilog/LED/build_ee.ys -t light -o model.smt2 -f benchmarks/verilog/LED/formula_ee_f.hq -k 101 -s hpes
 
 #=== LED AE ===#
-#cargo run --release -- -v benchmarks/verilog/LED/build.ys benchmarks/verilog/LED/build.ys -t light -o model.smt2 -f benchmarks/verilog/LED/formula_ae.hq -k 101 -s hpes
+#cargo run --release -- -v benchmarks/verilog/LED/build_ae.ys benchmarks/verilog/LED/build_ae.ys -t led_fsm -o model.smt2 -f benchmarks/verilog/LED/formula_ae.hq -k 1 -s pes
+
+cargo run --release -- -n model.smv model.smv -f benchmarks/verilog/LED/formula_ae.hq -k 10 -s pes
 
 #=== LED EA ===#
 #cargo run --release -- -v benchmarks/verilog/LED/build.ys benchmarks/verilog/LED/build.ys -t light -o model.smt2 -f benchmarks/verilog/LED/formula_ae.hq -k 101 -s hpes
 
 #=== SPI ===#
-# cargo run --release -- -v benchmarks/verilog/SPI/spi_build.ys benchmarks/verilog/SPI/spi_build.ys -t SPISlave -o spi.smt2 -f benchmarks/verilog/SPI/formula.hq -k 8 -s hpes
+ #cargo run --release -- -v benchmarks/verilog/SPI/spi_build.ys benchmarks/verilog/SPI/spi_build.ys -t SPISlave -o spi.smt2 -f benchmarks/verilog/SPI/formula.hq -k 8 -s pes
 
 #============= WIP =================#
 
 #=== fpu ===#
-cargo run --release -- -v verilog_benchmarks/iodine-benchmarks/fpu/verilog/build.ys verilog_benchmarks/iodine-benchmarks/fpu/verilog/build.ys -t fpu_small_tb -o fpu.smt2 -f verilog_benchmarks/iodine-benchmarks/fpu/verilog/formula_test.hq -k 10 -s pes
+# cargo run --release -- -v verilog_benchmarks/iodine-benchmarks/fpu/verilog/build.ys verilog_benchmarks/iodine-benchmarks/fpu/verilog/build.ys -t fpu_small_tb -o fpu.smt2 -f verilog_benchmarks/iodine-benchmarks/fpu/verilog/formula_test.hq -k 4 -s pes
 
 #=== TRNG ===#
 #RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/TRNG/build.ys verilog_benchmarks/TRNG/build.ys -t trng_wrap -o trng.smt2 -f verilog_benchmarks/TRNG/formula_1.hq -k 10 -s opt

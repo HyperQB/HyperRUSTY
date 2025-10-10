@@ -1,0 +1,9 @@
+# build.ys
+read_verilog -pwires ./benchmarks/verilog/LED/system_ae.v
+hierarchy -check -top led_fsm
+proc
+flatten
+sim -clock clock
+opt_clean -purge
+write_smv model.smv
+write_smt2 -stdt -wires model.smt2

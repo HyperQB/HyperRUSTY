@@ -1,11 +1,30 @@
-Forall A . Forall B . G  (
-    (
-        (input_b_stb[A]) & (s_input_b_ack[A]=#b1)
+Exists A . Exists B . ~(
+    G  (
+        (
+            (input_b_stb[A]) & (s_input_b_ack[A])
+            &
+            (input_b_stb[B]) & (s_input_b_ack[B])
+        )
+        ->
+        ( 
+            (~(s_output_z_stb[A]) & ~(s_output_z_stb[B]))
+            U
+            ((s_output_z_stb[A]) & (s_output_z_stb[B]))
+        )
+    ))
+    &
+    F (
+        (input_a_stb[A]) & (s_input_a_ack[A])
         &
-        (input_b_stb[B]) & (s_input_b_ack[B]=#b1)
+        (input_a_stb[B]) & (s_input_a_ack[B])
+        &
+        F(
+            (input_b_stb[A]) & (s_input_b_ack[A])
+            &
+            (input_b_stb[B]) & (s_input_b_ack[B])
+        )
     )
-    ->
-    ( ((s_output_z_stb[A]=#b0) & (s_output_z_stb[B]=#b0))
-      U
-      ((s_output_z_stb[A]=#b1) & (s_output_z_stb[B]=#b1)) )
-)
+    &
+    F (
+        (s_output_z_stb[A]) & (s_output_z_stb[B])
+    )

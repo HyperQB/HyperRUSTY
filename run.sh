@@ -387,7 +387,7 @@
 
 
 #=== fpu2 divider ===#
-RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/iodine-benchmarks/fpu2/divider/divider.ys verilog_benchmarks/iodine-benchmarks/fpu2/divider/divider.ys -t divider -o model.smt2 -f verilog_benchmarks/iodine-benchmarks/fpu2/divider/formula.hq -k 90 -s pes
+RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/iodine-benchmarks/fpu2/divider/divider.ys verilog_benchmarks/iodine-benchmarks/fpu2/divider/divider.ys -t divider -o model.smt2 -f verilog_benchmarks/iodine-benchmarks/fpu2/divider/formula.hq -k 50 -s pes
 #=== TRNG ===#
 #RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/TRNG/build.ys verilog_benchmarks/TRNG/build.ys -t trng_wrap -o trng.smt2 -f verilog_benchmarks/TRNG/formula_1.hq -k 10 -s opt
 

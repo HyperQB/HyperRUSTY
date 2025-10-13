@@ -33,7 +33,7 @@ pub fn unroll_in_place(smt2: &str, mod_name: &str, bound: usize, trace_id: &str,
     Ok((unrolled_smt, state_names, getter_map))
 }
 
-fn parse_variables(smt2: &str, mod_name: &str) -> Result<Vec<VariableAlias>, ExtractError> {
+pub fn parse_variables(smt2: &str, mod_name: &str) -> Result<Vec<VariableAlias>, ExtractError> {
     let re = Regex::new(&format!(r"\s*\(\|({}#\d+)\|.*(Bool|BitVec).*;\s*\\(.*)[\r\n]", mod_name)).unwrap();
     let mut variables = Vec::new();
     for cap in re.captures_iter(smt2) {
@@ -60,7 +60,7 @@ fn parse_variables(smt2: &str, mod_name: &str) -> Result<Vec<VariableAlias>, Ext
     Ok(variables)
 }
 
-fn restore_variable_names(smt2: &str, vars: &Vec<VariableAlias>) -> String {
+pub fn restore_variable_names(smt2: &str, vars: &Vec<VariableAlias>) -> String {
     let mut result = smt2.to_string();
     for var in vars {
         let re = Regex::new(&format!(r"\|{}\|", var.yosys_name)).unwrap();
@@ -130,7 +130,7 @@ fn add_unrolling_constraints(smt2: &str, mod_name: &str, bound: usize, trace_id:
                 var.getter,
                 format!("s_{}_{}", trace_id, i)
             );
-            probe_assertions.push(clause);
+            //probe_assertions.push(clause);
         }
     }
     //println!("Probe assertions: {:#?}", probe_assertions);

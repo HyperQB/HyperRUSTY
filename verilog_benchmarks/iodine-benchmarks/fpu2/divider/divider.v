@@ -43,7 +43,7 @@ module divider(
   reg       s_input_b_ack;
 
   // @annot{sanitize(state)}
-  reg       [3:0] state;
+  reg       [3:0] state_var;
   parameter get_a         = 4'd0,
             get_b         = 4'd1,
             unpack        = 4'd2,
@@ -72,7 +72,7 @@ module divider(
   always @(posedge clk)
   begin
 
-    case(state)
+    case(state_var)
 
       get_a:
       begin
@@ -80,7 +80,7 @@ module divider(
         if (s_input_a_ack && input_a_stb) begin
           a <= input_a;
           s_input_a_ack <= 0;
-          state <= get_b;
+          state_var <= get_b;
         end
       end
 
@@ -90,7 +90,7 @@ module divider(
         if (s_input_b_ack && input_b_stb) begin
           b <= input_b;
           s_input_b_ack <= 0;
-          state <= unpack;
+          state_var <= unpack;
         end
       end
 
@@ -102,7 +102,7 @@ module divider(
         b_e <= b[30 : 23] - 127;
         a_s <= a[31];
         b_s <= b[31];
-        state <= special_cases;
+        state_var <= special_cases;
       end
 
       special_cases:
@@ -113,54 +113,54 @@ module divider(
           z[30:23] <= 255;
           z[22] <= 1;
           z[21:0] <= 0;
-          state <= put_z;
+          state_var <= put_z;
           //if a is inf and b is inf return NaN 
         end else if ((a_e == 128) && (b_e == 128)) begin
           z[31] <= 1;
           z[30:23] <= 255;
           z[22] <= 1;
           z[21:0] <= 0;
-          state <= put_z;
+          state_var <= put_z;
         //if a is inf return inf
         end else if (a_e == 128) begin
           z[31] <= a_s ^ b_s;
           z[30:23] <= 255;
           z[22:0] <= 0;
-          state <= put_z;
+          state_var <= put_z;
            //if b is zero return NaN
           if ($signed(b_e == -127) && (b_m == 0)) begin
             z[31] <= 1;
             z[30:23] <= 255;
             z[22] <= 1;
             z[21:0] <= 0;
-            state <= put_z;
+            state_var <= put_z;
           end
         //if b is inf return zero
         end else if (b_e == 128) begin
           z[31] <= a_s ^ b_s;
           z[30:23] <= 0;
           z[22:0] <= 0;
-          state <= put_z;
+          state_var <= put_z;
         //if a is zero return zero
         end else if (($signed(a_e) == -127) && (a_m == 0)) begin
           z[31] <= a_s ^ b_s;
           z[30:23] <= 0;
           z[22:0] <= 0;
-          state <= put_z;
+          state_var <= put_z;
            //if b is zero return NaN
           if (($signed(b_e) == -127) && (b_m == 0)) begin
             z[31] <= 1;
             z[30:23] <= 255;
             z[22] <= 1;
             z[21:0] <= 0;
-            state <= put_z;
+            state_var <= put_z;
           end
         //if b is zero return inf
         end else if (($signed(b_e) == -127) && (b_m == 0)) begin
           z[31] <= a_s ^ b_s;
           z[30:23] <= 255;
           z[22:0] <= 0;
-          state <= put_z;
+          state_var <= put_z;
         end else begin
           //Denormalised Number
           if ($signed(a_e) == -127) begin
@@ -174,14 +174,14 @@ module divider(
           end else begin
             b_m[23] <= 1;
           end
-          state <= normalise_a;
+          state_var <= normalise_a;
         end
       end
 
       normalise_a:
       begin
         if (a_m[23]) begin
-          state <= normalise_b;
+          state_var <= normalise_b;
         end else begin
           a_m <= a_m << 1;
           a_e <= a_e - 1;
@@ -191,7 +191,7 @@ module divider(
       normalise_b:
       begin
         if (b_m[23]) begin
-          state <= divide_0;
+          state_var <= divide_0;
         end else begin
           b_m <= b_m << 1;
           b_e <= b_e - 1;
@@ -207,7 +207,7 @@ module divider(
         count <= 0;
         dividend <= a_m << 27;
         divisor <= b_m;
-        state <= divide_1;
+        state_var <= divide_1;
       end
 
       divide_1:
@@ -216,7 +216,7 @@ module divider(
         remainder <= remainder << 1;
         remainder[0] <= dividend[50];
         dividend <= dividend << 1;
-        state <= divide_2;
+        state_var <= divide_2;
       end
 
       divide_2:
@@ -226,10 +226,10 @@ module divider(
           remainder <= remainder - divisor;
         end
         if (count == 49) begin
-          state <= divide_3;
+          state_var <= divide_3;
         end else begin
           count <= count + 1;
-          state <= divide_1;
+          state_var <= divide_1;
         end
       end
 
@@ -239,7 +239,7 @@ module divider(
         guard <= quotient[2];
         round_bit <= quotient[1];
         sticky <= quotient[0] | (remainder != 0);
-        state <= normalise_1;
+        state_var <= normalise_1;
       end
 
       normalise_1:
@@ -251,7 +251,7 @@ module divider(
           guard <= round_bit;
           round_bit <= 0;
         end else begin
-          state <= normalise_2;
+          state_var <= normalise_2;
         end
       end
 
@@ -264,7 +264,7 @@ module divider(
           round_bit <= guard;
           sticky <= sticky | round_bit;
         end else begin
-          state <= round;
+          state_var <= round;
         end
       end
 
@@ -276,7 +276,7 @@ module divider(
             z_e <=z_e + 1;
           end
         end
-        state <= pack;
+        state_var <= pack;
       end
 
       pack:
@@ -293,7 +293,7 @@ module divider(
           z[30 : 23] <= 255;
           z[31] <= z_s;
         end
-        state <= put_z;
+        state_var <= put_z;
       end
 
 
@@ -303,14 +303,14 @@ module divider(
         s_output_z <= z;
         if (s_output_z_stb && output_z_ack) begin
           s_output_z_stb <= 0;
-          state <= get_a;
+          state_var <= get_a;
         end
       end
 
     endcase
 
     if (rst == 1) begin
-      state <= get_a;
+      state_var <= get_a;
       s_input_a_ack <= 0;
       s_input_b_ack <= 0;
       s_output_z_stb <= 0;

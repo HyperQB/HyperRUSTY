@@ -32,6 +32,8 @@ module aes_256 (clk, state, key, out);
     wire   [127:0] k0b, k1b, k2b, k3b, k4b, k5b, k6b, k7b, k8b,
                    k9b, k10b, k11b, k12b, k13b;
 
+    wire [255:0] k14_unused;
+
     always @ (posedge clk)
       begin
         s0 <= state ^ key[255:128];
@@ -49,7 +51,7 @@ module aes_256 (clk, state, key, out);
         a7 (clk, k7, 8'h8, k8, k7b),
         a9 (clk, k9, 8'h10, k10, k9b),
         a11 (clk, k11, 8'h20, k12, k11b),
-        a13 (clk, k13, 8'h40, k12b, k13b);
+        a13 (clk, k13, 8'h40, k14_unused, k13b);
 
     expand_key_type_B_256
         a2 (clk, k2, k3, k2b),

@@ -27,7 +27,7 @@ pub fn unrolled_states_from_Z3_ast<'ctx, T: Ast<'ctx>>(
     let mut bounded_vars: Vec<EnvState<'ctx>> = (0..=k)
         .map(|_| IndexMap::new())
         .collect();
-    extract_variables_rec(ast, variables, &mut states, &mut bounded_vars, 0);
+    extract_variables_rec(ast, variables, &mut states, &mut bounded_vars);
     (states, bounded_vars)
 }
 
@@ -36,40 +36,50 @@ fn extract_variables_rec<'ctx, T: Ast<'ctx>>(
     variables: &HashSet<&'ctx str>,
     states: &mut Vec<EnvState<'ctx>>,
     bounded: &mut Vec<EnvState<'ctx>>,
-    indent: usize,
 ) {
-    let name: String = ast.decl().name();
-    if name.starts_with("s_") {
-        let state_idx: usize = name
+    let states_len = states.len();
+    let num_children = ast.children().len();
+    for idx in states_len..num_children {
+        let node = &ast.children()[idx];
+        // The node is an "=". Inspect the left child for probed variables
+        // The right child can be used for extracting state variables
+        let left_subtree = &node.children()[0];
+        let right_subtree = &node.children()[1];
+        
+        // Handle probed variables
+        let child_name = left_subtree.decl().name();
+        let state_idx: usize = child_name
             .rsplit('_') // split from the right
             .next()      // take the last part
             .unwrap()    // safe if you know format is correct
             .parse()     // parse to usize
             .unwrap();   // safe if you know it's valid digits
-        bounded[state_idx].insert("bounded", Dynamic::from_ast(ast));
-    }
-    if name == "=" {
-        // Inspect left child
-        let child = &ast.children()[0];
-        let child_name = child.decl().name();
-        if child_name.starts_with("probe_") {
-            let state_idx: usize = child_name
-            .rsplit('_') // split from the right
-            .next()      // take the last part
-            .unwrap()    // safe if you know format is correct
-            .parse()     // parse to usize
-            .unwrap();   // safe if you know it's valid digits
-            let after_prefix = child_name.strip_prefix("probe_").unwrap();
-            let (before_part3, _part3) = after_prefix.rsplit_once('_').unwrap();
-            let (variable_name_ast, _part2) = before_part3.rsplit_once('_').unwrap();
-            if let Some(variable_name) = variables.get(variable_name_ast) {
-                let right_hand_side = &ast.children()[1];
-                states[state_idx].insert(*variable_name, Dynamic::from_ast(right_hand_side));
-            }
+        let after_prefix = child_name.strip_prefix("probe_").unwrap();
+        let (before_part3, _part3) = after_prefix.rsplit_once('_').unwrap();
+        let (variable_name_ast, _part2) = before_part3.rsplit_once('_').unwrap();
+        if let Some(variable_name) = variables.get(variable_name_ast) {
+            states[state_idx].insert(*variable_name, Dynamic::from_ast(right_subtree));
         }
-    }
-    for child in ast.children() {
-        extract_variables_rec(&child, variables, states, bounded, indent + 2);
+
+        // Handle state variables
+        let node_name: String = right_subtree.decl().name();
+        println!("{}", node_name);
+        let state = match node_name.as_str() {
+            "=" => {
+                &right_subtree
+                    .children()[0]   // extract
+                    .children()[0]  // probed variable name
+                    .children()[0]  // state
+            }
+            _ => &right_subtree.children()[0],    // recursive function name
+        };
+        let state_name: String = state.decl().name();
+        let state_idx: usize = state_name
+            .rsplit('_') // split from the right
+            .next()      // take the last part
+            .unwrap()    // safe if you know format is correct
+            .parse()     // parse to usize
+            .unwrap();   // safe if you know it's valid digits
+        bounded[state_idx].insert("bounded", Dynamic::from_ast(state));
     }
 }
-

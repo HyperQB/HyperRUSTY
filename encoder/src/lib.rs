@@ -258,7 +258,6 @@ pub fn complete_ahltl_encoding<'ctx>(ctx: &'ctx Context, formula: &AstNode, inne
 ****************************/
 
 fn generate_quantified_encoding<'ctx>(ctx: &'ctx Context, formula: &AstNode, paths: &Vec<Vec<EnvState<'ctx>>>, path_encodings: &Vec<Bool<'ctx>>, mapping: &HashMap<&str, usize>, inner: Bool<'ctx>) -> Bool<'ctx> {
-    println!("Formula: {:#?}", formula);
     match formula {
         AstNode::HAQuantifier {form, identifier} => {
             let idx = mapping.get(identifier as &str).unwrap();
@@ -295,7 +294,6 @@ fn generate_quantified_encoding<'ctx>(ctx: &'ctx Context, formula: &AstNode, pat
             )
         }
         _ => {
-            //println!("{:#?}", inner);
             inner
         }
     }
@@ -358,6 +356,9 @@ pub fn get_verilog_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, models: &
         // record bounded variables
         bounded_vars.push(quantified_vars);
     }
+
+    println!("{:#?}", states);
+    println!("{:#?}", bounded_vars);
 
     if is_hltl(formula) {
         // Unroll the formula first

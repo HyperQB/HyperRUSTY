@@ -1,12 +1,11 @@
 # build.ys
-read_verilog verilog_benchmarks/iodine-benchmarks/fpu/verilog/fpu.v \
+read_verilog -formal verilog_benchmarks/iodine-benchmarks/fpu/verilog/test_harness.v \
+		verilog_benchmarks/iodine-benchmarks/fpu/verilog/fpu.v \
 		verilog_benchmarks/iodine-benchmarks/fpu/verilog/pre_norm.v \
 		verilog_benchmarks/iodine-benchmarks/fpu/verilog/primitives.v \
 		verilog_benchmarks/iodine-benchmarks/fpu/verilog/post_norm.v \
 		verilog_benchmarks/iodine-benchmarks/fpu/verilog/except.v \
 		verilog_benchmarks/iodine-benchmarks/fpu/verilog/pre_norm_fmul.v \
         verilog_benchmarks/iodine-benchmarks/fpu/verilog/except.v
-hierarchy -top fpu
-proc
-flatten
-write_smt2 -stdt -wires fpu.smt2
+prep -top fpu_small_tb -flatten
+write_smt2 -stdt fpu.smt2

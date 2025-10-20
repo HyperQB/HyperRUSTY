@@ -1,1 +1,9 @@
-Forall A . Forall B . ((tx_buffer[A] = tx_buffer[B])->(G((miso[A]) & ~(sclk[A]) & (en[A]))=((miso[B]) & ~(sclk[B]) & (en[B]))))
+Forall A . Forall B . G (((tx_buffer__0_[A] = tx_buffer__0_[B]) &
+(tx_buffer__1_[A] = tx_buffer__1_[B]) &
+(tx_buffer__2_[A] = tx_buffer__2_[B]) &
+(tx_buffer__3_[A] = tx_buffer__3_[B]) &
+(tx_buffer__4_[A] = tx_buffer__4_[B]) &
+(tx_buffer__5_[A] = tx_buffer__5_[B]) &
+(tx_buffer__6_[A] = tx_buffer__6_[B]) &
+(tx_buffer__7_[A] = tx_buffer__7_[B])
+)->(G((miso[A]) & ~(sclk[A]) & (en[A]))=((miso[B]) & ~(sclk[B]) & (en[B]))))

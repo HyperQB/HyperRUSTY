@@ -180,13 +180,13 @@ impl<'ctx> SMVEnv<'ctx> {
                         let var = bv_var!(state, name);
                         match lower {
                             Some(v) => {
-                                bound_constraints.push(var.bvsge(&BV::from_i64(self.ctx, *v, *width)));
+                                bound_constraints.push(var.bvuge(&BV::from_i64(self.ctx, *v, *width)));
                             }
                             None => ()
                         };
                         match upper {
                             Some(v) => {
-                                bound_constraints.push(var.bvsle(&BV::from_i64(self.ctx, *v, *width)));
+                                bound_constraints.push(var.bvule(&BV::from_i64(self.ctx, *v, *width)));
                             }
                             None => ()
                         };

@@ -1,4 +1,5 @@
 #![allow(warnings)]
+use std::env;
 use std::fs;
 use std::mem;
 use std::io::{self, Write};
@@ -368,17 +369,14 @@ fn main() {
         let mut models: Vec<String> = Vec::with_capacity(path_identifiers.len());
 
         for i in 0..path_identifiers.len() {
-            // Create fake environments for compatibility
-            let env = SMVEnv::new(&ctx);
+            // parse the smv for this model
+            let env = build_smvenv_from_verilog(
+                build_paths[i], 
+                top_module, 
+                yosys_out,
+                &ctx
+            ).unwrap();
             envs.push(env);
-            // Get SMT2-LIB from each build file
-            let smt2_model = match unroll_from_smt_build(build_paths[i], top_module, yosys_out, unrolling_bound, path_identifiers[i], propositions.get(path_identifiers[i])) {
-                Ok((unrolled, a1, a2)) => {
-                    unrolled
-                },
-                Err(e) => panic!("{}", e),
-            };
-            models.push(smt2_model);
         }
         let duration = start.elapsed();
         let secs = duration.as_secs_f64();
@@ -387,8 +385,16 @@ fn main() {
         // Start the timer for encoding
         let start = Instant::now();
 
-        let encoding = get_verilog_encoding(&envs, &models, &ast_node, unrolling_bound, trajectory_bound.copied(), semantics, witness);
+        let encoding = if *matches.get_one::<bool>("loop_conditions").unwrap() {
+            let lp = LoopCondition::new(&ctx, &envs[0], &envs[1]);
+            lp.build_loop_condition(&ast_node)
+
+        } else {
+            get_z3_encoding(&envs, &ast_node, unrolling_bound, trajectory_bound.copied(), semantics, witness)
+        };
         
+        //println!("{:#?}", encoding);
+
         let duration = start.elapsed();
         let secs = duration.as_secs_f64();
         println!("Encoding Time: {}", secs);

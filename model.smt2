@@ -29,7 +29,7 @@
   (|divider#23| (_ BitVec 51)) ; \remainder
   (|divider#24| (_ BitVec 1)) ; \round_bit
   (|divider#25| Bool) ; \rst
-  (|divider#26| (_ BitVec 4)) ; \state_var
+  (|divider#26| (_ BitVec 4)) ; \state
   (|divider#27| (_ BitVec 1)) ; \sticky
   (|divider#28| (_ BitVec 32)) ; \z
   (|divider#29| (_ BitVec 10)) ; \z_e
@@ -182,10 +182,10 @@
 (define-fun |divider_n s_output_z_stb| ((state |divider_s|)) Bool (= ((_ extract 0 0) (|divider#21| state)) #b1))
 ; yosys-smt2-wire special_cases 4
 (define-fun |divider_n special_cases| ((state |divider_s|)) (_ BitVec 4) #b0011)
-; yosys-smt2-witness {"offset": 0, "path": ["\\state_var"], "smtname": 26, "smtoffset": 0, "type": "reg", "width": 4}
-; yosys-smt2-register state_var 4
-; yosys-smt2-wire state_var 4
-(define-fun |divider_n state_var| ((state |divider_s|)) (_ BitVec 4) (|divider#26| state))
+; yosys-smt2-witness {"offset": 0, "path": ["\\state"], "smtname": 26, "smtoffset": 0, "type": "reg", "width": 4}
+; yosys-smt2-register state 4
+; yosys-smt2-wire state 4
+(define-fun |divider_n state| ((state |divider_s|)) (_ BitVec 4) (|divider#26| state))
 ; yosys-smt2-witness {"offset": 0, "path": ["\\sticky"], "smtname": 27, "smtoffset": 0, "type": "reg", "width": 1}
 ; yosys-smt2-register sticky 1
 ; yosys-smt2-wire sticky 1
@@ -326,7 +326,7 @@
 (define-fun |divider#147| ((state |divider_s|)) Bool (= (|divider#26| state) #b0001)) ; $procmux$579_CMP
 (define-fun |divider#148| ((state |divider_s|)) Bool (not (or  (= ((_ extract 0 0) (|divider#26| state)) #b1) (= ((_ extract 1 1) (|divider#26| state)) #b1) (= ((_ extract 2 2) (|divider#26| state)) #b1) (= ((_ extract 3 3) (|divider#26| state)) #b1)))) ; $procmux$597_CMP
 (define-fun |divider#149| ((state |divider_s|)) (_ BitVec 4) (ite (|divider#148| state) (|divider#140| state) (ite (|divider#147| state) (|divider#138| state) (ite (|divider#146| state) #b0011 (ite (|divider#87| state) (|divider#136| state) (ite (|divider#145| state) (|divider#130| state) (ite (|divider#144| state) (|divider#129| state) (ite (|divider#33| state) #b0111 (ite (|divider#143| state) #b1000 (ite (|divider#142| state) (|divider#128| state) (ite (|divider#49| state) #b1010 (ite (|divider#48| state) (|divider#126| state) (ite (|divider#47| state) (|divider#125| state) (ite (|divider#46| state) #b1101 (ite (|divider#86| state) #b1110 (ite (|divider#141| state) (|divider#124| state) (|divider#26| state))))))))))))))))) ; $procmux$600_Y
-(define-fun |divider#150| ((state |divider_s|)) (_ BitVec 4) (ite (|divider#25| state) #b0000 (|divider#149| state))) ; $0\state_var[3:0]
+(define-fun |divider#150| ((state |divider_s|)) (_ BitVec 4) (ite (|divider#25| state) #b0000 (|divider#149| state))) ; $0\state[3:0]
 (define-fun |divider#151| ((state |divider_s|)) (_ BitVec 1) (ite (|divider#40| state) (|divider#12| state) (|divider#24| state))) ; $procmux$345_Y
 (define-fun |divider#152| ((state |divider_s|)) (_ BitVec 1) (ite (|divider#44| state) #b0 (|divider#24| state))) ; $procmux$350_Y
 (define-fun |divider#153| ((state |divider_s|)) (_ BitVec 1) (ite (|divider#49| state) ((_ extract 1 1) (|divider#22| state)) (ite (|divider#48| state) (|divider#152| state) (ite (|divider#47| state) (|divider#151| state) (|divider#24| state))))) ; $0\round_bit[0:0]
@@ -418,7 +418,7 @@
   (= (|divider#63| state) (|divider#29| next_state)) ; $procdff$717 \z_e
   (= (concat (|divider#118| state) (concat (|divider#110| state) (concat (|divider#97| state) (|divider#88| state)))) (|divider#28| next_state)) ; $procdff$711 \z
   (= (|divider#122| state) (|divider#27| next_state)) ; $procdff$723 \sticky
-  (= (|divider#150| state) (|divider#26| next_state)) ; $procdff$708 \state_var
+  (= (|divider#150| state) (|divider#26| next_state)) ; $procdff$708 \state
   (= (|divider#153| state) (|divider#24| next_state)) ; $procdff$722 \round_bit
   (= (concat (|divider#159| state) (|divider#157| state)) (|divider#23| next_state)) ; $procdff$727 \remainder
   (= (concat (|divider#163| state) (|divider#162| state)) (|divider#22| next_state)) ; $procdff$724 \quotient

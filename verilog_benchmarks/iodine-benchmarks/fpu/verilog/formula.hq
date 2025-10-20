@@ -1,1 +1,1 @@
-Forall A . Forall B . G ((fpu_op_q[A] = fpu_op_q[B])->(((~done[A]  & ~done[B]) U (done[A] & done[B]))))
+Forall A . Forall B . G (~done[A]  & ~done[B]) U (done[A] & done[B])

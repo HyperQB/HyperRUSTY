@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, pin, usize};
 
 use z3::{
     ast::{
@@ -18,6 +18,13 @@ use fsm::helper_functions::create_file;
 
 
 
+fn adj_bool_to_z3<'ctx>(ctx: &'ctx Context, adj: &Vec<Vec<bool>>) -> Vec<Vec<Bool<'ctx>>> {
+    adj.iter()
+        .map(|row| row.iter().map(|&b| Bool::from_bool(ctx, b)).collect())
+        .collect()
+}
+
+
 /// Structure representing loop conditions for hyperLTL verification
 /// Used to generate constraints for AE (∀∃) and EA (∃∀) quantifier patterns
 pub struct LoopCondition<'env, 'ctx> {
@@ -31,37 +38,136 @@ pub struct LoopCondition<'env, 'ctx> {
     pub symstates1: Vec<EnvState<'ctx>>,
     /// Symbolic states for model2
     pub symstates2: Vec<EnvState<'ctx>>,
+    // Concrete values returned by BFS (explicit values) m1
+    pub vals1: Vec<ConcreteState<'ctx>>,
+    /// m2
+    pub vals2: Vec<ConcreteState<'ctx>>,
     /// Simulation variables - sim_i_j[i*m + j] represents simulation between state i of model1 and state j of model2
-    pub sim_i_j: Vec<Bool<'ctx>>,
+    pub sim_i_j: Vec<Vec<Bool<'ctx>>>,
+    /// Transition relation for model 1
+    pub trans_i_ipr: Vec<Vec<Bool<'ctx>>>,
+    /// Transition relation for model 2
+    pub trans_j_jpr: Vec<Vec<Bool<'ctx>>>
 }
 
-impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
-    /// Creates a new LoopCondition instance
-    /// Generates symbolic states for both models and creates simulation variables
-    pub fn new(ctx: &'ctx Context, model1: &'env SMVEnv<'ctx>, model2: &'env SMVEnv<'ctx>) -> Self {
-        // Generate symbolic states with prefixes to distinguish between models
-        let symstates1 = model1.generate_all_symbolic_states(Some("m1"));
-        let symstates2 = model2.generate_all_symbolic_states(Some("m2"));
 
-        // Create simulation variables for each pair of states
-        let mut sim_i_j = Vec::new();
-        for i in 0..symstates1.len() {
-            for j in 0..symstates2.len() {
-                sim_i_j.push(Bool::new_const(&ctx, format!("sim_{}_{}", i, j)));
-            }
-        }       
+impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
+
+
+    pub fn new(ctx: &'ctx Context, model1: &'env SMVEnv<'ctx>, model2: &'env SMVEnv<'ctx>) -> Self {
         Self {
             ctx,
             model1,
             model2,
-            symstates1,
-            symstates2,
-            sim_i_j,
+            symstates1: Vec::new(),
+            symstates2: Vec::new(),
+            vals1: Vec::new(),
+            vals2: Vec::new(),
+            trans_i_ipr: Vec::new(),
+            trans_j_jpr: Vec::new(),
+            sim_i_j: Vec::new(),
         }
     }
 
+    pub fn init_AE(&mut self) {
+        let g1 = self.model1.bfs_build_explicit_graph(Some("m1"));
+        let g2 = self.model2.bfs_build_explicit_graph(Some("m2"));
 
-    /// Generates constraints ensuring all symbolic states are legal/valid
+        self.vals1 = g1.states;              // Vec<ConcreteState>
+        self.trans_i_ipr = adj_bool_to_z3(self.ctx, &g1.adjacency);     // Vec<Vec<bool>>
+
+        self.vals2 = g2.states;              // Vec<ConcreteState>
+        self.trans_j_jpr = adj_bool_to_z3(self.ctx, &g2.adjacency);     // Vec<Vec<bool>>
+
+        // Create matching symbolic snapshots (one per explicit state)
+        self.symstates1 = Vec::with_capacity(self.vals1.len());
+        for i in 0..self.vals1.len() {
+            self.symstates1.push(self.model1.make_enum_dummy_state(self.ctx, i, 1));
+        }
+        self.symstates2 = Vec::with_capacity(self.vals2.len());
+        for i in 0..self.vals2.len() {
+            self.symstates2.push(self.model2.make_enum_dummy_state(self.ctx, i, 2));
+        }
+
+        // sim[i][j]
+        self.sim_i_j = Vec::with_capacity(self.vals1.len());
+        for i in 0..self.vals1.len() {
+            let mut row = Vec::with_capacity(self.vals2.len());
+            for j in 0..self.vals2.len() {
+                row.push(Bool::new_const(self.ctx, format!("sim_{}_{}", i, j)));
+            }
+            self.sim_i_j.push(row);
+        }
+    }
+
+    pub fn init_EA(&mut self){
+        // Generate symbolic states with prefixes to distinguish between models
+        self.symstates1 = self.model1.generate_all_symbolic_states(Some("m1"));
+        self.symstates2 = self.model2.generate_all_symbolic_states( Some("m2"));
+
+        // sim[i][j]
+        self.sim_i_j = Vec::with_capacity(self.symstates1.len());
+        for i in 0..self.symstates1.len() {
+            let mut row = Vec::with_capacity(self.symstates2.len());
+            for j in 0..self.symstates2.len() {
+                row.push(Bool::new_const(self.ctx, format!("sim_{}_{}", i, j)));
+            }
+            self.sim_i_j.push(row);
+        }
+        //println!("{:#?}", self.sim_i_j);
+    }
+
+
+
+
+
+
+
+    fn pin_state_eq(&self, env: &SMVEnv<'ctx>, sym: &EnvState<'ctx>, conc: &ConcreteState<'ctx>, idx: usize) -> Vec<Bool<'ctx>> {
+        let mut cs = Vec::<Bool>::new();
+        for (name, var) in env.get_variables().iter() {
+            let base = format!("{name}_{idx}");
+            match (&var.sort, conc.get(name).expect("missing concrete value")) {
+                (VarType::Bool{..}, ConcreteVal::B(b)) => {
+                    let v = bool_var!(sym, name);
+                    cs.push(v._eq(&Bool::from_bool(self.ctx, *b)));
+                }
+                (VarType::Int{..}, ConcreteVal::I(n)) => {
+                    let v = int_var!(sym, name);
+                    cs.push(v._eq(&Int::from_i64(self.ctx, *n)));
+                }
+                (VarType::BVector{width, ..}, ConcreteVal::BV(n, w)) => {
+                    assert_eq!(*width, *w, "BV width mismatch for {}", name);
+                    let v = bv_var!(sym, name);
+                    cs.push(v._eq(&BV::from_i64(self.ctx, *n, *w)));
+                }
+                _ => panic!("type mismatch while pinning {}", name),
+            }
+        }
+        cs
+    }
+
+    /// Pins *all* snapshots in both models to the BFS concrete values.
+    pub fn pin_all_explicit_states(&self) -> Vec<Bool<'ctx>> {
+        let mut out = Vec::<Bool>::new();
+
+        // Model 1
+        for i in 0..self.symstates1.len() {
+            out.extend(self.pin_state_eq(self.model1, &self.symstates1[i], &self.vals1[i], i));
+        }
+        // Model 2
+        for i in 0..self.symstates2.len() {
+            out.extend(self.pin_state_eq(self.model2, &self.symstates2[i], &self.vals2[i], i));
+        }
+        //println!("{:#?}", out);
+        out
+    }
+
+
+    pub fn legal_explicit_state(&self) -> Vec<Bool<'env>>{
+        self.pin_all_explicit_states()
+    }
+        /// Generates constraints ensuring all symbolic states are legal/valid
     /// Includes scope constraints for variables and initial state constraints
     pub fn legal_state(&self) -> Vec<Bool<'env>> {
         let mut valid_states = Vec::new();
@@ -82,7 +188,6 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
         valid_states.extend(self.model1.generate_initial_constraints(&self.symstates1));
         valid_states.extend(self.model2.generate_initial_constraints(&self.symstates2));
         
-        println!("{:#?}", valid_states);
         valid_states
     }
 
@@ -125,8 +230,6 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
                 constraints.push(and_expr.implies(&distinct));
             }
         }
-
-        println!("{:#?}", constraints);
         constraints
     }
 
@@ -142,8 +245,9 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
         for j in 0..(self.symstates2.len()) {
             let initial_constraints_2 = self.model2.generate_initial_constraints_for_state(&self.symstates2, j);
             let initial_and = Bool::and(self.ctx, &initial_constraints_2.iter().collect::<Vec<_>>());
-            constraints.push(initial_and.implies(&self.sim_i_j[j]));
+            constraints.push(initial_and.implies(&self.sim_i_j[0][j]));
         }
+        //println!("{:#?}", constraints);
         constraints
     }
 
@@ -163,7 +267,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
                 let mut inner_and = Vec::new();
                 let init_constraint_m2 = self.model2.generate_initial_constraints_for_state(&self.symstates2, j);
                 inner_and.push(Bool::and(self.ctx, &init_constraint_m2.iter().collect::<Vec<_>>()));
-                inner_and.push(self.sim_i_j[i * self.symstates2.len() + j].clone());
+                inner_and.push(self.sim_i_j[i][j].clone());
                 inner_formula.push(Bool::and(self.ctx, &inner_and.iter().collect::<Vec<_>>()));
             }
             let inner_or = Bool::or(self.ctx, &inner_formula.iter().collect::<Vec<_>>());
@@ -171,10 +275,11 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             // If state i is a valid initial state of model1, then simulation must exist
             constraints.push(init_constraint_m1_and.implies(&inner_or));
         }
+        //println!("{:#?}", constraints);
         constraints
     }
 
-    /// Generates successor constraints for simulation relation
+     /// Generates successor constraints for simulation relation
     /// If state x simulates state y, then successors of x must simulate corresponding successors of y
     /// x, x_pr: indices in model1; relationship with model2 states through simulation variables
     pub fn succ_t(&self, x: usize, x_pr: usize) -> Bool<'env> {
@@ -189,12 +294,12 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
                 let transition = self.model2.generate_transition_relation(&self.symstates2[y], &self.symstates2[y_pr]);
                 let transition_constraint: Bool<'_> = Bool::and(self.ctx, &transition.iter().collect::<Vec<_>>());
                 // If transition y -> y_pr exists, then simulation x_pr -> y_pr must hold
-                inner_implication.push(transition_constraint.implies(&self.sim_i_j[x_pr * m + y_pr]));
+                inner_implication.push(transition_constraint.implies(&self.sim_i_j[x_pr][y_pr]));
             }
             let inner_implication = Bool::and(self.ctx, &inner_implication.iter().collect::<Vec<_>>());
             
             // If simulation x -> y holds, then successor condition must be satisfied
-            constraints.push(self.sim_i_j[x * m + y].implies(&inner_implication));
+            constraints.push(self.sim_i_j[x][y].implies(&inner_implication));
         }
         Bool::and(self.ctx, &constraints.iter().collect::<Vec<&Bool>>())
     }
@@ -250,46 +355,37 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
 
     /// Generates simulation pair constraints
     /// Ensures that if states are in simulation relation, their transitions preserve the relation
-    pub fn simulation_pairs(&self) -> Vec<Bool<'env>> {
+    pub fn simulation_constrains_AE(&self) -> Vec<Bool<'env>> {
         let mut constraints = Vec::new();
-        let n = self.symstates1.len();
-        let k = self.symstates2.len();
-        
-        // For each pair of states and their potential successors
-        for i in 0..(n){
-            for t in 0..(n){
-                let transition_x = self.model1.generate_transition_relation(&self.symstates1[i], &self.symstates1[t]);
-                let transition_x_constraint = Bool::and(self.ctx, &transition_x.iter().collect::<Vec<_>>());
-                
-                let mut inner_implication = Vec::new();
-                for j in 0..(k){
-                    let mut inner_constrains = Vec::new();
-                    
-                    // For each possible successor in model2
-                    for r in 0..(k){
-                        let transition_y = self.model2.generate_transition_relation(&self.symstates2[j], &self.symstates2[r]);
-                        let transition_y_constraint = Bool::and(self.ctx, &transition_y.iter().collect::<Vec<_>>());
-                        
-                        let mut inner_and = Vec::new();
-                        inner_and.push(transition_y_constraint);
-                        inner_and.push(self.sim_i_j[t * k + r].clone()); // Successor simulation
-                        inner_constrains.push(Bool::and(self.ctx, &inner_and.iter().collect::<Vec<_>>()));
+        let n = self.symstates1.len(); // M1 states
+        let k = self.symstates2.len(); // M2 states
+
+
+        for i in 0..n {
+            for t in 0..n {
+                let tx = self.trans_i_ipr[i][t].clone(); // MUST be M1(i→t)
+                let mut per_j = Vec::new();
+                for j in 0..k {
+                    // ∃r. (j→r in M2) ∧ sim(t,r)
+                    let mut exists_r = Vec::new();
+                    for r in 0..k {
+                        let ty = self.trans_j_jpr[j][r].clone(); // MUST be M2(j→r)
+                        exists_r.push(Bool::and(self.ctx, &[&ty, &self.sim_i_j[t][r]]));
                     }
-                    let inner_constrains = Bool::or(self.ctx, &inner_constrains.iter().collect::<Vec<_>>());
-                    
-                    // If simulation i -> j holds, then successor condition must be satisfied
-                    inner_implication.push(self.sim_i_j[i * k + j].implies(&inner_constrains));
+                    let exists_r = Bool::or(self.ctx, &exists_r.iter().collect::<Vec<_>>());
+                    per_j.push(self.sim_i_j[i][j].implies(&exists_r));
                 }
-                let inner_implication = Bool::and(self.ctx, &inner_implication.iter().collect::<Vec<_>>());
-                
-                // If transition i -> t exists, then simulation constraints must hold
-                constraints.push(transition_x_constraint.implies(&inner_implication));
+                let per_j = Bool::and(self.ctx, &per_j.iter().collect::<Vec<_>>());
+                constraints.push(tx.implies(&per_j));
             }
         }
-        // print the constrains
-        
+        // println!("Simulation pairs");
+        // println!("{:#?}", constraints);
         constraints
     }
+
+
+
 
     /// Evaluates predicates in the formula at specific state indices
     /// Recursively processes the AST to build Z3 constraints
@@ -324,8 +420,7 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             }
             // Handle binary operators (equality, conjunction, disjunction, implication)
             AstNode::BinOp { operator, lhs, rhs } => {
-                match operator {
-                    // Equality between different types (Bool, Int, BitVector)
+                match operator {                    // Equality between different types (Bool, Int, BitVector)
                     parser::BinOperator::Equality =>  match (
                         self.predicate(lhs, i, j, mapping),
                         self.predicate(rhs, i, j, mapping),
@@ -420,15 +515,16 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
                 let relation_pred = self.predicate(inner_ltl(formula), i, j, &mapping).unwrap_bool();
                 
                 // If simulation holds between states i and j, then the relation predicate must hold
-                constraints.push(self.sim_i_j[i * self.symstates2.len() + j].implies(&relation_pred));
+                constraints.push(self.sim_i_j[i][j].implies(&relation_pred));
             }
         }
+        //  println!("{:#?}", constraints);
         constraints
     }
 
     /// Main function to build loop condition constraints
     /// Validates the formula and generates appropriate constraints based on quantifier pattern
-    pub fn build_loop_condition(&self, formula: &AstNode) -> Bool<'env> {
+    pub fn build_loop_condition(&mut self, formula: &AstNode) -> Bool<'env> {
         // Validate that formula starts with G or F (temporal operators)
         if !starts_with_g_or_f(formula) {
             panic!("The formula must start with G or F");
@@ -439,10 +535,11 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             panic!("The formula must not contain Until or Release operators");
         }
         
-        self.model1.generate_explicit_states(&self.symstates1);
         
         // Detect quantifier pattern (AE or EA)
         let check = detect_quantifier_order(formula);
+    
+
         match check {
             0 => {
                 // Unsupported quantifier pattern
@@ -450,11 +547,12 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             }
             1 => {
                 // AE (∀∃) pattern: For all paths in model1, there exists a path in model2
+                self.init_AE();
                 let mut all_constraints = Vec::new();
-                all_constraints.extend(self.legal_state());                    // Basic validity constraints
-                all_constraints.extend(self.exhaustive_exploration(false));    // Distinctness for model1
-                all_constraints.extend(self.initial_state_sim_AE());          // Initial simulation for AE
-                all_constraints.extend(self.simulation_pairs());              // Transition simulation
+                all_constraints.extend(self.legal_explicit_state());
+                all_constraints.extend(self.exhaustive_exploration(false));
+                all_constraints.extend(self.initial_state_sim_AE());
+                all_constraints.extend(self.simulation_constrains_AE());              // Transition simulation
                 all_constraints.extend(self.relation_predicate(formula));     // Formula satisfaction
 
                 // Create references vector in the same scope as Bool::and
@@ -463,14 +561,13 @@ impl<'env, 'ctx> LoopCondition<'env, 'ctx> {
             }
             2 => {
                 // EA (∃∀) pattern: There exists a path in model1 for all paths in model2
+                self.init_EA();
                 let mut all_constraints = Vec::new();
-                all_constraints.extend(self.legal_state());                    // Basic validity constraints
-                all_constraints.extend(self.exhaustive_exploration(true));     // Distinctness for model2
+                all_constraints.extend(self.legal_state());     
+                all_constraints.extend(self.exhaustive_exploration(true));
                 all_constraints.extend(self.initial_state_sim_EA());          // Initial simulation for EA
                 all_constraints.push(self.simulation_constrains_EA());        // Path-based simulation
                 all_constraints.extend(self.relation_predicate(formula));     // Formula satisfaction
-                
-                // Create references vector in the same scope as Bool::and
                 let refs: Vec<&Bool<'env>> = all_constraints.iter().collect();
                 Bool::and(self.ctx, &refs)
             }

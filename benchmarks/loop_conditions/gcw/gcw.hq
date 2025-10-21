@@ -1,5 +1,1 @@
-Exists A . Forall B . G(~(((q[B] = 1) & (s[A] = 8)) 
-   | ((q[B] = 2) & (s[A] = 15))
-   | ((q[B] = 3) & (s[A] = 9))
-   | ((q[B] = 4) & (s[A] = 12)))
-)
+Exists A . Forall B . G((gc[B] | fw_gc[B] | gw[B] | fc[B]) -> (~bad_gc[A] & ~bad_fw_gc[A] & ~bad_gw[A] & ~bad_fc[A]))

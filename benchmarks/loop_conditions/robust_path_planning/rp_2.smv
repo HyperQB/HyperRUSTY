@@ -17,4 +17,3 @@ ASSIGN
       b_state = 10 : 10;
       TRUE         : b_state;
     esac;
-

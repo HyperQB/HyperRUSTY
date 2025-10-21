@@ -14,3 +14,4 @@ parser_nusmv = { path = "./parser_nusmv" }
 unroller_qbf = { path = "./unroller_qbf" }
 loop_conditions = { path = "./loop_conditions" }
 fs = "0.0.5"
+indexmap = "2.11.4"

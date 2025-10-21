@@ -245,7 +245,7 @@ fn main() {
             let start = Instant::now();
 
             let encoding = if use_loop_conditions {
-                let lp = LoopCondition::new(&ctx, &envs[0], &envs[1]);
+                let mut lp = LoopCondition::new(&ctx, &envs[0], &envs[1]);
                 lp.build_loop_condition(&ast_node)
 
             } else {

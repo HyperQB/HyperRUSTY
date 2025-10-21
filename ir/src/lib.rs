@@ -7,6 +7,9 @@ use z3::{
     },
     Context,
 };
+use std::collections::{HashMap, VecDeque};
+use z3::{Solver, SatResult};
+
 
 #[macro_use]
 pub mod macros;
@@ -35,6 +38,22 @@ pub enum ReturnType<'ctx> {
     Int(Vec<i64>),
     BVector(Vec<(i64, u32)>), // (element, size)
     DynAst(Dynamic<'ctx>),
+}
+
+/// Concrete value for one variable
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum ConcreteVal {
+    B(bool),
+    I(i64),
+    BV(i64, u32),
+}
+
+pub type ConcreteState<'ctx> = IndexMap<&'ctx str, ConcreteVal>;
+
+pub struct BFSExplicit<'ctx> {
+    pub states: Vec<ConcreteState<'ctx>>, // index -> concrete state
+    pub edges:  Vec<(usize, usize)>,      // (u -> v)
+    pub adjacency: Vec<Vec<bool>>,        // adjacency[u][v] == true
 }
 
 #[derive(Debug, Clone)]
@@ -585,6 +604,31 @@ impl<'ctx> SMVEnv<'ctx> {
  
         state
     }
+
+    pub fn make_enum_dummy_state(&self, ctx: &'ctx z3::Context, idx: usize, model: usize) -> EnvState<'ctx> {
+        let mut state: EnvState<'ctx> = IndexMap::new();
+        for (name, var) in &self.variables {
+            let base = format!("{name}_{idx}_{model}");
+            let val = match &var.sort {
+                VarType::Bool { .. } => {
+                    let ast = z3::ast::Bool::fresh_const(ctx, name);
+                    Dynamic::from_ast(&ast)
+                }
+                VarType::Int { .. } => {
+                    let ast = z3::ast::Int::fresh_const(ctx, name);
+                    Dynamic::from_ast(&ast)
+                }
+                VarType::BVector { width, .. } => {
+                    let ast = z3::ast::BV::fresh_const(ctx, name, *width);
+                    Dynamic::from_ast(&ast)
+                }
+            };
+            state.insert(*name, val);
+        }
+
+        state
+    }
+    
  
     pub fn get_context(&self) -> &'ctx z3::Context {
         self.ctx
@@ -702,19 +746,312 @@ impl<'ctx> SMVEnv<'ctx> {
         constraints
     }
 
-
-    pub fn generate_explicit_states(&self, states: &Vec<EnvState<'ctx>>){
-        let init_constrain = self.generate_initial_constraints(&states);
-        println!("Initial Constraints: {:?}", init_constrain);
-        println!("-----------------------------------------------------");
-        let transition_constrain = self.generate_transition_relation(&states[0], &states[1]);
-        println!("Transition Constraints: {:?}", transition_constrain);
-        println!("-----------------------------------------------------");
-
-
+/// Helper: pin the *current* symbolic vars to a concrete assignment
+ fn pin_curr_equalities(
+        &self,
+        curr_sym: &EnvState<'ctx>,
+        curr_vals: &ConcreteState<'ctx>,
+    ) -> Vec<Bool<'ctx>> {
+        let mut eqs = Vec::new();
+        for (name, var) in &self.variables {
+            let cv = curr_vals.get(name)
+                .unwrap_or_else(|| panic!("missing concrete value for '{}'", name));
+            match (var.sort.clone(), cv) {
+                (VarType::Bool { .. }, ConcreteVal::B(b)) => {
+                    let v = bool_var!(curr_sym, name);
+                    eqs.push(v._eq(&Bool::from_bool(self.ctx, *b)));
+                }
+                (VarType::Int { .. }, ConcreteVal::I(n)) => {
+                    let v = int_var!(curr_sym, name);
+                    eqs.push(v._eq(&Int::from_i64(self.ctx, *n)));
+                }
+                (VarType::BVector { width, .. }, ConcreteVal::BV(n, w))
+                    if width == *w =>
+                {
+                    let v = bv_var!(curr_sym, name);
+                    eqs.push(v._eq(&BV::from_i64(self.ctx, *n, *w)));
+                }
+                _ => panic!("type mismatch for variable '{}'", name),
+            }
+        }
+        eqs
     }
 
+    /// Helper: read a concrete state from model for the *next* symbolic vars
+    fn model_to_concrete_next(
+        &self,
+        next_sym: &EnvState<'ctx>,
+        m: &z3::Model<'ctx>,
+    ) -> ConcreteState<'ctx> {
+        let mut out: ConcreteState<'ctx> = IndexMap::new();
+        for (name, var) in &self.variables {
+            match &var.sort {
+                VarType::Bool { .. } => {
+                    let v = bool_var!(next_sym, name);
+                    let b = m.eval(&v, true).expect("eval").as_bool().expect("bool");
+                    out.insert(*name, ConcreteVal::B(b));
+                }
+                VarType::Int { .. } => {
+                    let v = int_var!(next_sym, name);
+                    let n = m.eval(&v, true).expect("eval").as_i64().expect("i64");
+                    out.insert(*name, ConcreteVal::I(n));
+                }
+                VarType::BVector { width, .. } => {
+                    let v = bv_var!(next_sym, name);
+                    let n = m.eval(&v, true).expect("eval").as_i64().expect("i64");
+                    out.insert(*name, ConcreteVal::BV(n, *width));
+                }
+            }
+        }
+        out
+    }
 
+    /// Core primitive:
+    /// Given (1) a relation between curr/next as a list of Bool constraints,
+    /// and (2) a concrete curr-state, enumerate ALL satisfying next states.
+    pub fn enumerate_next_states_from(
+        &self,
+        curr_sym: &EnvState<'ctx>,
+        next_sym: &EnvState<'ctx>,
+        relation_constraints: &[Bool<'ctx>],
+        curr_values: &ConcreteState<'ctx>,
+    ) -> Vec<ConcreteState<'ctx>> {
+        use z3::{Solver, SatResult};
+        let ctx = self.ctx;
+        let mut solver = Solver::new(ctx);
+
+        // Scope constraints (domains) — safe to add for both curr and next
+        for c in self.generate_scope_constraints_for_state(curr_sym) { solver.assert(&c); }
+        for c in self.generate_scope_constraints_for_state(next_sym) { solver.assert(&c); }
+
+        // Relation
+        let refs: Vec<&Bool> = relation_constraints.iter().collect();
+        solver.assert(&Bool::and(ctx, &refs));
+
+        // Pin current to the provided concrete assignment
+        for e in self.pin_curr_equalities(curr_sym, curr_values) { solver.assert(&e); }
+
+        // Enumerate all next-states
+        let mut results: Vec<ConcreteState<'ctx>> = Vec::new();
+        loop {
+            match solver.check() {
+                SatResult::Sat => {
+                    let m = solver.get_model().expect("model");
+                    let next_conc = self.model_to_concrete_next(next_sym, &m);
+                    results.push(next_conc.clone());
+
+                    // Block this *next* assignment only (keep curr pinned)
+                    let mut disj = Vec::new();
+                    for (name, var) in &self.variables {
+                        match &var.sort {
+                            VarType::Bool { .. } => {
+                                let v = bool_var!(next_sym, name);
+                                let ConcreteVal::B(b) = next_conc.get(name).unwrap() else { unreachable!() };
+                                disj.push(v._eq(&Bool::from_bool(ctx, *b)).not());
+                            }
+                            VarType::Int { .. } => {
+                                let v = int_var!(next_sym, name);
+                                let ConcreteVal::I(n) = next_conc.get(name).unwrap() else { unreachable!() };
+                                disj.push(v._eq(&Int::from_i64(ctx, *n)).not());
+                            }
+                            VarType::BVector { width, .. } => {
+                                let v = bv_var!(next_sym, name);
+                                let ConcreteVal::BV(n, w) = next_conc.get(name).unwrap() else { unreachable!() };
+                                disj.push(v._eq(&BV::from_i64(ctx, *n, *w)).not());
+                            }
+                        }
+                    }
+                    let refs2: Vec<&Bool> = disj.iter().collect();
+                    solver.assert(&Bool::or(ctx, &refs2));
+                }
+                SatResult::Unsat => break,
+                SatResult::Unknown => {
+                    eprintln!("Z3 returned Unknown while enumerating successors; stopping.");
+                    break;
+                }
+            }
+        }
+
+        results
+    }
+
+    /// Convenience wrapper that uses your registered transitions
+    /// instead of passing a custom relation.
+    pub fn enumerate_next_states_using_registered_transitions(
+        &self,
+        curr_sym: &EnvState<'ctx>,
+        next_sym: &EnvState<'ctx>,
+        curr_values: &ConcreteState<'ctx>,
+    ) -> Vec<ConcreteState<'ctx>> {
+        let relation = self.generate_transition_relation(curr_sym, next_sym);
+        self.enumerate_next_states_from(curr_sym, next_sym, &relation, curr_values)
+    }
+
+    /// Canonical key following env.variables order
+    fn concrete_to_key(&self, s: &ConcreteState<'ctx>) -> Vec<ConcreteVal> {
+        let mut key = Vec::with_capacity(self.variables.len());
+        for name in self.variables.keys() {
+            key.push(s.get(name).expect("missing var").clone());
+        }
+        key
+    }
+
+    /// Enumerate all initial concrete states (timestamp 0)
+    fn enumerate_initial_concrete_states(
+        &self,
+        sym: &Vec<EnvState<'ctx>>,
+    ) -> Vec<ConcreteState<'ctx>> {
+        use z3::{Solver, SatResult};
+        let ctx = self.ctx;
+        let curr = &sym[0];
+
+        let mut solver = Solver::new(ctx);
+        for c in self.generate_scope_constraints_for_state(curr) { solver.assert(&c); }
+        for c in self.generate_initial_constraints_for_state(sym, 0) { solver.assert(&c); }
+
+        let mut results = Vec::new();
+        loop {
+            match solver.check() {
+                SatResult::Sat => {
+                    let m = solver.get_model().unwrap();
+                    let mut conc: ConcreteState<'ctx> = IndexMap::new();
+                    for (name, var) in &self.variables {
+                        match &var.sort {
+                            VarType::Bool { .. } => {
+                                let v = bool_var!(curr, name);
+                                let b = m.eval(&v, true).unwrap().as_bool().unwrap();
+                                conc.insert(*name, ConcreteVal::B(b));
+                            }
+                            VarType::Int { .. } => {
+                                let v = int_var!(curr, name);
+                                let n = m.eval(&v, true).unwrap().as_i64().unwrap();
+                                conc.insert(*name, ConcreteVal::I(n));
+                            }
+                            VarType::BVector { width, .. } => {
+                                let v = bv_var!(curr, name);
+                                let n = m.eval(&v, true).unwrap().as_i64().unwrap();
+                                conc.insert(*name, ConcreteVal::BV(n, *width));
+                            }
+                        }
+                    }
+                    // block this assignment
+                    let mut disj = Vec::new();
+                    for (name, var) in &self.variables {
+                        match &var.sort {
+                            VarType::Bool { .. } => {
+                                let v = bool_var!(curr, name);
+                                let ConcreteVal::B(b) = conc.get(name).unwrap() else { unreachable!() };
+                                disj.push(v._eq(&z3::ast::Bool::from_bool(ctx, *b)).not());
+                            }
+                            VarType::Int { .. } => {
+                                let v = int_var!(curr, name);
+                                let ConcreteVal::I(n) = conc.get(name).unwrap() else { unreachable!() };
+                                disj.push(v._eq(&z3::ast::Int::from_i64(ctx, *n)).not());
+                            }
+                            VarType::BVector { width, .. } => {
+                                let v = bv_var!(curr, name);
+                                let ConcreteVal::BV(n, w) = conc.get(name).unwrap() else { unreachable!() };
+                                disj.push(v._eq(&z3::ast::BV::from_i64(ctx, *n, *w)).not());
+                            }
+                        }
+                    }
+                    let refs: Vec<&z3::ast::Bool> = disj.iter().collect();
+                    solver.assert(&z3::ast::Bool::or(ctx, &refs));
+
+                    results.push(conc);
+                }
+                _ => break,
+            }
+        }
+        results
+    }
+
+    /// BFS graph construction (no re-expansion; edges always recorded)
+    pub fn bfs_build_explicit_graph(&self, suffix: Option<&'ctx str>) -> BFSExplicit<'ctx> {
+        // 2 timestamps of symbolic vars: curr, next
+        let sym = self.generate_state_variables(1, suffix);
+        let curr = &sym[0];
+        let next = &sym[1];
+
+        // Build the transition relation once
+        let trans_vec = self.generate_transition_relation(curr, next);
+
+        // Initials
+        let initials = self.enumerate_initial_concrete_states(&sym);
+        assert!(!initials.is_empty(), "No initial states.");
+
+        // Graph storage
+        let mut order: Vec<ConcreteState<'ctx>> = Vec::new();
+        let mut key_to_idx: HashMap<Vec<ConcreteVal>, usize> = HashMap::new();
+        let mut adjacency: Vec<Vec<bool>> = Vec::new();
+        let mut edges: Vec<(usize, usize)> = Vec::new();
+        let mut expanded: Vec<bool> = Vec::new();
+        let mut enqueued: Vec<bool> = Vec::new();
+
+        // Helper that DOES NOT capture outer &muts; we pass them in
+        let mut add_node = |order: &mut Vec<ConcreteState<'ctx>>,
+                            key_to_idx: &mut HashMap<Vec<ConcreteVal>, usize>,
+                            adjacency: &mut Vec<Vec<bool>>,
+                            expanded: &mut Vec<bool>,
+                            enqueued: &mut Vec<bool>,
+                            st: ConcreteState<'ctx>| -> usize {
+            let key = self.concrete_to_key(&st);
+            if let Some(&idx) = key_to_idx.get(&key) {
+                return idx;
+            }
+            let idx = order.len();
+            order.push(st);
+            key_to_idx.insert(key, idx);
+
+            // Grow adjacency matrix
+            for row in adjacency.iter_mut() {
+                row.push(false);
+            }
+            adjacency.push(vec![false; order.len()]);
+
+            // Track bookkeeping for the new node
+            expanded.push(false);
+            enqueued.push(false);
+
+            idx
+        };
+
+        // Seed queue
+        let mut q: VecDeque<usize> = VecDeque::new();
+        for st in initials {
+            let idx = add_node(&mut order, &mut key_to_idx, &mut adjacency, &mut expanded, &mut enqueued, st);
+            if !enqueued[idx] {
+                q.push_back(idx);
+                enqueued[idx] = true;
+            }
+        }
+
+        // BFS
+        while let Some(u) = q.pop_front() {
+            if expanded[u] { continue; }
+            expanded[u] = true;
+
+            // enumerate successors using prebuilt relation
+            let succs = self.enumerate_next_states_from(curr, next, &trans_vec, &order[u]);
+
+            for succ in succs {
+                let v = add_node(&mut order, &mut key_to_idx, &mut adjacency, &mut expanded, &mut enqueued, succ);
+
+                if !adjacency[u][v] {
+                    adjacency[u][v] = true;
+                    edges.push((u, v));
+                }
+
+                // enqueue only if not yet expanded/enqueued
+                if !expanded[v] && !enqueued[v] {
+                    q.push_back(v);
+                    enqueued[v] = true;
+                }
+            }
+        }
+
+        BFSExplicit { states: order, edges, adjacency }
+    }
 
     pub fn get_predicates(&self) -> &IndexMap<&'ctx str, Box<dyn Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> Bool<'ctx>>> {
         &self.predicates

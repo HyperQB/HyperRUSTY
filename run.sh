@@ -187,11 +187,11 @@
 
 # cargo run --release -- -n benchmarks/loop_conditions/mm/mm1.smv benchmarks/loop_conditions/mm/mm2.smv -f benchmarks/loop_conditions/mm/mm.hq -l
 
-# cargo run --release -- -n benchmarks/loop_conditions/mm/mm1_buggy.smv benchmarks/loop_conditions/mm/mm2_buggy.smv -f benchmarks/loop_conditions/mm/mm.hq -l
+#cargo run --release -- -n benchmarks/loop_conditions/mm/mm1_buggy.smv benchmarks/loop_conditions/mm/mm2_buggy.smv -f benchmarks/loop_conditions/mm/mm.hq -l
 
 #cargo run --release -- -n benchmarks/loop_conditions/cbf/cbf1.smv benchmarks/loop_conditions/cbf/cbf2.smv -f benchmarks/loop_conditions/cbf/cbf.hq -l
 
-#cargo run --release -- -n benchmarks/loop_conditions/cbf/cbf1_buggy.smv benchmarks/loop_conditions/cbf/cbf2_buggy.smv -f benchmarks/loop_conditions/cbf/cbf.hq -l
+# cargo run --release -- -n benchmarks/loop_conditions/cbf/cbf1_buggy.smv benchmarks/loop_conditions/cbf/cbf2_buggy.smv -f benchmarks/loop_conditions/cbf/cbf.hq -l
 
 # cargo run --release -- -n benchmarks/loop_conditions/robust_path_planning/rp_1.smv benchmarks/loop_conditions/robust_path_planning/rp_2.smv -f benchmarks/loop_conditions/robust_path_planning/rp.hq -l
 

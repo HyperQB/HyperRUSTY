@@ -1,1 +1,1 @@
-Forall A . Exists B . G(pc[A] = pc[B])
+Forall A . Exists B . G(s[A] = s[B])

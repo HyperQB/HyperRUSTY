@@ -62,7 +62,7 @@ ASSIGN
 	-- when PIN is arbitrary, small PINs such as 001, is leaking information
 	init(PIN_2) := {1,0}; init(PIN_1) := {1,0}; init(PIN_0) := {1,0};
 	init(MASK_2) := 1; init(MASK_1) := 0; init(MASK_0) := 0;
-	-- the lines
+	-- the lines of each process
 	init(alpha_line) := 0;
 	init(beta_line) := 0;
 	init(theta_line) := 0;
@@ -79,19 +79,19 @@ ASSIGN
 
 	next(RESULT_2) :=
 		case
-			((alpha_line = 2) & ((RESULT_2 = 1) | (MASK_2 = 1))) : 1;
+			((alpha_line = 2) &  ((RESULT_2 = 1) | (MASK_2 = 1))) : 1;
 			((alpha_line = 2) & !((RESULT_2 = 1) | (MASK_2 = 1))) : 0;
-			((beta_line = 2) & ((RESULT_2 = 1) & (MASK_2 = 0))) : 1;
-			((beta_line = 2) & !((RESULT_2 = 1) & (MASK_2 = 0))) : 0;
+			((beta_line = 2)  &  ((RESULT_2 = 1) & (MASK_2 = 0))) : 1;
+			((beta_line = 2)  & !((RESULT_2 = 1) & (MASK_2 = 0))) : 0;
 			TRUE: RESULT_2;
 		esac;
 
 	next(RESULT_1) :=
 		case
-			((alpha_line = 2) & ((RESULT_1 = 1) | (MASK_1 = 1))) : 1;
+			((alpha_line = 2) &  ((RESULT_1 = 1) | (MASK_1 = 1))) : 1;
 			((alpha_line = 2) & !((RESULT_1 = 1) | (MASK_1 = 1))) : 0;
-			((beta_line = 2) & ((RESULT_1 = 1) & (MASK_1 = 0))) : 1;
-			((beta_line = 2) & !((RESULT_1 = 1) & (MASK_1 = 0))) : 0;
+			((beta_line = 2)  &  ((RESULT_1 = 1) & (MASK_1 = 0))) : 1;
+			((beta_line = 2)  & !((RESULT_1 = 1) & (MASK_1 = 0))) : 0;
 			TRUE: RESULT_1;
 		esac;
 

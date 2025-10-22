@@ -57,16 +57,15 @@ MODULE main
 
     proc2_halt         : boolean;
 
-	-- halt : boolean; 
+	halt : boolean; 
 
   ASSIGN
 
-	-- init(halt) := FALSE;
-    -- next(halt) := (proc1_halt & proc2_halt);
+	init(halt) := FALSE;
+    next(halt) := (proc1_halt & proc2_halt);
 
     -- original main assignments
     next(offset)    := offset;
-	init(var_Y)		:= 0;
     next(var_Y)     := var_Y;
     init(var_size)  := 4;
     next(var_size)  := var_size;
@@ -257,7 +256,4 @@ MODULE main
     init(proc2_arrB_pos3) := 3; next(proc2_arrB_pos3) := proc2_arrB_pos3;
     init(proc2_arrB_pos4) := 4; next(proc2_arrB_pos4) := proc2_arrB_pos4;
 
-    DEFINE
-
-        -- halting condition
-        halt := (proc1_halt & proc2_halt);
+-- (No DEFINEs were active in the original module; all commented lines remain omitted.)

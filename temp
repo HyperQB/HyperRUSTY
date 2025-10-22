@@ -1,0 +1,255 @@
+temp
+        let children = node.children();
+        if children.is_empty() {
+            let node_str = node.to_string();
+            // Check if the node string is an integer constant
+            if let Ok(parsed) = node_str.parse::<i64>() {
+                let bitwidth = *max_bit_map.get(var_name).unwrap_or(&1);
+                return build_bitblasted_equality(&var_name, parsed, bitwidth, is_primed);
+            }          
+            // let mut cleaned_name = clean_var_name(&decl_name, is_primed);
+            // return Expression::Literal(Lit::Atom(cleaned_name));
+        }
+
+        // Handle binary arithmetic ops: +, -, =, etc.
+        // TODO: nested operation might fail
+        let is_last_layer = children.iter().all(|child| child.children().is_empty());
+
+        let args: Vec<Expression> = if is_last_layer {
+            children
+                .iter()
+                .map(|child| Expression::Literal(Lit::Atom(child.to_string())))
+                .collect()
+        } else {
+            children
+                .iter()
+                .map(|child| {
+                    let dyn_child = Dynamic::from_ast(child);
+                    dyn_to_expr(var_name, &dyn_child, is_primed, max_bit_map)
+                })
+                .collect()
+        };
+
+
+        // TODO: here you need the bit-blasting, take care of all expressions in z3
+        return match decl_name.as_str() {
+            "+" | "-" | "*" | "/" | "mod" => {
+                // Use the original Z3 children for reliable introspection
+                let ch = node.children();
+                assert!(ch.len() == 2, "binary arithmetic expected");
+
+                // Try to read int constants
+                let l_const = int_literal_of(&Dynamic::from_ast(&ch[0]));
+                let r_const = int_literal_of(&Dynamic::from_ast(&ch[1]));
+
+                // Try to read variable bases (unprimed) from each side
+                let l_var = var_base_of_dyn(&Dynamic::from_ast(&ch[0])).map(|v| unprimed_base(&v));
+                let r_var = var_base_of_dyn(&Dynamic::from_ast(&ch[1])).map(|v| unprimed_base(&v));
+
+                println!("node: {:?}", node);
+                println!("var_name: {:?}", var_name);
+                // println!("l_var: {:?}", l_var);
+
+                // Target (LHS) is the variable we’re updating: `var_name`
+                let tgt_bw = *max_bit_map
+                    .get(var_name)
+                    .unwrap_or_else(|| panic!("Missing bitwidth for target variable '{}'", var_name));
+                let (tmin, tmax) = (0_i64, (1_i64 << tgt_bw) - 1);
+
+                // Helper: domain for a variable by name
+                let var_domain = |v: &str| -> (i64, i64) {
+                    let bw = *max_bit_map
+                        .get(v)
+                        .unwrap_or_else(|| panic!("Missing bitwidth for operand variable '{}'", v));
+                    (0, (1_i64 << bw) - 1)
+                };
+
+                // Build all implications (pre ⇒ post) and conjoin them
+                let mut clauses: Vec<Box<Expression>> = Vec::new();
+
+                // Enumerate according to the shapes (const/var).
+                match (l_const, l_var.as_deref(), r_const, r_var.as_deref()) {
+                    // VAR op VAR
+                    (None, Some(x), None, Some(y)) => {
+                        let (xmin, xmax) = var_domain(x);
+                        let (ymin, ymax) = var_domain(y);
+
+                        for a in xmin..=xmax {
+                            for b in ymin..=ymax {
+                                let res = match decl_name.as_str() {
+                                    "+" => a.checked_add(b),
+                                    "-" => a.checked_sub(b),
+                                    "*" => a.checked_mul(b),
+                                    "/" => if b == 0 { None } else { Some(a / b) },
+                                    "mod" => if b == 0 { None } else { Some(a % b) },
+                                    _ => unreachable!(),
+                                };
+
+                                if let Some(val) = res {
+                                    if val >= 0 && val <= tmax {   // <- disallow negatives here
+                                        let pre_x = build_bitblasted_equality(x, a, *max_bit_map.get(x).unwrap(), false);
+                                        let pre_y = build_bitblasted_equality(y, b, *max_bit_map.get(y).unwrap(), false);
+                                        let pre   = Expression::And(Box::new(pre_x), Box::new(pre_y));
+
+                                        let post = build_bitblasted_equality(var_name, val, tgt_bw, true);
+                                        clauses.push(Box::new(Expression::Implies(Box::new(pre), Box::new(post))));
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // VAR op CONST
+                    (None, Some(x), Some(c), None) => {
+                        let (xmin, xmax) = var_domain(x);
+                        for a in xmin..=xmax {
+                            let res = match decl_name.as_str() {
+                                "+" => a.checked_add(c),
+                                "-" => a.checked_sub(c),
+                                "*" => a.checked_mul(c),
+                                "/" => if c == 0 { None } else { Some(a / c) },
+                                "mod" => if c == 0 { None } else { Some(a % c) },
+                                _ => unreachable!(),
+                            };
+
+                            if let Some(val) = res {
+                                if val >= 0 && val <= tmax {   // <- ensure non-negative
+                                    let pre = build_bitblasted_equality(x, a, *max_bit_map.get(x).unwrap(), false);
+                                    let post = build_bitblasted_equality(var_name, val, tgt_bw, true);
+                                    clauses.push(Box::new(Expression::Implies(Box::new(pre), Box::new(post))));
+                                }
+                            }
+                        }
+                    }
+
+                    // CONST op VAR
+                    (Some(c), None, None, Some(y)) => {
+                        let (ymin, ymax) = var_domain(y);
+                        for b in ymin..=ymax {
+                            let res = match decl_name.as_str() {
+                                "+" => c.checked_add(b),
+                                "-" => c.checked_sub(b),
+                                "*" => c.checked_mul(b),
+                                "/" => if b == 0 { None } else { Some(c / b) },
+                                "mod" => if b == 0 { None } else { Some(c % b) },
+                                _ => unreachable!(),
+                            };
+
+                            if let Some(val) = res {
+                                if val >= 0 && val <= tmax {   // <- disallow negatives
+                                    let pre = build_bitblasted_equality(y, b, *max_bit_map.get(y).unwrap(), false);
+                                    let post = build_bitblasted_equality(var_name, val, tgt_bw, true);
+                                    clauses.push(Box::new(Expression::Implies(Box::new(pre), Box::new(post))));
+                                }
+                            }
+                        }
+                    }
+
+                    // CONST op CONST
+                    (Some(a), None, Some(b), None) => {
+                        let val = match decl_name.as_str() {
+                            "+" => a.checked_add(b),
+                            "-" => a.checked_sub(b),
+                            "*" => a.checked_mul(b),
+                            "/" => if b == 0 { None } else { Some(a / b) },
+                            "mod" => if b == 0 { None } else { Some(a % b) },
+                            _ => unreachable!(),
+                        };
+                        if let Some(v) = val {
+                            if v >= 0 && v <= tmax {   // <- disallow negatives
+                                clauses.push(Box::new(build_bitblasted_equality(var_name, v, tgt_bw, true)));
+                            }
+                        }
+                    }
+
+                    // Fallback: at least one side is a composite int term you didn’t model yet.
+                    _ => {
+                        eprintln!(
+                            "[dyn_to_expr][arith] Exhaustive arith needs var/const leaves. 
+                            Got decl='{}', l_const={:?}, l_var={:?}, r_const={:?}, r_var={:?}",
+                            decl_name, l_const, l_var, r_const, r_var
+                        );
+                        // Safe structural fallback so you don’t create fake atoms
+                        let pre = Expression::True; // or return Expression::True to avoid constraining
+                        clauses.push(Box::new(pre));
+                    }
+                }
+                // return all bit-blasted clauses
+                return Expression::MAnd(clauses);
+            }
+            // "-" => Expression::Sub(Box::new(args[0].clone()), Box::new(args[1].clone())),
+             _   => Expression::Literal(Lit::Atom(format!("UNKNOWN_INT({})", decl_name))),
+        };
+
+
+
+
+        // ==================================================================
+
+        let is_last_layer = children.iter().all(|child| child.children().is_empty());
+
+        let args: Vec<Expression> = if is_last_layer {
+            children
+                .iter()
+                .map(|child| Expression::Literal(Lit::Atom(child.to_string())))
+                .collect()
+        } else {
+            children
+                .iter()
+                .map(|child| {
+                    let dyn_child = Dynamic::from_ast(child);
+                    dyn_bool_to_expr(var_name, &dyn_child, is_primed, max_bit_map)
+                })
+                .collect()
+        };
+
+        return match decl_name.as_str() {
+            "and" => Expression::MAnd(args.into_iter().map(Box::new).collect()),
+            "or"  => Expression::MOr(args.into_iter().map(Box::new).collect()),
+            "not" => {
+                assert_eq!(args.len(), 1);
+                negate_expr(args.into_iter().next().unwrap())
+            }
+            "=" => {
+                let ch = node.children();
+                assert!(ch.len() == 2, "binary = expected");
+                let hint = var_name_hint_from_children(&ch[0], &ch[1]).unwrap_or_default();
+                return encode_cmp_dyn("=", &ch[0], &ch[1], is_primed, max_bit_map, &hint);
+            }
+            "<" => {
+                let ch = node.children();
+                assert!(ch.len() == 2, "binary < expected");
+                let hint = var_name_hint_from_children(&ch[0], &ch[1]).unwrap_or_default();
+                return encode_cmp_dyn("<", &ch[0], &ch[1], is_primed, max_bit_map, &hint);
+            }
+            ">" => {
+                let ch = node.children();
+                assert!(ch.len() == 2, "binary > expected");
+                let hint = var_name_hint_from_children(&ch[0], &ch[1]).unwrap_or_default();
+                return encode_cmp_dyn(">", &ch[0], &ch[1], is_primed, max_bit_map, &hint);
+            }
+            "<=" => {
+                let ch = node.children();
+                assert!(ch.len() == 2, "binary <= expected");
+                let hint = var_name_hint_from_children(&ch[0], &ch[1]).unwrap_or_default();
+                return encode_cmp_dyn("<=", &ch[0], &ch[1], is_primed, max_bit_map, &hint);
+            }
+            ">=" => {
+                let ch = node.children();
+                assert!(ch.len() == 2, "binary >= expected");
+                let hint = var_name_hint_from_children(&ch[0], &ch[1]).unwrap_or_default();
+                return encode_cmp_dyn(">=", &ch[0], &ch[1], is_primed, max_bit_map, &hint);
+            }
+            "if"  => Expression::Implies(Box::new(args[0].clone()), Box::new(args[1].clone())),
+            "ite" => {
+                // Convert to (cond → then) ∧ (¬cond → else)
+                Expression::And(
+                    Box::new(Expression::Implies(Box::new(args[0].clone()), Box::new(args[1].clone()))),
+                    Box::new(Expression::Implies(
+                        Box::new(Expression::Neg(Box::new(args[0].clone()))),
+                        Box::new(args[2].clone()),
+                    )),
+                )
+            }
+            _     => Expression::Literal(Lit::Atom(format!("UNKNOWN_BOOL({})", decl_name))),
+        };

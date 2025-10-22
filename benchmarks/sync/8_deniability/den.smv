@@ -1,24 +1,24 @@
 --DENIABILITY
---(adopted from: Michael Backes, Boris Köpf, and Andrey Rybalchenko. Automatic discovery and quantification of information leaks. In 2009 30th IEEE Symposium on Security and Privacy)
+--(adopted from: Michael Backes, Boris Kopf, and Andrey Rybalchenko. Automatic discovery and quantification of information leaks. In 2009 30th IEEE Symposium on Security and Privacy)
 MODULE main
  VAR
-    init_balance: 0..20;
-    debits_amount: 1..10;
     PC: 1..6;
     num_itr: 0..11;
+    init_balance: 0..20;
+    debits_amount: 1..10;
     halt: boolean;
  ASSIGN
     -- Initial Conditions
-    init(init_balance):= {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
+    init(init_balance) := {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
     init(debits_amount) := {1,2,3,4,5,6,7,8,9,10};
-    init(num_itr):= 0;
-    init(PC):= 1; -- but program counter starts at 1.
+    init(num_itr) := 0;
+    init(PC) := 1; -- but program counter starts at 1.
     init(halt) := FALSE;
 
     -- Transition Relations
     next(init_balance) :=
       case
-        ((PC=3) & ((init_balance - debits_amount) > 0)): (init_balance - debits_amount);
+        ((PC=3) & (init_balance - debits_amount > 0)): (init_balance - debits_amount);
         TRUE: init_balance;
       esac;
 
@@ -50,5 +50,3 @@ MODULE main
         (PC=6): TRUE;
         TRUE: halt;
       esac;
-
-DEFINE

@@ -9,6 +9,7 @@ use std::collections::{HashMap, HashSet};
 use std::ffi::{CString, CStr};
 use indexmap::IndexMap;
 use ahltlunroller::*;
+
 use hltlunroller::*;
 use regex::Regex;
 use enchelper::*;
@@ -18,6 +19,7 @@ use std::ptr;
 use ir::*;
 
 mod verilog_helper;
+
 
 /****************************
 *

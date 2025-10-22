@@ -51,7 +51,6 @@ MODULE main
     -- main-level state
     next(offset) := offset;
     init(pointer_Y) := var_Y;
-    init(var_Y)		:= 0;
     next(var_Y) := var_Y;
     init(var_size) := 4;
     next(var_size) := var_size;
@@ -274,6 +273,4 @@ MODULE main
     next(proc2_arrB_pos4) := proc2_arrB_pos4;
 
   DEFINE
-
-    -- halting condition
-    halt := (proc1_halt & proc2_halt);
+    -- (no extra defines)

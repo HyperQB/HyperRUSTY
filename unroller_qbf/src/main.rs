@@ -224,10 +224,12 @@ pub fn gen_qcir<'env, 'ctx>(
             }
         }
         // DEBUG: transitions
-        println!(">>> TRANSITIONS: ");
-        for (i, e) in expr_vec.iter().enumerate() {
-            println!("  [{}] {}", i, expression_to_string(&*e));
-        }
+
+        // println!(">>> TRANSITIONS: ");
+        // for (i, e) in expr_vec.iter().enumerate() {
+        //     println!("  [{}] {}", i, expression_to_string(&*e));
+        // }
+
         let full_trans_expr = Expression::MAnd(expr_vec.clone());
         expr_vec.clear();
         complete_bit_map.extend(
@@ -1478,7 +1480,7 @@ fn encode_cmp_dyn(
             let (min, max) = unsigned_domain(bw);
             // clamp c into domain for range limits
             let c = c.clamp(min, max);
-            
+
             match op {
                 "="  => build_bitblasted_equality(v, c, bw, is_primed),
                 "<"  => {

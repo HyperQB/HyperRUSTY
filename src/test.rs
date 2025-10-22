@@ -713,7 +713,7 @@ fn main() {
 
     let form = generate_hltl_encoding(&ctx, &ast_node, &vec![&states], &vec![sym_path], &Semantics::Pes);
 
-    println!("{:?}", form);
+    // println!("{:?}", form);
 
     solver.assert(&form);
 

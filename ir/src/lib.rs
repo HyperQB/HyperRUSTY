@@ -602,7 +602,7 @@ impl<'ctx> SMVEnv<'ctx> {
     }
  
     pub fn get_variable_type(&self, name: &str) -> Option<&VarType> {
-        println!("Looking up variable type for: {}", name);
+        // println!("Looking up variable type for: {}", name);
         self.variables.get(name).map(|var| &var.sort)
     }
 

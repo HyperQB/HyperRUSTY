@@ -145,7 +145,7 @@ impl StateMap {
 }
 
 pub fn csv_to_expr() -> (Box<Expression>, HashMap<String,i32>) {
-    println!(">>> HERE");
+    // println!(">>> HERE");
     let mut trans_stack: Vec<Box<Expression>> = Vec::new();
     let max_bit_map = parse_vars_file().expect("REASON");
     let copy_max_bit_map = max_bit_map.clone();
@@ -178,7 +178,7 @@ fn parse_vars_file() -> io::Result<HashMap<String, i32>> {
         }
     }
     for (key, value) in &result_map {
-        println!("+++++RESULT MAP => {} : {}", key, value);
+        // println!("+++++RESULT MAP => {} : {}", key, value);
     }
 
     Ok(result_map)

@@ -241,7 +241,7 @@ pub fn gen_qcir<'env, 'ctx>(
 
 
     if (is_ahltl(formula)) {
-        println!("Given formula is AHLTL");
+        // println!("Given formula is AHLTL");
         let mut quantifiers: Vec<(String, String)> = Vec::new();
         let parsed = parse_ahltl(formula, &complete_bit_map, bound).expect("AHLTL parse failed");
         let quants = parsed.prefix;
@@ -293,7 +293,7 @@ pub fn gen_qcir<'env, 'ctx>(
 
 
     } else {
-        println!("Given formula is HLTL");
+        // println!("Given formula is HLTL");
         let mut quantifiers: Vec<(String, String)> = Vec::new();
         let parsed = parse_hyperltl(formula, &complete_bit_map).expect("HLTL parse failed");
         let form = parsed.formula;

@@ -1077,7 +1077,7 @@ pub fn parse_smv<'ctx>(
     output_format: &str,
 ) -> SMVEnv<'ctx>  {
     
-    println!("Parsing: {}\n", input_path);
+    // println!("Parsing: {}\n", input_path);
 
     let commands = vec![
         format!("read_model -i {}", input_path),
@@ -1115,7 +1115,7 @@ pub fn parse_smv<'ctx>(
             if let Some(out_path) = output_path {
                 std::fs::write(&out_path, &output).expect("Failed to write output file");
             } else {
-                println!("{}", output);
+                // println!("{}", output);
             }
             panic!("Expected output format 'ir' to return SMVEnv, but got 'primed'");
         }
@@ -1124,7 +1124,7 @@ pub fn parse_smv<'ctx>(
             if let Some(out_path) = output_path {
                 std::fs::write(&out_path, &output).expect("Failed to write output file");
             } else {
-                println!("{}", output);
+                // println!("{}", output);
             }
             panic!("Expected output format 'ir' to return SMVEnv, but got 'functions'");
         }
@@ -1482,7 +1482,7 @@ ASSIGN
 "#;
 
         let flat = flatten_nusmv(src);
-        println!("{flat}");
+        // println!("{flat}");
         assert!(flat.contains("MODULE main"));
         assert!(flat.contains("proc1_line : 0..8;"));
         assert!(flat.contains("proc2_flag : boolean;"));

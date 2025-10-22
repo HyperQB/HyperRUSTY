@@ -64,9 +64,9 @@ impl Encoder<'_> {
     /// prints the association vector
     pub fn print_association(&self) {
         for (model, vec) in &self.association {
-            println!("Model: {}", model);
+            // println!("Model: {}", model);
             for (helper, real, name) in vec {
-                println!("Helper: {}, Real: {}, Name: {}", helper, real, name);
+                // println!("Helper: {}, Real: {}, Name: {}", helper, real, name);
             }
         }
     }

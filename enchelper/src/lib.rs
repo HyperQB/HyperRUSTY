@@ -58,7 +58,6 @@ pub fn is_ahltl(formula: &AstNode) -> bool {
 
 // The formula must be quantifier-free
 fn get_propositions_for_paths(formula: &AstNode, map: &mut HashMap<&str, Vec<String>>) {
-    println!("{:#?}", formula);
     match formula {
         AstNode::BinOp {operator: _, lhs, rhs} => {
             get_propositions_for_paths(lhs, map);

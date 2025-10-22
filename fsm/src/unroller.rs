@@ -30,11 +30,11 @@ pub fn legacy_unwrap(   expression: Vec<(String,String)>,
     let mut output_str = String::new();
 
     for (initial, transitions) in expression {
-        println!("\nINIT:  {}", initial);
+        // println!("\nINIT:  {}", initial);
 
-        println!("\nTRANS: {}", transitions);
+        // println!("\nTRANS: {}", transitions);
 
-        println!("quantifiers = {:?}", quantifiers);
+        // println!("quantifiers = {:?}", quantifiers);
 
         symbol_map.add_initials(&initial);
         logger.log("Starting input to expression", 1);
@@ -132,7 +132,7 @@ pub fn encoding_unroll(     expression: Vec<(String, String)>,
                             model_flag: &String) 
 {
     // Used variables
-    println!("Encoding unroll");
+    // println!("Encoding unroll");
     let mut symbol_map = SymbolMap::new(expression.len() as i32, layers);
     symbol_map.setup_model_map(quantifiers);
     let mut output_str = String::new();
@@ -143,7 +143,7 @@ pub fn encoding_unroll(     expression: Vec<(String, String)>,
     // This is the model to apply encoding to if we specified it
     let mut model_mum = -1;
     if !model_flag.is_empty(){
-        println!("Length of model_flag {}", model_flag.len());
+        // println!("Length of model_flag {}", model_flag.len());
         model_mum = symbol_map.get_model_number_from_name(model_flag).clone();
     }
 
@@ -195,7 +195,7 @@ pub fn encoding_unroll(     expression: Vec<(String, String)>,
     logger.log(&format!("max_gate_number after unrolling models is: {}", max_gate_number), 1);
 
     // build the final gates of the model and format start of model
-    println!("entering get_output_string_unified");
+    // println!("entering get_output_string_unified");
     let final_string = crate::helper_functions::get_output_string_unified(&model_map, max_gate_number, logger, formula, quantifiers, semantics, layers, &mut symbol_map, true, model_flag);
     let mut file = crate::helper_functions::create_file();
     file.write_all(final_string.as_bytes()).expect("Should have been able to write to file");

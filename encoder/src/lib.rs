@@ -359,9 +359,6 @@ pub fn get_verilog_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, models: &
         bounded_vars.push(quantified_vars);
     }
 
-    println!("{:#?}", states);
-    println!("{:#?}", bounded_vars);
-
     if is_hltl(formula) {
         // Unroll the formula first
         let inner_ltl = unroll_hltl_formula(envs, formula, &states, &sem);
@@ -425,7 +422,7 @@ pub fn extract_grouped_model(model: &Model) -> Vec<(i32, Vec<(String, String)>)>
             temp.push((state, (var_name, val_str)));
         } else {
             // Uncomment if you want to see non-matching names:
-            eprintln!("unmatched: {}", var_name);
+            // eprintln!("unmatched: {}", var_name);
         }
     }
 

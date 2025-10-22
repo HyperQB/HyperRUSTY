@@ -199,8 +199,8 @@ pub fn create_gates_from_cdf(
                     // stack.push_back(!curr_expression);
                 }
                 _ => {
-                    println!("{:?}", curr_expression);
-                    println!("Not implemented yet?");
+                    // println!("{:?}", curr_expression);
+                    // println!("Not implemented yet?");
                 }
             }
 
@@ -288,9 +288,9 @@ mod tests {
         let expression = r"a/\a'";
         let logger = Logger::new(true, 1);
         let fsm = crate::input_to_expressions::input_to_expression(expression);
-        println!("{:?}", fsm);
+        // println!("{:?}", fsm);
         let (output, _, _) = create_gates_from_cdf(&fsm, &logger, 0, 1, &mut SymbolMap::new(1,1));
-        println!("{}", output);
+        // println!("{}", output);
         assert_eq!(output, "g1 = and(a[1],a[0])\n");
     }
 
@@ -299,9 +299,9 @@ mod tests {
         let logger = Logger::new(false, 2);
         let expression = r"((a)->(a'\/b'))";
         let fsm = crate::input_to_expressions::input_to_expression(expression);
-        println!("{:?}", fsm);
+        // println!("{:?}", fsm);
         let (output, _, _) = create_gates_from_cdf(&fsm, &logger, 0, 1, &mut SymbolMap::new(1,1));
-        println!("{}", output);
+        // println!("{}", output);
         assert_eq!(output, "1 = or(-2,5,3)\n");
     }
 
@@ -310,7 +310,7 @@ mod tests {
         let logger = Logger::new(true, 1);
         let expression = r"((a)->(a'\/~a'))/\((~a)->(~a'))";
         let fsm = crate::input_to_expressions::input_to_expression(expression);
-        println!("{:?}", fsm);
+        // println!("{:?}", fsm);
         create_gates_from_cdf(&fsm, &logger, 0, 1, &mut SymbolMap::new(1,1));
     }
 
@@ -319,9 +319,9 @@ mod tests {
         let logger = Logger::new(true, 1);
         let expression = r"(a/\b/\c)";
         let fsm = crate::input_to_expressions::input_to_expression(expression);
-        println!("{:?}", fsm);
+        // println!("{:?}", fsm);
         let (output, _, _) = create_gates_from_cdf(&fsm, &logger, 0, 2, &mut SymbolMap::new(1,2));
-        println!("{}", output);
+        // println!("{}", output);
         assert_eq!(output, "g1 = and(c[0],b[0],a[0])\ng11 = and(c[1],b[1],a[1])\ng12 = and(g1,g11)\n")
     }
 
@@ -330,9 +330,9 @@ mod tests {
         let logger = Logger::new(true, 1);
         let expression = r"(~a/\b)\/(a'/\b'/\c')";
         let fsm = crate::input_to_expressions::input_to_expression(expression);
-        println!("{:?}", fsm);
+        // println!("{:?}", fsm);
         let (output, _, _) = create_gates_from_cdf(&fsm, &logger, 0, 2, &mut SymbolMap::new(1,2));
-        println!("{}", output);
+        // println!("{}", output);
     }
 
 }

@@ -93,7 +93,7 @@ fn main() {
         .by_ref()
         .take_while(|arg| !arg.starts_with('-'))
         .collect();
-    println!("Files: {:?}", files);
+    // println!("Files: {:?}", files);
     let formula_file = files.pop().expect("Expected at least one input file");
     let cwd = env::current_dir().expect("Failed to get current directory");
     let path_string = cwd.display().to_string();
@@ -109,7 +109,7 @@ fn main() {
     // =========================================
     // NuSMV parser
     // \TBD: Integrate this part with main.rs
-    println!("Parsing NuSMV in IR\n");
+    // println!("Parsing NuSMV in IR\n");
     let cfg = Config::new();
     let ctx = Context::new(&cfg);
     let input_path = "cases/mini/mini.smv";
@@ -137,21 +137,21 @@ fn main() {
     //     println!("\nInitial constraint {}: {}", i, constraint);
     // }
     let time1 = now.elapsed().as_micros();
-    println!("> NuSMV parse finished: {} s \n", time1 as f64 / 1_000_000.0);
+    // println!("> NuSMV parse finished: {} s \n", time1 as f64 / 1_000_000.0);
     
 
     // =========================================
     // Given a SMVEnv, unroll models with formula, output a QCIR
-    println!("\nQBF unrolling Starts!\n");
+    // println!("\nQBF unrolling Starts!\n");
 
     gen_qcir(&mut files, &formula_file, &env, layers, debug, &semantics);
 
 
     // print time elapsed
     let time2 = now.elapsed().as_micros();
-    println!("> Rust genqbf finished: {} s \n", time2 as f64 / 1_000_000.0);
-    println!("> TOTAL: {} s \n", (time1+time2) as f64 / 1_000_000.0);
-    println!("HyperRust finished.\n");
+    // println!("> Rust genqbf finished: {} s \n", time2 as f64 / 1_000_000.0);
+    // println!("> TOTAL: {} s \n", (time1+time2) as f64 / 1_000_000.0);
+    // println!("HyperRust finished.\n");
 
 }
 

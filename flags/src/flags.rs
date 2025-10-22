@@ -82,7 +82,7 @@ lazy_static! {
 pub fn parse_flags() -> Logger{
     let args = parse();
     let logger = Logger::new(FLAGS.debug, FLAGS.debug_level);
-    println!("The model flag is: {}", MODEL.flag);
+    // println!("The model flag is: {}", MODEL.flag);
 
     if HELP.flag {
         // print the doc string of each flag

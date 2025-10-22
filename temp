@@ -46,8 +46,6 @@ temp
                 let l_var = var_base_of_dyn(&Dynamic::from_ast(&ch[0])).map(|v| unprimed_base(&v));
                 let r_var = var_base_of_dyn(&Dynamic::from_ast(&ch[1])).map(|v| unprimed_base(&v));
 
-                println!("node: {:?}", node);
-                println!("var_name: {:?}", var_name);
                 // println!("l_var: {:?}", l_var);
 
                 // Target (LHS) is the variable we’re updating: `var_name`

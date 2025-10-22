@@ -70,9 +70,9 @@ pub fn parse_ahltl(
     let inner = parse_form_rec(after_paths)?;
     let inner = bitblast_eqs(&inner, max_bit_map);
 
-    println!("\nPath Prefix:  {:?} ", prefix);
-    println!("\nTrajectories: {:?}", trajs);
-    println!("\nInner LTL:    {:?}", inner);
+    // println!("\nPath Prefix:  {:?} ", prefix);
+    // println!("\nTrajectories: {:?}", trajs);
+    // println!("\nInner LTL:    {:?}", inner);
 
     // 4) Build the AHLTL encoding (parameterize k as needed)
     let k = bound;

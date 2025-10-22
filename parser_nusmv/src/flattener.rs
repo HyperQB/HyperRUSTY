@@ -331,7 +331,7 @@ ASSIGN
 "#;
 
         let flat = flatten_nusmv(src);
-        println!("{flat}");
+        // println!("{flat}");
         assert!(flat.contains("MODULE main"));
         assert!(flat.contains("proc1_line : 0..8;"));
         assert!(flat.contains("proc2_flag : boolean;"));

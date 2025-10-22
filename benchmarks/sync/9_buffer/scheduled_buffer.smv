@@ -30,7 +30,14 @@ ASSIGN
   init(PC) := 1;
 
   -- Transition Relations
-  next(P1_sec_in) := P1_sec_in;
+  next(P1_sec_in) := 
+    case
+      (P1_sec_in = 0): 0;
+      (P1_sec_in = 1): 1;
+      (P1_sec_in = 2): 2;
+      (P1_sec_in = 3): 3;
+    esac;
+    
   next(P2_unclass_in) := P2_unclass_in;
   next(sec_write) := sec_write;
   next(unclass_write) := unclass_write;
@@ -77,5 +84,5 @@ ASSIGN
     esac;
 
 DEFINE
-  halt := PC = 3 ;
+  halt := (PC=3) ;
   no_conflict := !(sec_read & unclass_read);

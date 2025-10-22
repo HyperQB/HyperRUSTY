@@ -9,6 +9,12 @@
 # time cargo run --release -- -n benchmarks/async/0_test/m1.smv benchmarks/async/0_test/m2.smv -f benchmarks/async/0_test/formula.hq -k 4 -m 8 -s hpes -q
 
 
+# cargo run --release -- -n benchmarks/0_infoflow/info.smv benchmarks/0_infoflow/info.smv -f benchmarks/0_infoflow/info.hq -k 10 -s hpes -q 
+
+# time cargo run --release -- -n benchmarks/async/0_test/m1.smv benchmarks/async/0_test/m2.smv -f benchmarks/async/0_test/formula.hq -k 4 -m 8 -s hpes -q
+
+
+
 #=== BAKERY ===#
 
 # echo "bakery 3"
@@ -22,6 +28,12 @@
 
 # echo "bakery 7"
 # time cargo run --release -- -n benchmarks/1_bakery/bakery7.smv benchmarks/1_bakery/bakery7.smv -f benchmarks/1_bakery/symmetry7.hq -k 10 -s hpes
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/1_bakery/bakery7.smv benchmarks/AH_formulas/1.7.hq --log --witness
+
+# cargo run --release -- -n benchmarks/1_bakery/bakery9.smv benchmarks/1_bakery/bakery9.smv -f benchmarks/1_bakery/symmetry9.hq -k 10 -s hpes -q
+
+# time AutoHyper/app/AutoHyper --nusmv benchmarks/1_bakery/bakery9.smv benchmarks/AH_formulas/1.9.hq --log --witness
 
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/1_bakery/bakery7.smv benchmarks/AH_formulas/1.7.hq --log --witness
 
@@ -359,7 +371,6 @@
 
 # cargo run --release -- -n benchmarks/loop_conditions/test_loop/rs1.smv benchmarks/loop_conditions/test_loop/rs2.smv -f benchmarks/loop_conditions/test_loop/rs.hq -l
 
-
 #=== VERLIOG EXAMPLES ===#
 
 #RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/build_infoflow.ys verilog_benchmarks/build_infoflow.ys -t main -o model.smt2 -f verilog_benchmarks/formula.hq -k 3 -s hpes
@@ -378,7 +389,7 @@
 #cargo run --release -- -v benchmarks/verilog/LED/build_ea.ys benchmarks/verilog/LED/build_ea.ys -t led_fsm -o model.smt2 -f benchmarks/verilog/LED/formula_ea.hq -k 101 -s pes
 
 #=== SPI ===#
-cargo run --release -- -v benchmarks/verilog/SPI/spi_build.ys benchmarks/verilog/SPI/spi_build.ys -t SPISlave -o spi.smt2 -f benchmarks/verilog/SPI/formula.hq -k 16 -s pes -c
+#cargo run --release -- -v benchmarks/verilog/SPI/spi_build.ys benchmarks/verilog/SPI/spi_build.ys -t SPISlave -o spi.smt2 -f benchmarks/verilog/SPI/formula.hq -k 8 -s hpes
 
 #=== VERILOG GOOD_BAKERY ===#
 #cargo run --release -- -v benchmarks/verilog/bakery/goodbakery.ys benchmarks/verilog/bakery/goodbakery.ys -t bakery -o model.smt2 -f benchmarks/verilog/bakery/formula.hq -k 10 -s pes
@@ -394,7 +405,7 @@ cargo run --release -- -v benchmarks/verilog/SPI/spi_build.ys benchmarks/verilog
 #cargo run --release -- -v verilog_benchmarks/iodine-benchmarks/fpu/verilog/minimal_fpu.ys verilog_benchmarks/iodine-benchmarks/fpu/verilog/minimal_fpu.ys -t fdiv_tb -o fpu.smt2 -f verilog_benchmarks/iodine-benchmarks/fpu/verilog/formula.hq -k 1 -s pes
 
 #=== fpu2 ===#
-#RUST_BACKTRACE=full cargo run --release -- -v benchmarks/verilog/divider/divider.ys benchmarks/verilog/divider/divider.ys -t divider -o model.smt2 -f benchmarks/verilog/divider/formula.hq -k 8 -s pes
+# RUST_BACKTRACE=full cargo run --release -- -v benchmarks/verilog/divider/divider.ys benchmarks/verilog/divider/divider.ys -t divider -o model.smt2 -f benchmarks/verilog/divider/formula.hq -k 8 -s pes
 
 #=== TRNG ===#
 #RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/TRNG/build.ys verilog_benchmarks/TRNG/build.ys -t trng_wrap -o trng.smt2 -f verilog_benchmarks/TRNG/formula_1.hq -k 10 -s opt

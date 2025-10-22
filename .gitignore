@@ -2,6 +2,7 @@
 /AutoHyper
 Cargo.lock
 commands.txt
+
 aut1.hoa
 aut2.hoa
 autRes.hoa
@@ -9,3 +10,5 @@ obliv_bits_*.ll
 .DS_Store
 *.smt2
 *.qcir
+*.hoa
+.vscode/

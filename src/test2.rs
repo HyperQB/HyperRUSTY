@@ -636,10 +636,10 @@ fn main() {
 
     let (states, sym_path) = env.generate_symbolic_path(2, Some("A"));
 
-    println!("{:?}", ast_node);
+    // println!("{:?}", ast_node);
 
     let form = unroll_hltl_formula(&ctx, &ast_node, &vec![&states], &Semantics::Pes);
 
-    println!("{:?}", form);
+    // println!("{:?}", form);
 
 }

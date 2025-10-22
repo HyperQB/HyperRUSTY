@@ -34,7 +34,7 @@ ASSIGN
     esac;
 
 DEFINE
-    VALID :=    ((STATE=0) -> (!S_R_sec & !S_R_pub & !R_pub & !R_sec ))
-              & ((STATE=1) -> (!S_R_sec &  S_R_pub &  R_pub & !R_sec ))
-              & ((STATE=2) -> ( S_R_sec & !S_R_pub & !R_pub &  R_sec ))
-              & ((STATE=3) -> ( S_R_sec & !S_R_pub &  R_pub &  R_sec ));
+    -- VALID :=    ((STATE=0) -> (!S_R_sec & !S_R_pub & !R_pub & !R_sec ))
+    --           & ((STATE=1) -> (!S_R_sec &  S_R_pub &  R_pub & !R_sec ))
+    --           & ((STATE=2) -> ( S_R_sec & !S_R_pub & !R_pub &  R_sec ))
+    --           & ((STATE=3) -> ( S_R_sec & !S_R_pub &  R_pub &  R_sec ));

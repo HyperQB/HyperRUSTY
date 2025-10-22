@@ -38,10 +38,10 @@ ASSIGN
     esac;
 
 DEFINE
-    VALID :=    ((STATE=0) -> (!Alice_Bob_sec& !Bob_Eve_pub & !Bob_sec & !Eve_secisnotempty))
-              & ((STATE=1) -> (Alice_Bob_sec & !Bob_Eve_pub & !Bob_sec & !Eve_secisnotempty))
-              & ((STATE=2) -> (!Alice_Bob_sec & Bob_Eve_pub & !Bob_sec & !Eve_secisnotempty))
-              & ((STATE=3) -> (Alice_Bob_sec & !Bob_Eve_pub & Bob_sec & !Eve_secisnotempty))
-              & ((STATE=4) -> (!Alice_Bob_sec & Bob_Eve_pub & Bob_sec & !Eve_secisnotempty))
-              & ((STATE=5) -> (!Alice_Bob_sec & Bob_Eve_pub & Bob_sec & !Eve_secisnotempty & (secret=0)))
-              & ((STATE=6) -> (!Alice_Bob_sec & Bob_Eve_pub & Bob_sec &  Eve_secisnotempty & (secret=1)));
+    -- VALID := ((STATE=0) -> (!Alice_Bob_sec& !Bob_Eve_pub & !Bob_sec & !Eve_secisnotempty))
+    --           & ((STATE=1) -> (Alice_Bob_sec & !Bob_Eve_pub & !Bob_sec & !Eve_secisnotempty))
+    --           & ((STATE=2) -> (!Alice_Bob_sec & Bob_Eve_pub & !Bob_sec & !Eve_secisnotempty))
+    --           & ((STATE=3) -> (Alice_Bob_sec & !Bob_Eve_pub & Bob_sec & !Eve_secisnotempty))
+    --           & ((STATE=4) -> (!Alice_Bob_sec & Bob_Eve_pub & Bob_sec & !Eve_secisnotempty))
+    --           & ((STATE=5) -> (!Alice_Bob_sec & Bob_Eve_pub & Bob_sec & !Eve_secisnotempty & (secret=0)))
+    --           & ((STATE=6) -> (!Alice_Bob_sec & Bob_Eve_pub & Bob_sec &  Eve_secisnotempty & (secret=1)));

@@ -21,7 +21,7 @@ MODULE main
 
  ASSIGN
 	init(location) := 1 ;
-	init(h) := {TRUE, FALSE} ;
+	init(h) := {TRUE, FALSE};
 	next(h) := h;
 
 	init(x) := {0,1,2,3,4,5};
@@ -35,15 +35,15 @@ MODULE main
 		((location = 1) & h): 2;
 		(location = 3) : 4;
 		(location = 2) : 4;
-		((location = 4) & z > 0) : 5;
-    	((location = 4) & z = 0) : 6;
+		((location = 4) & (z > 0)) : 5;
+    	((location = 4) & (z = 0)) : 6;
     	(location = 5) : 4; -- jump back
-		(location = 6): 7;
+		(location = 6) : 7;
 		TRUE: location ;
 	esac;
 
 	next(y) :=
-  case
+  	case
 	    ((location = 5) & (y <= (50 - x)) & (z > 0)) : (y + x);
 	    ((location = 6) & !h & (y <= 25)): (y + y);
 	    TRUE: y;
@@ -52,7 +52,7 @@ MODULE main
 	next(z) :=
   case
 		(h & (location = 1)) : (x + x);
-		(!h & (location = 1)) : x;
+		(!h & (location = 1)) : (x);
 		((location = 5) & (z > 0)) : (z - 1);
 	  TRUE: z;
 	esac;

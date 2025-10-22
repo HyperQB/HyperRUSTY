@@ -38,26 +38,40 @@ ASSIGN
     next(serverport) := serverport;
 
     --Transition Rules
-    next(httpclient) := case
-        (serverip = 1 & serverport = 1) : username;
+    next(httpclient) := 
+    case
+        ((serverip = 1) & (serverport = 1)) : username;
         TRUE : 0;
     esac;
 
-    next(result) := case
-        httpclient = 0 : result;
-        (password = matchedUserPassword & httpclient = 1) | (password = matchedAdminPassword & httpclient = 2) : 1;
+    next(result) := 
+    case
+        (httpclient = 0) : result;
+        (((password = matchedUserPassword) & (httpclient = 1)) | ((password = matchedAdminPassword) & (httpclient = 2))) : 1;
         TRUE : 2;
     esac;
 
-    next(loginfo) := case
-        result = 0 : loginfo;
+    next(loginfo) := 
+    case
+        (result = 0) : loginfo;
         TRUE : result;
     esac;
 
-    next(creds) := case
-        (password = matchedAdminPassword & httpclient = 2) : 2; --Give Admin Creds
-        (password = matchedUserPassword & httpclient = 1) : 1; --Give User Creds
+    next(creds) := 
+    case
+        ((password = matchedAdminPassword) & (httpclient = 2)) : 2; --Give Admin Creds
+        ((password = matchedUserPassword) & (httpclient = 1)) : 1; --Give User Creds
         TRUE : 0;
     esac;
 
-    next(startactivity) := creds;
+    next(startactivity) := 
+    case
+        (creds = 0): 0;
+        (creds = 1): 1;
+        (creds = 2): 2;
+        TRUE: startactivity;
+    esac;
+
+
+DEFINE
+    halt := ((result = 1) | (result = 2));

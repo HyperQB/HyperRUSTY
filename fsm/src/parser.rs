@@ -302,7 +302,7 @@ impl Parser<'_>{
                 }
 
                 _ => {
-                    println!("Not implemented yet: {:?}", expression);
+                    // println!("Not implemented yet: {:?}", expression);
                     (0.to_string(), false)
                 }
             }
@@ -535,7 +535,7 @@ impl Parser<'_>{
             // }
             _ => {
                 let test = expression_to_string(expression);
-                println!("Test: {:?}", test);
+                // println!("Test: {:?}", test);
                 unreachable!("Shouldn't have gotten here")}
         }
     }
@@ -545,7 +545,7 @@ impl Parser<'_>{
         // Now run to get the gates it will use
         let expression = &*self.expression.clone();
         let test = expression_to_string(expression);
-        println!("Test: {:?}", test);
+        // println!("Test: {:?}", test);
         return self.process_g_expressions(expression, &mut false);
     }
 }

@@ -583,7 +583,7 @@ pub fn parse_original_smv(input: &str) -> ParsedModel {
                     }
                 } else {
                     // fallback: treat unknown types as unbounded integer
-                    println!("WARNING: Unknown type '{}', defaulting to Int for '{}'", typ_raw, name);
+                    // println!("WARNING: Unknown type '{}', defaulting to Int for '{}'", typ_raw, name);
                     ParsedVarType::Int {
                         init: None,
                         lower: None,
@@ -820,7 +820,7 @@ pub fn generate_smv_env_from_parsed<'ctx>(
     }
 
     for (name, _) in &env.predicates {
-        println!("Predicate: {}", name);
+        // println!("Predicate: {}", name);
     }
 
 
@@ -989,7 +989,7 @@ pub fn parse_condition<'ctx>(
     var_type: &ParsedVarType,
 ) -> impl Fn(&SMVEnv<'ctx>, &'ctx Context, &EnvState<'ctx>) -> Dynamic<'ctx> + 'static {
 
-    println!("NOW parsing: {:?}", cond_str);
+    // println!("NOW parsing: {:?}", cond_str);
 
     let raw = preprocess_nondet_expr(var_name, cond_str.trim()); // preprocess once
     // let raw = cond_str.trim().to_owned();
@@ -1239,7 +1239,7 @@ pub fn parse_smv<'ctx>(
     output_format: &str,
 ) -> SMVEnv<'ctx>  {
     
-    println!("Parsing: {}\n", input_path);
+    // println!("Parsing: {}\n", input_path);
 
     let commands = vec![
         format!("read_model -i {}", input_path),
@@ -1277,7 +1277,7 @@ pub fn parse_smv<'ctx>(
             if let Some(out_path) = output_path {
                 std::fs::write(&out_path, &output).expect("Failed to write output file");
             } else {
-                println!("{}", output);
+                // println!("{}", output);
             }
             panic!("Expected output format 'ir' to return SMVEnv, but got 'primed'");
         }
@@ -1286,7 +1286,7 @@ pub fn parse_smv<'ctx>(
             if let Some(out_path) = output_path {
                 std::fs::write(&out_path, &output).expect("Failed to write output file");
             } else {
-                println!("{}", output);
+                // println!("{}", output);
             }
             panic!("Expected output format 'ir' to return SMVEnv, but got 'functions'");
         }

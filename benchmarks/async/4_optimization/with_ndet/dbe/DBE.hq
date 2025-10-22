@@ -1,2 +1,2 @@
-Forall A . Forall B . E t . 
-G(obs_out[A][t] = obs_out[B][t])
+Forall A . Forall B . E t . G
+(obs_out[A][t] = obs_out[B][t])

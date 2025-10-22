@@ -197,7 +197,7 @@ impl SymbolMap {
     }
 
     pub fn print(&self){
-        println!("{:?}", self.symbol_map);
+        // println!("{:?}", self.symbol_map);
     }
 }
 

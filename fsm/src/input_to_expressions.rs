@@ -491,7 +491,7 @@ mod tests {
         let expression = r"((a)  ->  (a'))";
         let fsm = input_to_expression(expression);
         if debug {
-            println!("{:?}", fsm);
+            // println!("{:?}", fsm);
         }
         let expr1 = Box::new(Expression::Neg(Box::new(Expression::Literal(Literal::Atom("a".to_string())))));
         let expr2 = Box::new(Expression::Literal(Literal::Atom("a'".to_string())));
@@ -507,7 +507,7 @@ mod tests {
         let expression = r"((a)->(a'\/b'))"; // Which translates to not(a) \/ (a or b)
         let fsm = input_to_expression(expression);
         if debug {
-            println!("{:?}", fsm);
+            // println!("{:?}", fsm);
         }
         let expr1 = Box::new(Expression::Neg(Box::new(Expression::Literal(Literal::Atom("a".to_string())))));
         let expr2 = Box::new(Expression::Literal(Literal::Atom("a'".to_string())));
@@ -522,7 +522,7 @@ mod tests {
         let expression = r"a->a'\/b'"; // Which translates to not(a) \/ (a or b) which is then MOR
         let fsm = input_to_expression(expression);
         if debug {
-            println!("{:?}", fsm);
+            // println!("{:?}", fsm);
         }
         let expr1 = Box::new(Expression::Neg(Box::new(Expression::Literal(Literal::Atom("a".to_string())))));
         let expr2 = Box::new(Expression::Literal(Literal::Atom("a'".to_string())));
@@ -536,7 +536,7 @@ mod tests {
     fn test_complex(){
         let expression = r"((a)->(a'\/~a'))/\(~a->(~a'))";
         let fsm = input_to_expression(expression);
-        println!("{:?}", fsm);
+        // println!("{:?}", fsm);
         let expr1 = Box::new(Expression::Neg(Box::new(Expression::Literal(Literal::Atom("a'".to_string())))));
         let expr2 = Box::new(Expression::Literal(Literal::Atom("a'".to_string())));
         let expr3 = Box::new(Expression::Neg(Box::new(Expression::Literal(Literal::Atom("a".to_string())))));
@@ -556,7 +556,7 @@ mod tests {
     fn test_double_implication(){
         let expression = r"(a<->b)"; // Which translates to (a -> b) /\ (b -> a)
         let fsm = input_to_expression(expression);
-        println!("{:?}", fsm);
+        // println!("{:?}", fsm);
         let expr1 = Box::new(Expression::Neg(Box::new(Expression::Literal(Literal::Atom("a".to_string())))));
         let expr2 = Box::new(Expression::Literal(Literal::Atom("b".to_string())));
         let res1 = Box::new(Expression::Or(expr1,expr2)); // a -> b
@@ -571,9 +571,9 @@ mod tests {
     #[test]
     fn test_broken_edge(){
         let expression = r"(((b/\a)->((~a')/\b')))"; // this was previously broken
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
-        println!("{:?}", fsm);
+        // println!("{:?}", fsm);
         let expr1 = Box::new(Expression::Literal(Literal::Atom("a".to_string())));
         let expr2 = Box::new(Expression::Literal(Literal::Atom("b".to_string())));
         let res1 = Box::new(Expression::And(expr2,expr1)); // a /\ b
@@ -589,7 +589,7 @@ mod tests {
     #[test]
     fn test_global(){
         let expression = r"G(a)";
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
         assert_eq!(fsm, Box::new(Expression::G(Box::new(Expression::Literal(Literal::Atom("a".to_string()))))));
     }
@@ -597,7 +597,7 @@ mod tests {
     #[test]
     fn test_multiple_global(){
         let expression = r"G(a) /\ G(b)";
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
         let expr1 = Box::new(Expression::G(Box::new(Expression::Literal(Literal::Atom("a".to_string())))));
         let expr2 = Box::new(Expression::G(Box::new(Expression::Literal(Literal::Atom("b".to_string())))));
@@ -605,7 +605,7 @@ mod tests {
         assert_eq!(fsm, res);
 
         let  expression = r"G(a \/ b)";
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
         let expr1 = Box::new(Expression::Literal(Literal::Atom("a".to_string())));
         let expr2 = Box::new(Expression::Literal(Literal::Atom("b".to_string())));
@@ -613,7 +613,7 @@ mod tests {
         assert_eq!(fsm, res);
 
         let expression = r"G(b\/a)/\G(a/\b)";
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
         let expr1 = Box::new(Expression::Literal(Literal::Atom("a".to_string())));
         let expr2 = Box::new(Expression::Literal(Literal::Atom("b".to_string())));
@@ -626,7 +626,7 @@ mod tests {
         assert_eq!(fsm, res);
 
         let expression = r"F(~(b\/a))/\G(a/\b)";
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
         let expr1 = Box::new(Expression::Literal(Literal::Atom("a".to_string())));
         let expr2 = Box::new(Expression::Literal(Literal::Atom("b".to_string())));
@@ -639,7 +639,7 @@ mod tests {
         assert_eq!(fsm, res);
 
         let expression = r"~(G(a)/\G(b))";
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
         let expr1 = Box::new(Expression::G(Box::new(Expression::Literal(Literal::Atom("a".to_string())))));
         let expr2 = Box::new(Expression::G(Box::new(Expression::Literal(Literal::Atom("b".to_string())))));
@@ -651,7 +651,7 @@ mod tests {
     #[test]
     fn test_until(){
         let expression = r"(a)U(b)";
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
         let expr1 = Box::new(Expression::Literal(Literal::Atom("a".to_string())));
         let expr2 = Box::new(Expression::Literal(Literal::Atom("b".to_string())));
@@ -659,7 +659,7 @@ mod tests {
         assert_eq!(fsm, res);
 
         let expression = r"(a)U((b)U(c))";
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
         let expr1 = Box::new(Expression::Literal(Literal::Atom("a".to_string())));
         let expr2 = Box::new(Expression::Literal(Literal::Atom("b".to_string())));
@@ -669,7 +669,7 @@ mod tests {
         assert_eq!(fsm, res);
 
         let expression = r"((a)U(b))/\G(a)";
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
         let expr1 = Box::new(Expression::Literal(Literal::Atom("a".to_string())));
         let expr2 = Box::new(Expression::Literal(Literal::Atom("b".to_string())));
@@ -683,7 +683,7 @@ mod tests {
     #[test]
     fn test_prime(){
         let expression = r"((a'/\b')/\c)";
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
         let expr1 = Box::new(Expression::Literal(Literal::Atom("a'".to_string())));
         let expr2 = Box::new(Expression::Literal(Literal::Atom("b'".to_string())));
@@ -692,7 +692,7 @@ mod tests {
         assert_eq!(fsm, res);
 
         let expression = r"((~a'/\~b')/\c)";
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
         let na = Box::new(Expression::Neg(expr1.clone()));
         let nb = Box::new(Expression::Neg(expr2.clone()));
@@ -700,7 +700,7 @@ mod tests {
         assert_eq!(fsm, res);
 
         let expression = r"(~FAIL'/\(newnode_1'/\~newnode_0')/\~popRightFAIL')";
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
         let fail = Box::new(Expression::Neg(Box::new(Expression::Literal(Literal::Atom("FAIL'".to_string())))));
         let newnode_1 = Box::new(Expression::Literal(Literal::Atom("newnode_1'".to_string())));
@@ -714,7 +714,7 @@ mod tests {
     #[test]
     fn test_m_functions(){
         let expression = r"((a/\b)/\c)";
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
         let expr1 = Box::new(Expression::Literal(Literal::Atom("a".to_string())));
         let expr2 = Box::new(Expression::Literal(Literal::Atom("b".to_string())));
@@ -723,7 +723,7 @@ mod tests {
         assert_eq!(fsm, res);
 
         let expression = r"(a\/b\/c)";
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
         let expr1 = Box::new(Expression::Literal(Literal::Atom("a".to_string())));
         let expr2 = Box::new(Expression::Literal(Literal::Atom("b".to_string())));
@@ -732,7 +732,7 @@ mod tests {
         assert_eq!(fsm, res);
 
         let expression = r"(a/\b/\c)/\(a\/b\/c)";
-        println!("{:?}", expression); // becomes a and b and c and (a or b or c)
+        // println!("{:?}", expression); // becomes a and b and c and (a or b or c)
         let fsm = input_to_expression(expression);
         let expr1 = Box::new(Expression::Literal(Literal::Atom("a".to_string())));
         let expr2 = Box::new(Expression::Literal(Literal::Atom("b".to_string())));
@@ -745,20 +745,20 @@ mod tests {
     #[test]
     fn test_broken_snark() {
         let expression = r"(~a/\~b/\c)";
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
         let a = Box::new(Expression::Literal(Literal::Atom("a".to_string())));
         let b = Box::new(Expression::Literal(Literal::Atom("b".to_string())));
         let c = Box::new(Expression::Literal(Literal::Atom("c".to_string())));
         let res1 = Box::new(Expression::MAnd(vec![Box::new(Expression::Neg(a.clone())),Box::new(Expression::Neg(b.clone())),c.clone()]));
-        println!("{:?}", fsm);
+        // println!("{:?}", fsm);
         assert_eq!(fsm, res1);
 
 
         let expression = r"~(G(~FAIL[A])";
-        println!("{:?}", expression);
+        // println!("{:?}", expression);
         let fsm = input_to_expression(expression);
-        println!("{:?}", fsm);
+        // println!("{:?}", fsm);
         let fail = Box::new(Expression::Literal(Literal::Atom("FAIL[A]".to_string())));
         let res1 = Box::new(Expression::Neg(Box::new(Expression::G(Box::new(Expression::Neg(fail))))));
         assert_eq!(fsm, res1);
@@ -786,7 +786,7 @@ mod tests {
         let gfail = Box::new(Expression::G(ffail));
         let res = Box::new(Expression::Neg(Box::new(Expression::And(gfail,fin))));
         let fsm = input_to_expression(expression);
-        println!("{:?}", fsm);
+        // println!("{:?}", fsm);
         assert_eq!(fsm, res);
     }
 }

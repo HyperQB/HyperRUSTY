@@ -126,7 +126,7 @@ ASSIGN
 	init(BOTH_MODIFYING) := FALSE;
 	next(BOTH_MODIFYING) :=
 		case
-			(proc1.modifying & proc2.modifying) : TRUE ;
+			((proc1.modifying) & (proc2.modifying)) : TRUE ;
 			TRUE: BOTH_MODIFYING;
 		esac;	
 

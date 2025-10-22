@@ -45,7 +45,7 @@ impl Logger {
             self.raise_error(message, level);
         }
         if (level >= self.level) & self.debug {
-            println!("{}", self.apply_level(&message, level));
+            // println!("{}", self.apply_level(&message, level));
         }
 
     }

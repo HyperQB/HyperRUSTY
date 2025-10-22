@@ -160,8 +160,9 @@ fn main() {
         let formula = fs::read_to_string(formula_path).expect("Failed to read the formula");
         let mut ast_node = parse(&formula).expect("Failed parsing the formula");
         if *matches.get_one::<bool>("qbf_solver").unwrap() {
-            
-               // QBF unrolling
+
+            // QBF unrolling
+
 
             // create ENV
             let mut cfg = Config::new();
@@ -224,7 +225,7 @@ fn main() {
             let duration = start.elapsed();
             let secs = duration.as_secs_f64();
             println!("QBF Build & Solving Time: {}", secs);
-            
+
         } else {
             // Should we use the negation for counterexample generation?
             let mut witness : bool = false;
@@ -259,6 +260,7 @@ fn main() {
                 );
                 envs.push(env);
             }
+
             let duration = start.elapsed();
             let secs = duration.as_secs_f64();
             println!("Model Creation Time: {}", secs);
@@ -289,7 +291,7 @@ fn main() {
                         for (state, entries) in grouped {
                             println!("\nState {state}:");
                             for (var, val) in entries {
-                                println!("  {var} = {val}");
+                                // println!("  {var} = {val}");
                             }
                         }
 
@@ -309,12 +311,12 @@ fn main() {
                 }
             };
             // grab the statistics of the solver
-            let stats = solver.get_statistics();
-            let val_str = match stats.value("time").unwrap() {
-                StatisticsValue::UInt(u)   => u.to_string(),
-                StatisticsValue::Double(d) => d.to_string(),
-            };
-            println!("Solve Time: {}", val_str);
+            // let stats = solver.get_statistics();
+            // let val_str = match stats.value("time").unwrap() {
+            //     StatisticsValue::UInt(u)   => u.to_string(),
+            //     StatisticsValue::Double(d) => d.to_string(),
+            // };
+            // println!("Solve Time: {}", val_str);
         }
     } else {
         // Verilog Path
@@ -411,9 +413,9 @@ fn main() {
                     let model = solver.get_model().unwrap();
                     let grouped = extract_grouped_model(&model);
                     for (state, entries) in grouped {
-                        println!("\nState {state}:");
+                        // println!("\nState {state}:");
                         for (var, val) in entries {
-                            println!("  {var} = {val}");
+                            // println!("  {var} = {val}");
                         }
                     }
 

@@ -127,7 +127,7 @@ pub fn get_output_string(model_map: &Vec<(String, i32)>,max_gate_number: i32, lo
     
     // Beginning and end of the output string
     let (starting_header,footer,final_ands) = get_string_quantifiers_and_ends(model_map, quantifiers, logger, symbol_map); 
-    println!("??? {}", starting_header);
+    // println!("??? {}", starting_header);
     // has the header and quantifiers
     let debug = logger.get_mode();
     // Middle part of the output string
@@ -169,7 +169,7 @@ pub fn get_output_string(model_map: &Vec<(String, i32)>,max_gate_number: i32, lo
     let mut parser = Parser::new(expression, symbol_map, debug, layers, and_max_gate.clone(), (*semantics.clone()).to_owned(), (*logger).clone());
     let (output, gate, negated) = parser.ltl_parser();
     middle_string.push_str(output.as_str());
-    println!("----------\nGate is: {}\n----------", gate);
+    // println!("----------\nGate is: {}\n----------", gate);
     // Here we do the model gates so M1/\M2->phi is exists M1, forall M2, phi
     let mut last_and = &mut String::new();
     let mut quantifier_output_gate = gate+quantifiers.len() as i32;
@@ -178,7 +178,7 @@ pub fn get_output_string(model_map: &Vec<(String, i32)>,max_gate_number: i32, lo
     let mut bmc = "".to_string();
     for (quantifier, _) in quantifiers {
         temp = quantifier_output_gate -1;
-        println!("{}", negated);
+        // println!("{}", negated);
         if (temp == gate) & negated{ // if its the last quantifier in the loop and the parser ended with a negation
             temp = 0-temp
         }
@@ -276,7 +276,7 @@ pub fn get_output_string_encoding_version(model_map: &Vec<(String, i32)>,max_gat
     let mut parser = Parser::new(expression, symbol_map, debug, layers, and_max_gate.clone(), (*semantics.clone()).to_owned(), (*logger).clone());
     let (output, gate, negated) = parser.ltl_parser();
     middle_string.push_str(output.as_str());
-    println!("----------\nGate is: {}\n----------", gate);
+    // println!("----------\nGate is: {}\n----------", gate);
     // Here we do the model gates so M1/\M2->phi is exists M1, forall M2, phi
     let mut last_and = &mut String::new();
     let mut quantifier_output_gate = gate+quantifiers.len() as i32;
@@ -285,7 +285,7 @@ pub fn get_output_string_encoding_version(model_map: &Vec<(String, i32)>,max_gat
     let mut bmc = "".to_string();
     for (quantifier, _) in quantifiers {
         temp = quantifier_output_gate -1;
-        println!("{}", negated);
+        // println!("{}", negated);
         if (temp == gate) & negated{ // if its the last quantifier in the loop and the parser ended with a negation
             temp = 0-temp
         }
@@ -443,9 +443,9 @@ pub fn get_output_string_unified(model_map: &Vec<(String, i32)>, mut max_gate_nu
 
         counter += 1;
     }
-    println!("Final ands: {:?}", final_ands);
-    println!("Final ands string: {:?}", final_ands_string);
-    println!("Max gate number: {:?}", max_gate_number);
+    // println!("Final ands: {:?}", final_ands);
+    // println!("Final ands string: {:?}", final_ands_string);
+    // println!("Max gate number: {:?}", max_gate_number);
     /*
     78 = and(-7,-10)
     79 = and(-37,-32)
@@ -492,7 +492,7 @@ pub fn get_output_string_unified(model_map: &Vec<(String, i32)>, mut max_gate_nu
     let (output, gate, negated) = parser.ltl_parser();
     middle_string.push_str(output.as_str());
 
-    println!("----------\nGate is: {}\n----------", gate);
+    // println!("----------\nGate is: {}\n----------", gate);
     // Here we do the model gates so M1/\M2->phi is exists M1, forall M2, phi
     let mut last_and = &mut String::new();
     let mut quantifier_output_gate = gate+quantifiers.len() as i32;
@@ -502,7 +502,7 @@ pub fn get_output_string_unified(model_map: &Vec<(String, i32)>, mut max_gate_nu
     
     for (quantifier, _) in quantifiers {
         temp = quantifier_output_gate -1;
-        println!("{}", negated);
+        // println!("{}", negated);
         if (temp == gate) & negated{ // if its the last quantifier in the loop and the parser ended with a negation
             temp = 0-temp
         }
@@ -655,6 +655,6 @@ fn get_string_quantifiers_and_ends_unified(model_map: &Vec<(String, i32)>, quant
 
 
     }
-    println!("Broke where we thought?");
+    // println!("Broke where we thought?");
     return (format!("#QCIR-G14\n{}", output_string), ending_headers.to_owned(), final_ands.to_owned());
 }

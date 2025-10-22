@@ -54,7 +54,7 @@ pub fn parse_variables(smt2: &str, mod_name: &str) -> Result<Vec<VariableAlias>,
         });
     }
     if variables.is_empty() {
-        println!("{:#?}", smt2);
+        // println!("{:#?}", smt2);
         return Err(ExtractError::Parse(format!("No variables found for module {}", mod_name)));
     }
     Ok(variables)

@@ -6,19 +6,19 @@ MODULE main
     num_itr: 0..11;
     init_balance: 0..20;
     debits_amount: 1..10;
-    halt: boolean;
+    -- halt: boolean;
  ASSIGN
     -- Initial Conditions
     init(init_balance) := {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
     init(debits_amount) := {1,2,3,4,5,6,7,8,9,10};
     init(num_itr) := 0;
     init(PC) := 1; -- but program counter starts at 1.
-    init(halt) := FALSE;
+    -- init(halt) := FALSE;
 
     -- Transition Relations
     next(init_balance) :=
       case
-        ((PC=3) & (init_balance - debits_amount > 0)): (init_balance - debits_amount);
+        ((PC=3) & (debits_amount < init_balance)): (init_balance - debits_amount);
         TRUE: init_balance;
       esac;
 
@@ -36,7 +36,7 @@ MODULE main
     next(PC) :=
       case
         (PC=1): 2; -- num_itr = 0
-        ((PC=2) & (init_balance > debits_amount)): 3; -- while (init_balance >= debits amount)
+        ((PC=2) & (debits_amount < init_balance)): 3; -- while (init_balance >= debits amount)
         ((PC=2) & (init_balance <= debits_amount)): 5;
         (PC=3): 4; -- init_balance -= debits_amount
         (PC=4): 2; -- num_itr += 1
@@ -45,8 +45,6 @@ MODULE main
         TRUE: PC;
       esac;
 
-    next(halt) :=
-      case
-        (PC=6): TRUE;
-        TRUE: halt;
-      esac;
+
+  DEFINE
+    halt := ( PC = 6);

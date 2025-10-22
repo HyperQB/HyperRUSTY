@@ -1,6 +1,6 @@
 module SPISlave(
     input clk,
-    input stutter_in,
+    input stutter_in, change, align,
     // SPI
     input sclk_in,
     input mosi_in,
@@ -34,8 +34,7 @@ reg[1:0] en_d;
 wire ss_v;
 assign ss_v = ~en_d[0];
 reg[1:0] stutter_d;
-wire stutter_v;
-assign stutter_v = stutter_d[0];
+wire stutter_v = 1'b0;
 
 // receiving
 reg[7:0] rx_buffer;
@@ -94,6 +93,10 @@ always @(posedge clk) begin
         sclk_d <= {sclk_d[0], sclk_in};
         mosi_d <= {mosi_d[0], mosi_in};
         en_d <= {en_d[0], ~ss_in};
+        if (start) begin
+        tx_pos <= 5'd0;        // align the transmit phase at each SS falling edge
+        byte_transfered <= 1'b0;
+end
         // active
         if (!ss_v) begin
             // receiving
@@ -143,3 +146,4 @@ always @(posedge clk) begin
 end
 
 endmodule
+// yosys -p "hierarchy -top SPISlave; proc; flatten; techmap -map +/dff2ff.v; delete SPISlave/clk; synth; aigmap; write_aiger -ascii -symbols spi_slave.aag" spi_slave.v

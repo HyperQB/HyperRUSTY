@@ -3,6 +3,8 @@
 Cargo.lock
 commands.txt
 
+_outfiles/*
+
 aut1.hoa
 aut2.hoa
 autRes.hoa

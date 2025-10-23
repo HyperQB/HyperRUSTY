@@ -1,0 +1,13 @@
+{
+  "name": "Compiler opt: expression folding",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["EFLP_source.smv", "EFLP_target.smv"],
+    "formula": "EFLP.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 25,
+    "semantics": "hpes"
+  }
+}

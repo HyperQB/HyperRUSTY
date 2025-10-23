@@ -1,0 +1,7 @@
+Forall A . Exists B . E t .
+G((var_Y[A][t] = 0) & (var_Y[B][t] = 0))
+
+
+
+
+

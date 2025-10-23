@@ -1,0 +1,13 @@
+{
+  "name": "Cache Attack (flattened)",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["cache_flattened.smv", "cache_flattened.smv"],
+    "formula": "odnd.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 12,
+    "semantics": "hpes"
+  }
+}

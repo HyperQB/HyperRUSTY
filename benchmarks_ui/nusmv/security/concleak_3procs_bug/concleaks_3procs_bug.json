@@ -1,0 +1,13 @@
+{
+  "name": "ConcLeak 3 processes (buggy)",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["concleaks_3procs_bug.smv", "concleaks_3procs_bug.smv"],
+    "formula": "od.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

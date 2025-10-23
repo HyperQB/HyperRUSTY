@@ -1,0 +1,171 @@
+MODULE main
+  VAR
+    -- top-level inputs/state
+    HIGH    : boolean;      -- HIGH-value
+    in_LOW  : boolean;      -- in_LOW-value
+
+    ID_one   : 1..4;
+    ID_two   : 1..4;
+    ID_three : 1..4;
+
+    counter_MMMMMMMMM : 0..4;
+    wait_p            : 0..10;
+    wait_n            : 0..3;
+    wait_mn           : 0..7;
+
+    -- inlined programs(..., initPC=1) as proc1
+    proc1_PC______________pc : 0..16;
+    proc1_loop_count        : 0..1;
+
+    -- inlined programs(..., initPC=6) as proc2
+    proc2_PC______________pc : 0..16;
+    proc2_loop_count        : 0..1;
+
+    -- inlined programs(..., initPC=13) as proc3
+    proc3_PC______________pc : 0..16;
+    proc3_loop_count        : 0..1;
+
+  ASSIGN
+    --------------------------------------------------------------------------
+    -- IDs are fixed
+    --------------------------------------------------------------------------
+    init(ID_one)   := 1;
+    next(ID_one   ) := 1;
+
+    init(ID_two)   := 2;
+    next(ID_two   ) := 2;
+
+    init(ID_three) := 3;
+    next(ID_three) := 3;
+
+    --------------------------------------------------------------------------
+    -- Shared counters / waits (now referencing flattened PCs)
+    --------------------------------------------------------------------------
+    init(counter_MMMMMMMMM) := 0;
+    next(counter_MMMMMMMMM) :=
+      case
+        (proc2_PC______________pc = 9  & counter_MMMMMMMMM != 0) : counter_MMMMMMMMM - 1;
+        (proc1_PC______________pc = 3)                           : 4;
+        TRUE                                                     : counter_MMMMMMMMM;
+      esac;
+
+    init(wait_p) := 10;
+    next(wait_p) :=
+      case
+        (proc1_PC______________pc = 4 & wait_p != 0) : wait_p - 1;
+        TRUE                                         : wait_p;
+      esac;
+
+    init(wait_n) := 3;
+    next(wait_n) :=
+      case
+        (proc2_PC______________pc = 7 & wait_n != 0) : wait_n - 1;
+        TRUE                                         : wait_n;
+      esac;
+
+    init(wait_mn) := 7;
+    next(wait_mn) :=
+      case
+        (proc3_PC______________pc = 14 & wait_mn != 0) : wait_mn - 1;
+        TRUE                                           : wait_mn;
+      esac;
+
+    --------------------------------------------------------------------------
+    -- Inputs HIGH / in_LOW as in original main
+    --------------------------------------------------------------------------
+    init(HIGH) := {TRUE, FALSE};
+    next(HIGH) :=
+      case
+        TRUE : HIGH;
+      esac;
+
+    init(in_LOW) := {TRUE, FALSE};
+    next(in_LOW) :=
+      case
+        TRUE : in_LOW;
+      esac;
+
+    --------------------------------------------------------------------------
+    -- Inlined programs(ID_one, in_LOW, HIGH, initPC=1, ...)
+    --   state: proc1_PC______________pc, proc1_loop_count
+    --------------------------------------------------------------------------
+    init(proc1_loop_count) := 0;
+    next(proc1_loop_count) :=
+      case
+        (proc1_loop_count = 1)                                         : 1;
+        (ID_one = 1 & proc1_PC______________pc = 4 & wait_p = 0)       : proc1_loop_count + 1;
+        TRUE                                                           : proc1_loop_count;
+      esac;
+
+    init(proc1_PC______________pc) := 1;
+    next(proc1_PC______________pc) :=
+      case
+        -- program1 (L1..L4)
+        (ID_one = 1 & proc1_loop_count = 1)                 : 1;     -- terminate loop
+        (proc1_PC______________pc = 1)                       : 2;
+        (proc1_PC______________pc = 2 &  in_LOW = HIGH)      : 3;
+        (proc1_PC______________pc = 2 & !(in_LOW = HIGH))    : 4;
+        (proc1_PC______________pc = 3)                       : 4;
+        (proc1_PC______________pc = 4 & wait_p != 0)         : 4;
+        (proc1_PC______________pc = 4 & wait_p = 0)          : 1;
+        TRUE                                                 : proc1_PC______________pc;
+      esac;
+
+    --------------------------------------------------------------------------
+    -- Inlined programs(ID_two, in_LOW, HIGH, initPC=6, ...)
+    --   state: proc2_PC______________pc, proc2_loop_count
+    --------------------------------------------------------------------------
+    init(proc2_loop_count) := 0;
+    next(proc2_loop_count) :=
+      case
+        (proc2_loop_count = 1)                  : 1;
+        (ID_two = 2 & proc2_PC______________pc = 11) : proc2_loop_count + 1;
+        TRUE                                  : proc2_loop_count;
+      esac;
+
+    init(proc2_PC______________pc) := 6;
+    next(proc2_PC______________pc) :=
+      case
+        -- program2 (L6..L11)
+        (ID_two = 2 & proc2_loop_count = 1)             : 6;    -- terminate loop
+        (proc2_PC______________pc = 6)                   : 7;
+        (proc2_PC______________pc = 7 & wait_n != 0)     : 7;
+        (proc2_PC______________pc = 7 & wait_n = 0)      : 8;
+        (proc2_PC______________pc = 8 & counter_MMMMMMMMM != 0) : 9;
+        (proc2_PC______________pc = 8 & counter_MMMMMMMMM = 0)  : 10;
+        (proc2_PC______________pc = 9 & counter_MMMMMMMMM != 0) : 9;
+        (proc2_PC______________pc = 9 & counter_MMMMMMMMM = 0)  : 10;
+        (proc2_PC______________pc = 10)                : 11;
+        (proc2_PC______________pc = 11)                : 6;
+        TRUE                                           : proc2_PC______________pc;
+      esac;
+
+    --------------------------------------------------------------------------
+    -- Inlined programs(ID_three, in_LOW, HIGH, initPC=13, ...)
+    --   state: proc3_PC______________pc, proc3_loop_count
+    --------------------------------------------------------------------------
+    init(proc3_loop_count) := 0;
+    next(proc3_loop_count) :=
+      case
+        (proc3_loop_count = 1)                    : 1;
+        (ID_three = 3 & proc3_PC______________pc = 16) : proc3_loop_count + 1;
+        TRUE                                     : proc3_loop_count;
+      esac;
+
+    init(proc3_PC______________pc) := 13;
+    next(proc3_PC______________pc) :=
+      case
+        -- program3 (L13..L16)
+        (ID_three = 3 & proc3_loop_count = 1) : 13;   -- terminate loop
+        (proc3_PC______________pc = 13)       : 14;
+        (proc3_PC______________pc = 14 & wait_mn != 0) : 14;
+        (proc3_PC______________pc = 14 & wait_mn = 0)  : 15;
+        (proc3_PC______________pc = 15)       : 16;
+        (proc3_PC______________pc = 16)       : 13;
+        TRUE                                  : proc3_PC______________pc;
+      esac;
+
+  DEFINE
+    halt            := (proc1_loop_count = 1 & proc2_loop_count = 1 & proc3_loop_count = 1);
+    obs_PRINT_ONE   := (proc2_PC______________pc = 11);
+    obs_PRINT_ZERO  := (proc3_PC______________pc = 16);

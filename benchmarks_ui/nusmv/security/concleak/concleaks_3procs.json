@@ -1,0 +1,13 @@
+{
+  "name": "Concurrent leakage (3 procs)",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["concleaks_3procs.smv", "concleaks_3procs.smv"],
+    "formula": "od.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 12,
+    "semantics": "hpes"
+  }
+}

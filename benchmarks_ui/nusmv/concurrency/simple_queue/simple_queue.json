@@ -1,0 +1,13 @@
+{
+  "name": "Simple Queue",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["concurrent.smv", "atomic.smv"],
+    "formula": "lin.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 18,
+    "semantics": "hpes"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "ACDB",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["acdb_flattened.smv", "acdb_flattened.smv"],
+    "formula": "acdb.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

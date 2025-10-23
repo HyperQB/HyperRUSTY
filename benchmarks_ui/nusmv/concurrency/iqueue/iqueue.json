@@ -1,0 +1,13 @@
+{
+  "name": "IQueue",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["iqueue_conc.smv", "iqueue_seq.smv"],
+    "formula": "iqueue.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 18,
+    "semantics": "hpes"
+  }
+}

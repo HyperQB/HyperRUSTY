@@ -1,0 +1,13 @@
+{
+  "name": "ConcLeak 2 processes",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["concleaks_2procs.smv", "concleaks_2procs.smv"],
+    "formula": "od.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

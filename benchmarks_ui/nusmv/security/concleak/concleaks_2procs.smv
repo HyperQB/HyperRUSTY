@@ -1,0 +1,153 @@
+MODULE main
+VAR
+    -- globals (unchanged)
+    in_HIGH : boolean;    -- in_HIGH-value
+    LOW     : boolean;    -- low-value
+    var_X   : boolean;    -- X
+    var_Y   : boolean;    -- Y
+
+    SCHEDULE : 0..1;      -- 0: p1 moves, 1: p2 moves
+    ID_one   : 0..2;
+    ID_two   : 0..2;
+    ID_three : 0..2;
+
+    halt : boolean;
+
+    -- flattened state for proc1: programs(ID_one, SCHEDULE, LOW, in_HIGH, var_X, var_Y, 0)
+    proc1_line       : 0..8;
+    proc1_loop_count : 0..2;
+
+    -- flattened state for proc2: programs(ID_two, SCHEDULE, LOW, in_HIGH, var_X, var_Y, 6)
+    proc2_line       : 0..8;
+    proc2_loop_count : 0..2;
+
+ASSIGN
+    ----------------------------------------------------------------
+    -- IDs (as in your original)
+    ----------------------------------------------------------------
+    init(ID_one) := 0;
+    next(ID_one) := 0;
+
+    init(ID_two) := 1;
+    next(ID_two) := 1;
+
+    ----------------------------------------------------------------
+    -- inputs / other globals (updated references)
+    ----------------------------------------------------------------
+    init(in_HIGH) := {TRUE, FALSE};
+    next(in_HIGH) :=
+        case
+            TRUE : in_HIGH;
+        esac;
+
+    init(LOW) := FALSE;
+    next(LOW) :=
+        case
+            TRUE : LOW;
+        esac;
+
+    init(var_X) := FALSE;
+    next(var_X) :=
+        case
+            (proc1_line = 0)              : {FALSE};
+            (proc1_line = 2 | proc1_line = 5) : {TRUE};
+            TRUE                          : var_X;
+        esac;
+
+    init(var_Y) := FALSE;
+    next(var_Y) :=
+        case
+            (proc1_line = 0)              : {FALSE};
+            (proc1_line = 3 | proc1_line = 3) : {TRUE}; -- (same as your original)
+            TRUE                          : var_Y;
+        esac;
+
+    init(SCHEDULE) := {0,1};
+    next(SCHEDULE) :=
+        case
+            (proc1_loop_count = 2) : 1;
+            (proc2_loop_count = 2) : 0;
+            TRUE                   : {0,1};
+        esac;
+
+    init(halt) := FALSE;
+    next(halt) :=
+        case
+            ((proc1_loop_count = 2) & (proc2_loop_count = 2)) : TRUE;
+            TRUE                                              : halt;
+        esac;
+
+    ----------------------------------------------------------------
+    -- proc1: programs(ID_one, SCHEDULE, LOW, in_HIGH, var_X, var_Y, 0) — flattened
+    ----------------------------------------------------------------
+    init(proc1_loop_count) := 0;
+    next(proc1_loop_count) :=
+        case
+            (proc1_loop_count = 2)                          : 2;
+            (ID_one = 0 & proc1_line = 0 & (SCHEDULE = ID_one)) : proc1_loop_count + 1;
+            (ID_one = 1 & proc1_line = 6 & (SCHEDULE = ID_one)) : proc1_loop_count + 1;
+            TRUE                                             : proc1_loop_count;
+        esac;
+
+    init(proc1_line) := 0;
+    next(proc1_line) :=
+        case
+            (!(SCHEDULE = ID_one)) : proc1_line;
+
+            -- program1
+            (proc1_line = 0)                         : {1};         -- x=0, y=0
+            (proc1_line = 1 & in_HIGH = LOW)         : {2};         -- if (h == l)
+            (proc1_line = 2)                         : {3};         -- x=1
+            (proc1_line = 3)                         : {0};         -- y=1
+            (proc1_line = 1 & !(in_HIGH = LOW))      : {4};
+            (proc1_line = 4)                         : {5};         -- y=1
+            (proc1_line = 5)                         : {0};         -- x=1
+
+            -- program2
+            (proc1_line = 6)                         : {7};
+            (proc1_line = 7)                         : {8};         -- output x
+            (proc1_line = 8)                         : {6};         -- output y
+
+            TRUE : proc1_line;
+        esac;
+
+    ----------------------------------------------------------------
+    -- proc2: programs(ID_two, SCHEDULE, LOW, in_HIGH, var_X, var_Y, 6) — flattened
+    ----------------------------------------------------------------
+    init(proc2_loop_count) := 0;
+    next(proc2_loop_count) :=
+        case
+            (proc2_loop_count = 2)                          : 2;
+            (ID_two = 0 & proc2_line = 0 & (SCHEDULE = ID_two)) : proc2_loop_count + 1;
+            (ID_two = 1 & proc2_line = 6 & (SCHEDULE = ID_two)) : proc2_loop_count + 1;
+            TRUE                                             : proc2_loop_count;
+        esac;
+
+    init(proc2_line) := 6;
+    next(proc2_line) :=
+        case
+            (!(SCHEDULE = ID_two)) : proc2_line;
+
+            -- program1
+            (proc2_line = 0)                         : {1};         -- x=0, y=0
+            (proc2_line = 1 & in_HIGH = LOW)         : {2};         -- if (h == l)
+            (proc2_line = 2)                         : {3};         -- x=1
+            (proc2_line = 3)                         : {0};         -- y=1
+            (proc2_line = 1 & !(in_HIGH = LOW))      : {4};
+            (proc2_line = 4)                         : {5};         -- y=1
+            (proc2_line = 5)                         : {0};         -- x=1
+
+            -- program2
+            (proc2_line = 6)                         : {7};
+            (proc2_line = 7)                         : {8};         -- output x
+            (proc2_line = 8)                         : {6};         -- output y
+
+            TRUE : proc2_line;
+        esac;
+
+DEFINE
+    -- observables (updated to flattened names)
+    obs_X_is_zero := (proc2_line = 7) & (in_HIGH = FALSE);
+    obs_X_is_one  := (proc2_line = 7) & (in_HIGH = TRUE);
+    obs_Y_is_zero := (proc2_line = 8) & (in_HIGH = FALSE);
+    obs_Y_is_one  := (proc2_line = 8) & (in_HIGH = TRUE);

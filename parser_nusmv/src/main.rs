@@ -658,11 +658,24 @@ pub fn generate_smv_env_from_parsed<'ctx>(
             ParsedVarType::Int { lower, upper, .. } => {
                 let init = match init_val {
                     Some(val) => {
-                        let final_val = val
-                            .split(",")
+                        // collect all explicit choices, e.g., "0,1,2,3"
+                        let parsed_vals: Vec<i64> = val
+                            .split(',')
                             .filter_map(|s| s.trim().parse::<i64>().ok())
-                            .last();
-                        final_val.map(|v| vec![v])
+                            .collect();
+
+                        if !parsed_vals.is_empty() {
+                            Some(parsed_vals)
+                        } else {
+                            // if no explicit list parsed, try full domain if bounds are known
+                            match (*lower, *upper) {
+                                (Some(lo), Some(hi)) => {
+                                    let (a, b) = if lo <= hi { (lo, hi) } else { (hi, lo) };
+                                    Some((a..=b).collect::<Vec<i64>>())
+                                }
+                                _ => None, // bounds unknown; leave as None
+                            }
+                        }
                     }
                     None => None,
                 };

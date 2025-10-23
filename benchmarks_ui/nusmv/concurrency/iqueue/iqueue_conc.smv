@@ -4,7 +4,6 @@ VAR
     Head: 0..2;
     Tail: 0..2;
 
-    -- items: array 0..2 of 0..1; -- 0: null, 1: filled
     -- 3 items representing the size of the queue is 3
 	items[0]: 0..1; -- If value is 0 then it is null
     items[1]: 0..1;

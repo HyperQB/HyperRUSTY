@@ -1,4 +1,3 @@
---
 -- // SNARK structure (with some accelerations):
 -- // 0   ------- STAND BY: could go to line:1/ line:10/ line:19
 -- // 	  popRight() starts:
@@ -646,36 +645,4 @@ ASSIGN
 		esac;
 
 
-	-- ##############################################################################
-
-
-DEFINE
-	-- ##############################################################################
-	-- Proc1 DEFINE
-	-- proc1.modifying := (proc1.line=5 | proc1.line=8 | proc1.line=14 | proc1.line=17 | proc1.line=16 | proc1.line=11 | proc1.line=22 | proc1.line=25);
-	-- proc1.popRightSTART 	:= proc1.line=1 | proc1.line=2 | proc1.line=3 | proc1.line=4 | proc1.line=5 | proc1.line=6 | proc1.line=7 | proc1.line=8 | proc1.line=9;
-	-- proc1.popRightEND 		:= proc1.line=0;
-	-- proc1.pushRightSTART	:= proc1.line=10 | proc1.line=11| proc1.line=12 | proc1.line=13 | proc1.line=14 | proc1.line=15 | proc1.line=16 | proc1.line=17 | proc1.line=18;
-	-- proc1.pushRightEND		:= proc1.line=0;
-	-- proc1.popLeftSTART		:= proc1.line=19 | proc1.line=20 | proc1.line=21 | proc1.line=22 | proc1.line=23 | proc1.line=24 | proc1.line=25 | proc1.line=26;
-	-- proc1.popLeftEND			:= proc1.line=0;
-	-- ##############################################################################
-
-	-- ##############################################################################
-	-- Proc2 DEFINE
-	-- proc2.modifying := (proc2.line=5 | proc2.line=8 | proc2.line=14 | proc2.line=17 | proc2.line=16 | proc2.line=11 | proc2.line=22 | proc2.line=25);
-	-- proc2.popRightSTART 	:= proc2.line=1 | proc2.line=2 | proc2.line=3 | proc2.line=4 | proc2.line=5 | proc2.line=6 | proc2.line=7 | proc2.line=8 | proc2.line=9;
-	-- proc2.popRightEND 		:= proc2.line=0;
-	-- proc2.pushRightSTART	:= proc2.line=10 | proc2.line=11| proc2.line=12 | proc2.line=13 | proc2.line=14 | proc2.line=15 | proc2.line=16 | proc2.line=17 | proc2.line=18;
-	-- proc2.pushRightEND		:= proc2.line=0;
-	-- proc2.popLeftSTART		:= proc2.line=19 | proc2.line=20 | proc2.line=21 | proc2.line=22 | proc2.line=23 | proc2.line=24 | proc2.line=25 | proc2.line=26;
-	-- proc2.popLeftEND			:= proc2.line=0;
-	-- ##############################################################################
-
-
-	-- ##############################################################################
-	-- Queue DEFINE
-	-- BOTH_MODIFYING := (proc1.modifying & proc2.modifying);
-
-	-- fAIL :=	 ((proc1.line=5) & (!(RightHat=proc1.local_popR_RH)| !(LeftHat=proc1.local_popR_LH))) |((proc1.line=8) & (  !(RightHat=proc1.local_popR_RH)| !(proc1.local_popR_RH=1 -> (AllNodes[1][0]=proc1.local_popR_RHL)) | !(proc1.local_popR_RH=2 -> (AllNodes[2][0]=proc1.local_popR_RHL))))|((proc1.line=22) & (	!(RightHat=proc1.local_popL_RH) | !(LeftHat=proc1.local_popL_LH)))|((proc1.line=25) & (  !(LeftHat=proc1.local_popL_LH) | !(proc1.local_popL_LH=1 -> (AllNodes[1][1]=proc1.local_popL_LHR)) | !(proc1.local_popL_LH=2 -> (AllNodes[2][1]=proc1.local_popL_LHR)))) |((proc1.line=13) & RightHat=2) |((proc2.line=13) & RightHat=2) |((proc2.line=20) & RightHat=0 & RightHat=0) | BOTH_MODIFYING;
 	-- ##############################################################################

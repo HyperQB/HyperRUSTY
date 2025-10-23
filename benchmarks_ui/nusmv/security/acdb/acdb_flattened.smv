@@ -40,38 +40,12 @@ ASSIGN
     init(proc1.line) := 1;
 
     next(proc1.line) := 1;
-        -- case
-        --     (SCHEDULE = 0) : proc1.line;
-        --     -- (LOCKED) : proc1.line;
-        --     -- program1, diameter = 4
-        --     (proc1.line = 1 & LOCKED)    : {1};   -- wait if LOCKED
-        --     (proc1.line = 1 & !LOCKED)   : {2};   -- else go to 2
-        --     (proc1.line = 2)             : {3};   -- LOCK it
-        --     (proc1.line = 3)             : {4};   -- print A
-        --     (proc1.line = 4)             : {5};   -- print B
-        --     (proc1.line = 5)             : {5};   -- UNLOCK, END
-        --     TRUE : proc1.line;
-        -- esac;
     ----------------------------------------------------------------
     -- proc2 instance (ID_two, initline = 6)
     ----------------------------------------------------------------
     init(proc2.line) := 6;
 
     next(proc2.line) := 6;
-        -- case
-        --     (!(SCHEDULE = 1)) : proc2.line;
-        --     -- (LOCKED) : proc2.line;
-        --     -- program2, diameter = 5
-        --     (proc2.line = 6)             : {7};   -- print C
-        --     (proc2.line = 7 & in_HIGH)   : {8};   -- if in_HIGH, proceed
-        --     (proc2.line = 7 & !in_HIGH)  : {11};  -- skip to end
-        --     (proc2.line = 8 & LOCKED)    : {8};   -- wait if LOCKED
-        --     (proc2.line = 8 & !LOCKED)   : {9};   -- else proceed
-        --     (proc2.line = 9)             : {10};  -- LOCK
-        --     (proc2.line = 10)            : {11};  -- UNLOCK
-        --     (proc2.line = 11)            : {11};  -- print D, END
-        --     TRUE : proc2.line;
-        -- esac;
 
 	DEFINE
         obs_printA := (proc1.line=3);

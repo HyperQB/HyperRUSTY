@@ -1,4 +1,3 @@
---
 -- // SNARK structure (with some accelerations):
 -- // 0   ------- STAND BY: could go to line:1/ line:10/ line:19
 -- // 	  popRight() starts:
@@ -369,34 +368,3 @@ VAR
 					((proc2.line=4) & (RightHat=1)): 0;
 					TRUE: AllNodes[2][1];
 				esac;
-
-		-- ##############################################################################
-
-
-	DEFINE 
-		-- ##############################################################################
-		-- Proc 1 DEFINE
-		-- proc1.popRightSTART 	:= proc1.line=1 | proc1.line=2 | proc1.line=3;
-		-- proc1.popRightEND 		:= proc1.line=0 ;
-		-- proc1.pushRightSTART	:= proc1.line=4 | proc1.line=5;
-		-- proc1.pushRightEND		:= proc1.line=0 ;
-		-- proc1.popLeftSTART		:= proc1.line=7 | proc1.line=8;
-		-- proc1.popLeftEND		:= proc1.line=0 ;
-		-- proc1.modifying			:= proc1.line=1 | proc1.line=4| proc1.line=7;
-		-- ##############################################################################
-
-		-- ##############################################################################
-		-- Proc 2 DEFINE
-		-- proc2.popRightSTART 	:= proc2.line=1 | proc2.line=2 | proc2.line=3;
-		-- proc2.popRightEND 		:= proc2.line=0 ;
-		-- proc2.pushRightSTART	:= proc2.line=4 | proc2.line=5;
-		-- proc2.pushRightEND		:= proc2.line=0 ;
-		-- proc2.popLeftSTART		:= proc2.line=7 | proc2.line=8;
-		-- proc2.popLeftEND		:= proc2.line=0 ;
-		-- proc2.modifying			:= proc2.line=1 | proc2.line=4| proc2.line=7;
-		-- ##############################################################################
-
-		-- ##############################################################################
-		-- Queue DEFINE
-		-- BOTH_MODIFYING := (proc1.modifying & proc2.modifying);
-		-- ##############################################################################

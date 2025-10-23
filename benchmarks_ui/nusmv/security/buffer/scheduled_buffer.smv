@@ -1,4 +1,3 @@
---BUFFER
 --(adopted from: Michael W Whalen, David A Greve, and Lucas G Wagner. Model checking information flow. In Design and verification of microprocessor systems for high-assurance applications)
 MODULE main
 VAR

@@ -1,4 +1,3 @@
--- MUTATION TESTING
 -- (adopted from: . Andreas Fellner, Mitra Tabaei Befrouei, and Georg Weissenbacher. Mutation testing with hyperproperties. In Proc. of the 17th Int’l Conf. on Software Engineering and Formal Methods (SEFM’19))
 MODULE main
 VAR
@@ -55,7 +54,4 @@ ASSIGN
             (!mutation & (water = 3)) : 3;
             TRUE : water;
         esac;
-
--- DEFINE
-    -- NO_water := ((action = 1) & (water = 0));
-    -- NO_output := ((action != 1) | ((action = 1) & (beverage = 0)));
+        

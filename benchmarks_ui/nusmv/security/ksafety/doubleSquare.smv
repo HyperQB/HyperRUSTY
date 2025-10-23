@@ -1,6 +1,5 @@
---NI
 --(adpted from: Hiroshi Unno, Tachio Terauchi, and Eric Koskinen. Constraint-based relational verification. In Computer Aided Verification: 33rd International Conference, CAV 2021)
-MODULE main
+
 --  calculating 2^x
 --  doubleSquare(bool h, int x) {
 --    INIT: int z, y=0;
@@ -12,6 +11,8 @@ MODULE main
 -- 6  if (!h) { y = 2 * y; }
 -- 7  return y;
 --  }
+
+MODULE main
  VAR
 	location: 1..7;
 	y: 0..50;

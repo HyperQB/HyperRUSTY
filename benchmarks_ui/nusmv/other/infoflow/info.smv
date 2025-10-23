@@ -1,11 +1,10 @@
 
--- [program]
+-- [modeled program]
 -- 1:  high := {true, false}
 -- 2:  low := false
 -- 3:  if (high):
 -- 4:    low := true;
 -- 5:  halt
-
 MODULE main
  VAR
     high: boolean;

@@ -1,4 +1,3 @@
---MULTI-THREADED PROGRAM
 --(adopted from: Geoffrey Smith and Dennis M. Volpano. Secure information flow in a multithreaded imperative language. In Proc. of the 25th ACM Symposium on Principles of Programming Languages (POPL’98))
 -- //// TRIGGER 0
 -- // 0   trigger0 loops if (mask != 0) else go to line25
@@ -195,6 +194,3 @@ ASSIGN
 			(theta_line=5 & (main_trigger=2)) : {6}; -- proceed
 			(theta_line=6) : {0}; --mask = mask / 2
 		esac;
-
--- DEFINE
--- 	halt := ((theta_line=0) & (MASK_2=0) & (MASK_1=0) & (MASK_0=0));

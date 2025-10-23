@@ -1,4 +1,3 @@
---TEAMLTL
 --(adopted from: Jonni Virtema, Jana Hofmann, Bernd Finkbeiner, Juha Kontinen, and Fan Yang. Linear-time temporal logic with team semantics: Expressivity and complexity. arXiv preprint arXiv:2010.03311, 2020)
 MODULE main
 VAR

@@ -1,4 +1,26 @@
-
+-- L0:
+-- L1: x = 0
+-- L2: k = 0
+-- L3: if (k == 0)
+-- L4: {x := in_secretput();}
+-- L5: else {x := x + x;}
+-- L6: k := k + 1;
+-- L7: temp0 = (x-4);
+-- L8: temp1 = (4+temp0)
+-- L9: temp2 = (k-k);
+-- L10: temp3 = (temp2-3);
+-- L11: public_output = (x % k);
+-- L12: while (k < 3) {
+-- L13: if (k == 0) {
+-- L14:  x := in_secretput();}
+-- L15: else {x := x + x;}
+-- L16: k := k + 1;
+-- L17: temp0 = (x-4);
+-- L18: temp1 = (4+temp0);
+-- L19: temp2 = (k-k);
+-- L20: temp3 = (temp2-3);
+-- L21: out_public=temp1 % temp3; }
+-- L22: END
  MODULE main
  VAR
     step: 0..22;
@@ -13,30 +35,6 @@
     temp3: 0..5;
 
   ASSIGN
-    -- (diameter: 25)
-    -- L0:
-    -- L1: x = 0
-    -- L2: k = 0
-    -- L3: if (k == 0)
-    -- L4: {x := in_secretput();}
-    -- L5: else {x := x + x;}
-    -- L6: k := k + 1;
-    -- L7: temp0 = (x-4);
-    -- L8: temp1 = (4+temp0)
-    -- L9: temp2 = (k-k);
-    -- L10: temp3 = (temp2-3);
-    -- L11: public_output = (x % k);
-    -- L12: while (k < 3) {
-    -- L13: if (k == 0) {
-    -- L14:  x := in_secretput();}
-    -- L15: else {x := x + x;}
-    -- L16: k := k + 1;
-    -- L17: temp0 = (x-4);
-    -- L18: temp1 = (4+temp0);
-    -- L19: temp2 = (k-k);
-    -- L20: temp3 = (temp2-3);
-    -- L21: out_public=temp1 % temp3; }
-    -- L22: END
   init(step):= 0;
   next(step):=
     case
@@ -108,7 +106,6 @@
   init(int_x) := 0;
   next(int_x) :=
     case
-      -- ((int_x+int_x)>9): 9;
       (int_x > 4): 9;
       (step=4) : in_secret;
       (step=5) : int_x+int_x;
@@ -129,8 +126,6 @@
   init(out_public) := 0;
   next(out_public) :=
     case
-      -- ((step=11)& !(int_k=0)): temp1 mod temp3;
-      -- ((step=21)& !(int_k=0)): temp1 mod temp3;
       ((step=11)& !(int_k=0)): int_x mod 3;
       ((step=21)& !(int_k=0)): int_x mod 3;
       TRUE: out_public;

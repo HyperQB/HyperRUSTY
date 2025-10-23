@@ -1,4 +1,3 @@
---DENIABILITY
 --(adopted from: Michael Backes, Boris Kopf, and Andrey Rybalchenko. Automatic discovery and quantification of information leaks. In 2009 30th IEEE Symposium on Security and Privacy)
 MODULE main
  VAR

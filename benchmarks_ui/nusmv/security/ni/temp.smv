@@ -157,5 +157,3 @@ ASSIGN
 			((theta_line = 5) & (main_trigger = 2)) : {6}; -- proceed
 			(theta_line = 6) : {0}; -- mask = mask / 2
 		esac;
--- DEFINE
--- 		halt := ((theta_line=0) & (MASK_2=0) & (MASK_1=0) & (MASK_0=0));

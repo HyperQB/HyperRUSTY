@@ -1,14 +1,11 @@
 MODULE main
 	VAR
-		-- LOCKED: boolean; -- semaphore
 		in_HIGH: boolean; -- in_HIGH-value
 		in_LOW: boolean; -- in_LOW-value
 
-		-- SCHEDULE: 1..3; -- 0:p1 moves, 1:p2 moves, 2:p3 moves
 		ID_one: 1..4;
 		ID_two: 1..4;
 		ID_three: 1..4;
-		-- ID_four: 1..4;
 
 		counter: 0..4;
 		wait_p: 0..3;
@@ -169,7 +166,6 @@ MODULE main
 
 
 	DEFINE
-		-- halt := (proc1.loop_count=1 & proc2.loop_count=1 & proc3.loop_count=1);
 		halt           := (proc2_PC = 11 & proc3_PC = 16);
 		obs_PRINT_ONE  := (proc2_PC = 11);
 		obs_PRINT_ZERO := (proc3_PC = 16);

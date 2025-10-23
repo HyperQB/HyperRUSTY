@@ -1,11 +1,8 @@
--- CO-TERMINATION
 -- (adopted from: Hiroshi Unno, Tachio Terauchi, and Eric Koskinen. Constraint-based relational verification. In Computer Aided Verification: 33rd International Conference, CAV 2021)
-
-MODULE main
-
 -- 0	while (x>0){
 -- 1		x = x - y
 -- 2	}
+MODULE main
 	VAR
 		x: 0..100;
 		t: 0..1;

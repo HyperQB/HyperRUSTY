@@ -272,6 +272,3 @@ MODULE main
     next(proc2_arrB_pos3) := proc2_arrB_pos3;
     init(proc2_arrB_pos4) := 4;
     next(proc2_arrB_pos4) := proc2_arrB_pos4;
-
-  DEFINE
-    -- add DEFINEs here if you want, or leave empty

@@ -8,10 +8,7 @@ VAR
     result : 0..2; -- (none = 0, 1 = login, badLogin = 2, 3 = No connection)
     httpclient : 0..2; -- (unset = 0, userlogin = 1, devlogin = 2)
     serverport : 0..1; -- (unset = 0, set = 1)
-    --serverip : 0..1; -- (unset = 0, set = 1)
     creds : 0..2; -- (nothing = 0, user = 1, dev = 2)
-    --startactivity : 0..2; -- (none = 0, userLoginSequence = 1; AdminLoginSequence = 1)
-    --date : 0..11; -- Due to the over-simplified hq property, loginfo has to have everything the same so extra features like date violate it
 
 ASSIGN
     -- Starting values
@@ -19,21 +16,16 @@ ASSIGN
     init(username) := {0, 1, 2}; -- 
     init(matchedUserPassword) := {0, 1};
     init(matchedAdminPassword) := {0, 1};
-    --init(serverip) := 1; -- set
     init(serverport) := {0, 1}; -- set   
     init(loginfo) := 0; -- empty
     init(result) := 0; -- unknown
-    --init(startactivity) := 0; -- none
     init(httpclient) := 1; --nada
     init(creds) := 0;
-    --init(date) := 0..11;
 
-    --next(date) := date;
     next(password) := password;
     next(username) := username;
     next(matchedUserPassword) := matchedUserPassword;
     next(matchedAdminPassword) := matchedAdminPassword;
-    --next(serverip) := serverip;
     next(serverport) := serverport;
 
 

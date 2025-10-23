@@ -1,12 +1,7 @@
--- (hand-craft)
-MODULE main
--- A simple program that violates non-interference
---
 -- 1: LOW=false, HIGH={false, true}
 -- 2: if(HIGH):
 -- 3:   LOW=true
---
-
+MODULE main
 VAR
   HIGH: 0..1;
   LOW: 0..1;

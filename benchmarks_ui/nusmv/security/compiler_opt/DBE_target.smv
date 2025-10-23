@@ -1,4 +1,6 @@
-
+-- L0: x := in_secretput()
+-- L1: out_secretput(x)
+-- L2: END
  MODULE main
  VAR
     PC: 0..2;
@@ -7,10 +9,6 @@
     out_public: 0..3;
 
   ASSIGN
-
-    -- L0: x := in_secretput()
-    -- L1: out_secretput(x)
-    -- L2: END
   init(PC):= 0;
   next(PC):=
     case

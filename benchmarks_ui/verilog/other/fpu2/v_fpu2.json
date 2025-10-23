@@ -1,0 +1,16 @@
+{
+  "name": "FPU2",
+  "inputLanguage": "verilog",
+  "files": {
+    "nusmvFiles": null,
+    "verilogFiles": ["divider.v"],
+    "verilogBuildFiles": ["build.ys", "build.ys"],
+    "verilogTopModule": "divider",
+    "formula": "formula.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 8,
+    "semantics": "pes"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "LED_EE_T",
+  "inputLanguage": "verilog",
+  "files": {
+    "nusmvFiles": null,
+    "verilogFiles": ["system.v"],
+    "verilogBuildFiles": ["build.ys", "build.ys"],
+    "verilogTopModule": "light",
+    "formula": "formula.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 101,
+    "semantics": "pes"
+  }
+}

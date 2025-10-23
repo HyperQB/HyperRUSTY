@@ -1,0 +1,16 @@
+{
+  "name": "SPI",
+  "inputLanguage": "verilog",
+  "files": {
+    "nusmvFiles": null,
+    "verilogFiles": ["system.v"],
+    "verilogBuildFiles": ["build.ys", "build.ys"],
+    "verilogTopModule": "SPISlave",
+    "formula": "formula.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 16,
+    "semantics": "pes"
+  }
+}

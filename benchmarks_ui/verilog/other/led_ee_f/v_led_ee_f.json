@@ -1,5 +1,5 @@
 {
-  "name": "LED",
+  "name": "LED_EE_F",
   "inputLanguage": "verilog",
   "files": {
     "nusmvFiles": null,
@@ -11,6 +11,6 @@
   "options": {
     "useLoopConditions": false,
     "unrollingBound": 101,
-    "semantics": "hpes"
+    "semantics": "pes"
   }
 }

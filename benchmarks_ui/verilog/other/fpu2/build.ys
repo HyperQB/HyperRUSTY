@@ -1,0 +1,4 @@
+# build.ys
+read_verilog -pwires verilog1.v
+prep -top divider -flatten
+write_smt2 -stdt -wires model.smt2

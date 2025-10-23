@@ -371,18 +371,18 @@
 
 # cargo run --release -- -n benchmarks/loop_conditions/test_loop/rs1.smv benchmarks/loop_conditions/test_loop/rs2.smv -f benchmarks/loop_conditions/test_loop/rs.hq -l
 
+
+
 #=== VERLIOG EXAMPLES ===#
 
 #RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/build_infoflow.ys verilog_benchmarks/build_infoflow.ys -t main -o model.smt2 -f verilog_benchmarks/formula.hq -k 3 -s hpes
 
 #=== LED EE===#
-#unsat
 #cargo run --release -- -v benchmarks/verilog/LED/build_ee.ys benchmarks/verilog/LED/build_ee.ys -t light -o model.smt2 -f benchmarks/verilog/LED/formula_ee_t.hq -k 101 -s hpes
 
-#sat
 #cargo run --release -- -v benchmarks/verilog/LED/build_ee.ys benchmarks/verilog/LED/build_ee.ys -t light -o model.smt2 -f benchmarks/verilog/LED/formula_ee_f.hq -k 101 -s pes
+
 #=== LED AE ===#
-#sat
 #cargo run --release -- -v benchmarks/verilog/LED/build_ae.ys benchmarks/verilog/LED/build_ae.ys -t led_fsm -o model.smt2 -f benchmarks/verilog/LED/formula_ae.hq -k 10 -s pes
 
 #=== LED EA ===#
@@ -391,45 +391,8 @@
 #=== SPI ===#
 #cargo run --release -- -v benchmarks/verilog/SPI/spi_build.ys benchmarks/verilog/SPI/spi_build.ys -t SPISlave -o spi.smt2 -f benchmarks/verilog/SPI/formula.hq -k 8 -s hpes
 
-#=== VERILOG GOOD_BAKERY ===#
-#cargo run --release -- -v benchmarks/verilog/bakery/goodbakery.ys benchmarks/verilog/bakery/goodbakery.ys -t bakery -o model.smt2 -f benchmarks/verilog/bakery/formula.hq -k 10 -s pes
-
-#============= WIP =================#
-
-#=== ETHERNET ===#
-#cargo run --release -- -v benchmarks/verilog/ethernet/rtl/verilog/build.ys benchmarks/verilog/ethernet/rtl/verilog/build.ys -t eth_top -o model.smt2 -f benchmarks/verilog/ethernet/rtl/verilog/formula.hq -k 1 -s pes
-
-#=== fpu ===#
-#cargo run --release -- -v verilog_benchmarks/iodine-benchmarks/fpu/verilog/build.ys verilog_benchmarks/iodine-benchmarks/fpu/verilog/build.ys -t fpu_small_tb -o fpu.smt2 -f verilog_benchmarks/iodine-benchmarks/fpu/verilog/formula.hq -k 1 -s pes
-# small
-#cargo run --release -- -v verilog_benchmarks/iodine-benchmarks/fpu/verilog/minimal_fpu.ys verilog_benchmarks/iodine-benchmarks/fpu/verilog/minimal_fpu.ys -t fdiv_tb -o fpu.smt2 -f verilog_benchmarks/iodine-benchmarks/fpu/verilog/formula.hq -k 1 -s pes
-
 #=== fpu2 ===#
 # RUST_BACKTRACE=full cargo run --release -- -v benchmarks/verilog/divider/divider.ys benchmarks/verilog/divider/divider.ys -t divider -o model.smt2 -f benchmarks/verilog/divider/formula.hq -k 8 -s pes
-
-#=== TRNG ===#
-#RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/TRNG/build.ys verilog_benchmarks/TRNG/build.ys -t trng_wrap -o trng.smt2 -f verilog_benchmarks/TRNG/formula_1.hq -k 10 -s opt
-
-#=== aes ===#
-#cargo run --release -- -v verilog/designs/aes/build.ys verilog/designs/aes/build.ys -t aes_256 -o aes_256.smt2 -f verilog/designs/aes/formula.hq -k 1 -s pes
-
-
-#=== fmcp ===#
-#cargo run --release -- -v verilog_benchmarks/iodine-benchmarks/fpu/fcmp/verilog/build.ys verilog_benchmarks/iodine-benchmarks/fpu/fcmp/verilog/build.ys -t fcmp_top -o fcmp.smt2 -f verilog_benchmarks/iodine-benchmarks/fpu/fcmp/verilog/formula.hq -k 3 -s pes
-
-# small
-#RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/iodine-benchmarks/fpu/verilog/build_small.ys verilog_benchmarks/iodine-benchmarks/fpu/verilog/build_small.ys -t fdiv_harness -o fpu_small.smt2 -f verilog_benchmarks/iodine-benchmarks/fpu/verilog/formula.hq -k 50 -s pes
-
-#=== SHA1 ===#
-#cargo run --release -- -v verilog_benchmarks/iodine-benchmarks/crypto_cores/sha_core/trunk/rtl/sha1build.ys verilog_benchmarks/iodine-benchmarks/crypto_cores/sha_core/trunk/rtl/sha1build.ys -t sha1_top -o sha1.smt2 -f verilog_benchmarks/iodine-benchmarks/crypto_cores/sha_core/trunk/rtl/formula.hq -k 1 -s pes
-
-
-# cargo run --release -- -v verilog_benchmarks/SPI/spi_correct/src/spi_build.ys verilog_benchmarks/SPI/spi_correct/src/spi_build.ys -t SPISlave -o spi.smt2 -f verilog_benchmarks/SPI/spi_correct/src/formula.hq -k 12 -s hpes
-
-#=== FIFO ASYNC ===#
-# RUST_BACKTRACE=1 cargo run --release -- -v verilog_benchmarks/fifo_async/build.ys verilog_benchmarks/fifo_async/build.ys -t oh_fifo_generic -o fifo_async.smt2 -f verilog_benchmarks/fifo_async/formula_1.hq -k 1 -s hpes
-
-
 
 
 #=== A-HLTL cases ===#

@@ -254,6 +254,68 @@ fn find_transition_fun(ir: &ModelIR) -> Option<FunDef> {
     None
 }
 
+fn is_bv_lit_atom(x:&SExpr) -> Option<(usize, String)> {
+    if let SExpr::Atom(s) = x {
+        if let Some(bits) = s.strip_prefix("#b") {
+            return Some((bits.len(), s.clone()));
+        }
+    }
+    None
+}
+
+fn sort_is_bool(s:&Sort) -> bool {
+    matches!(&s.ast, SExpr::Atom(a) if a=="Bool")
+}
+
+fn flatten_concat_terms(e: &SExpr) -> Vec<SExpr> {
+    if let SExpr::List(v) = e {
+        if !v.is_empty() {
+            if let SExpr::Atom(a) = &v[0] {
+                if a == "concat" {
+                    let mut out = Vec::new();
+                    for x in &v[1..] { out.extend(flatten_concat_terms(x)); }
+                    return out;
+                }
+            }
+        }
+    }
+    vec![e.clone()]
+}
+
+// After rewrite_init_strip_selectors, a bit leaf looks like: (ite |foo__i_| #b1 #b0)
+fn concat_of_bit_ites_fields(e:&SExpr) -> Option<Vec<String>> {
+    let parts = flatten_concat_terms(e);
+    if parts.is_empty() { return None; }
+    let mut fields = Vec::<String>::with_capacity(parts.len());
+    for term in parts {
+        let v = match term { SExpr::List(v) => v, _ => return None };
+        if v.len() != 4 { return None; }
+        if !matches!(v[0], SExpr::Atom(ref a) if a=="ite") { return None; }
+        if !matches!(v[2], SExpr::Atom(ref a) if a=="#b1") { return None; }
+        if !matches!(v[3], SExpr::Atom(ref a) if a=="#b0") { return None; }
+        let fname = match &v[1] { SExpr::Atom(s) => s.clone(), _ => return None };
+        fields.push(fname);
+    }
+    Some(fields) // MSB..LSB order
+}
+
+// Match: (bvand <concat(bit-ites)> #b....)
+fn match_bvand_concat_mask(e:&SExpr) -> Option<(Vec<String>, String)> {
+    if let SExpr::List(v) = e {
+        if v.len()==3 {
+            if let SExpr::Atom(op) = &v[0] {
+                if op == "bvand" {
+                    let fields = concat_of_bit_ites_fields(&v[1])?;
+                    let (_, mask) = is_bv_lit_atom(&v[2])?;
+                    return Some((fields, mask));
+                }
+            }
+        }
+    }
+    None
+}
+
+
 fn find_init_fun(ir: &ModelIR) -> Option<FunDef> {
     let module = ir.module.as_ref()?;
     let state_sort = &module.sort_symbol;
@@ -546,6 +608,87 @@ fn extract_init_values(module:&ModuleState, init_fun:&FunDef)->HashMap<String,SE
         if let Some((a,b)) = as_eq(&c) {
             if let SExpr::Atom(sa)=&a { if field_sorts.contains_key(sa) { values.entry(sa.clone()).or_insert(b.clone()); continue; } }
             if let SExpr::Atom(sb)=&b { if field_sorts.contains_key(sb) { values.entry(sb.clone()).or_insert(a.clone()); continue; } }
+                        // --- Concat of per-bit Bool fields equals a bit-vector literal ---
+            // (= (concat (ite |bN| #b1 #b0) ... (ite |b0| #b1 #b0)) #bXXXXX)
+            if let Some(fields_msb_to_lsb) = concat_of_bit_ites_fields(&a) {
+                if let Some((wlit, lit)) = is_bv_lit_atom(&b) {
+                    if wlit == fields_msb_to_lsb.len() {
+                        let bits = &lit[2..]; // drop "#b"
+                        for (i, fname) in fields_msb_to_lsb.iter().enumerate() {
+                            if let Some(srt) = field_sorts.get(fname) {
+                                if sort_is_bool(srt) {
+                                    let bit_is_one = bits.as_bytes()[i] == b'1'; // MSB..LSB
+                                    values.entry(fname.clone())
+                                          .or_insert(atom(if bit_is_one { "true" } else { "false" }));
+                                }
+                            }
+                        }
+                        continue;
+                    }
+                }
+            }
+            // swapped sides
+            if let Some(fields_msb_to_lsb) = concat_of_bit_ites_fields(&b) {
+                if let Some((wlit, lit)) = is_bv_lit_atom(&a) {
+                    if wlit == fields_msb_to_lsb.len() {
+                        let bits = &lit[2..];
+                        for (i, fname) in fields_msb_to_lsb.iter().enumerate() {
+                            if let Some(srt) = field_sorts.get(fname) {
+                                if sort_is_bool(srt) {
+                                    let bit_is_one = bits.as_bytes()[i] == b'1';
+                                    values.entry(fname.clone())
+                                          .or_insert(atom(if bit_is_one { "true" } else { "false" }));
+                                }
+                            }
+                        }
+                        continue;
+                    }
+                }
+            }
+
+            // --- Masked case: (= (bvand (concat bit-ites) #bMASK) #bLIT) ---
+            if let Some((fields_msb_to_lsb, mask)) = match_bvand_concat_mask(&a) {
+                if let Some((wlit, lit)) = is_bv_lit_atom(&b) {
+                    let mbits = &mask[2..];
+                    let lbits = &lit[2..];
+                    if wlit == fields_msb_to_lsb.len() && mbits.len()==fields_msb_to_lsb.len() {
+                        for (i, fname) in fields_msb_to_lsb.iter().enumerate() {
+                            if mbits.as_bytes()[i] == b'1' {
+                                if let Some(srt) = field_sorts.get(fname) {
+                                    if sort_is_bool(srt) {
+                                        let want_one = lbits.as_bytes()[i] == b'1';
+                                        values.entry(fname.clone())
+                                              .or_insert(atom(if want_one { "true" } else { "false" }));
+                                    }
+                                }
+                            }
+                        }
+                        continue;
+                    }
+                }
+            }
+            // swapped sides
+            if let Some((fields_msb_to_lsb, mask)) = match_bvand_concat_mask(&b) {
+                if let Some((wlit, lit)) = is_bv_lit_atom(&a) {
+                    let mbits = &mask[2..];
+                    let lbits = &lit[2..];
+                    if wlit == fields_msb_to_lsb.len() && mbits.len()==fields_msb_to_lsb.len() {
+                        for (i, fname) in fields_msb_to_lsb.iter().enumerate() {
+                            if mbits.as_bytes()[i] == b'1' {
+                                if let Some(srt) = field_sorts.get(fname) {
+                                    if sort_is_bool(srt) {
+                                        let want_one = lbits.as_bytes()[i] == b'1';
+                                        values.entry(fname.clone())
+                                              .or_insert(atom(if want_one { "true" } else { "false" }));
+                                    }
+                                }
+                            }
+                        }
+                        continue;
+                    }
+                }
+            }
+
             let (inner, truth) = if is_true(&a)||is_false(&a) { (b.clone(), is_true(&a)) }
                                  else if is_true(&b)||is_false(&b) { (a.clone(), is_true(&b)) }
                                  else { (atom(""), false) };

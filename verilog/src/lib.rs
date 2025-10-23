@@ -53,6 +53,14 @@ pub fn build_smvenv_from_verilog<'ctx>(
     let id_to_name = parser::parse_variables(&smt_text, top_module_name)?;
     let restored_smt2 = parser::restore_variable_names(&smt_text, &id_to_name);
 
+    // Save restored SMT2 for debugging
+    let restored_path = smt_path.with_file_name(format!("{}_restored.smt2", top_module_name));
+    std::fs::write(&restored_path, &restored_smt2)
+        .map_err(|e| ExtractError::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Failed to write restored SMT2 to {}: {}", restored_path.display(), e),
+        )))?;
+
     let transformed_smt = smt_preprocess::transform(&restored_smt2);
 
     let transformed_path = smt_path.with_file_name(format!("{}_transformed.smt2", top_module_name));

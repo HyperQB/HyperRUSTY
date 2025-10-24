@@ -3,7 +3,7 @@ name: Push benchmarks folder to hyperqb-ui repo
 on:
   push:
     branches:
-      - verilog_integration # Change after merging it to main
+      - main # Change after merging it to main
     paths:
       - "benchmarks_ui/**"
   workflow_dispatch:
@@ -15,7 +15,7 @@ jobs:
       - name: Checkout HyperRUSTY branch
         uses: actions/checkout@v4
         with:
-          ref: verilog_integration # Change after merging it to main
+          ref: main # Change after merging it to main
 
       - name: Checkout hyperqb-ui repo
         uses: actions/checkout@v4
@@ -72,7 +72,7 @@ jobs:
       - name: Checkout HyperRUSTY branch
         uses: actions/checkout@v4
         with:
-          ref: verilog_integration # Change after merging it to main
+          ref: main # Change after merging it to main
 
       - name: Checkout hyperqb.github.io repo
         uses: actions/checkout@v4

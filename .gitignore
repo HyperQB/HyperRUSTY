@@ -1,7 +1,7 @@
 /target
-/AutoHyper
 /_outfiles
 .vscode/
+/AutoHyper
 
 Cargo.lock
 .DS_Store
@@ -13,4 +13,3 @@ Cargo.lock
 *.smt2
 *.qcir
 *.hoa
-

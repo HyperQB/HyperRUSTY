@@ -94,7 +94,7 @@ time_run() {
 # ---- Pretty-print table (plain + markdown) ----
 render_tables() {
   echo
-  echo "=== Table 9 runtimes (loop condition cases) ==="
+  echo "=== Table 7 runtimes (loop condition cases) ==="
   column -s, -t < "$CSV" | sed '1s/^/**/;1s/$/**/' | column -t
 
   # Markdown table

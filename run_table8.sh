@@ -2,7 +2,7 @@
 #!/bin/bash
 set -euo pipefail
 
-TIMEOUT_SEC=${TIMEOUT_SEC:-10}  # seconds
+TIMEOUT_SEC=${TIMEOUT_SEC:-300}  # seconds
 
 # Detect timeout binary safely (avoid unbound variable errors)
 if command -v gtimeout >/dev/null 2>&1; then
@@ -30,7 +30,7 @@ fi
 
 # Initialize CSV (once per script run)
 # echo "timestamp,case,variant,exit,real_s,user_s,sys_s,max_rss_kb,log" > "$CSV"
-echo "case,real_s,log" > "$CSV"
+echo "case,result,real_s,log" > "$CSV"
 
 # ---- Timing helper ----
 time_run() {
@@ -82,8 +82,8 @@ time_run() {
 
     # execution finished.  
     # Append one row to CSV (simple real time)
-    printf "%s,%.3f,%s\n" \
-        "$case_name" "${real_s:-0.0}" "$log_file" >> "$CSV"
+    printf "%s,%s,%.3f,%s\n" \
+        "$case_name" "$status" "${real_s:-0.0}" "$log_file" >> "$CSV"
     # Append one row to CSV (full info)
     # printf "%s,%s,%s,%s,%s,%.3f,%.3f,%.3f,%s,%s\n" \
     # "$stamp" "$case_name" "$variant" "$status" "$exit_code" \
@@ -99,9 +99,9 @@ render_tables() {
 
   # Markdown table
   {
-    echo "| Case | Real (s) | Log |"
-    echo "|------|---------:|-----|"
-    tail -n +2 "$CSV" | awk -F, '{printf "| %s | %.3f | %s |\n",$1,$2,$3}'
+    echo "| Case | Result | Real (s) | Log |"
+    echo "|------|--------|---------:|-----|"
+    tail -n +2 "$CSV" | awk -F, '{printf "| %s | %s | %.3f | %s |\n",$1,$2,$3,$4}'
   } > "$MD"
   printf "\nMarkdown table written to: $MD"
 }

@@ -191,4 +191,4 @@ MODULE main
     obs_Y_is_one  := ((proc2_line = 8) & (var_Y = TRUE));
 
     -- global halt: each inlined program finished two loops
-    halt := (proc1_loop_count = 2 & proc2_loop_count = 2 & proc3_loop_count = 2);
+    halt := ((proc1_loop_count = 2) & (proc2_loop_count = 2) & (proc3_loop_count = 2));

@@ -29,4 +29,4 @@
   next(in_secret) := in_secret;
 
   DEFINE
-  halt := (PC=2);
+    halt := (PC=2);

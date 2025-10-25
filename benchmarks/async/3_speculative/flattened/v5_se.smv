@@ -275,3 +275,5 @@ MODULE main
 
   DEFINE
     -- add DEFINEs here if you want, or leave empty
+    -- halting condition
+    halt := ((proc1_line=8) & (proc2_line=8));

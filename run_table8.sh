@@ -14,6 +14,7 @@ else
 fi
 
 # ---- Paths for results/logs ----
+FOLDER="benchmarks/verilog/"
 RESULTS_DIR="_outfiles"
 LOG_DIR="${RESULTS_DIR}/logs"
 CSV="${RESULTS_DIR}/table1_runtimes.csv"
@@ -107,7 +108,6 @@ render_tables() {
 }
 
 
-FOLDER="benchmarks/async/"
 # --------------------------
 # ---- Case definitions ----
 # --------------------------
@@ -121,10 +121,10 @@ case_fpu2() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "cargo run --release -- -v \
-              benchmarks/verilog/divider/divider.ys \
-              benchmarks/verilog/divider/divider.ys \
+              ${FOLDER}divider/divider.ys \
+              ${FOLDER}divider/divider.ys \
                -t divider -o model.smt2 \
-               -f benchmarks/verilog/divider/formula.hq -k 8 -s pes"
+               -f ${FOLDER}divider/formula.hq -k 8 -s pes"
             ;;
 
         *)
@@ -143,10 +143,10 @@ case_spi() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "cargo run --release -- -v \
-              benchmarks/verilog/SPI/spi_build.ys \
-              benchmarks/verilog/SPI/spi_build.ys \
+              ${FOLDER}SPI/spi_build.ys \
+              ${FOLDER}SPI/spi_build.ys \
               -t SPISlave -o spi.smt2 \
-              -f benchmarks/verilog/SPI/formula.hq -k 8 -s hpes"
+              -f ${FOLDER}SPI/formula.hq -k 8 -s hpes"
             ;;
 
         *)
@@ -165,10 +165,10 @@ case_led_EA() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "cargo run --release -- -v \
-              benchmarks/verilog/LED/build_ea.ys \
-              benchmarks/verilog/LED/build_ea.ys \
+              ${FOLDER}LED/build_ea.ys \
+              ${FOLDER}LED/build_ea.ys \
               -t led_fsm -o model.smt2 \
-              -f benchmarks/verilog/LED/formula_ea.hq -k 101 -s pes"
+              -f ${FOLDER}LED/formula_ea.hq -k 101 -s pes"
             ;;
 
         *)
@@ -187,10 +187,10 @@ case_led_AE() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "cargo run --release -- -v \
-              benchmarks/verilog/LED/build_ae.ys \
-              benchmarks/verilog/LED/build_ae.ys \
+              ${FOLDER}LED/build_ae.ys \
+              ${FOLDER}LED/build_ae.ys \
               -t led_fsm -o model.smt2 \
-              -f benchmarks/verilog/LED/formula_ae.hq -k 10 -s pes"
+              -f ${FOLDER}LED/formula_ae.hq -k 10 -s pes"
             ;;
 
         *)
@@ -209,10 +209,10 @@ case_led_EE_true() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "cargo run --release -- -v \
-              benchmarks/verilog/LED/build_ee.ys \
-              benchmarks/verilog/LED/build_ee.ys \
+              ${FOLDER}LED/build_ee.ys \
+              ${FOLDER}LED/build_ee.ys \
               -t light -o model.smt2 \
-              -f benchmarks/verilog/LED/formula_ee_t.hq -k 101 -s hpes"
+              -f ${FOLDER}LED/formula_ee_t.hq -k 101 -s hpes"
             ;;
 
         *)
@@ -231,10 +231,10 @@ case_led_EE_false() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "cargo run --release -- -v \
-              benchmarks/verilog/LED/build_ee.ys \
-              benchmarks/verilog/LED/build_ee.ys \
+              ${FOLDER}LED/build_ee.ys \
+              ${FOLDER}LED/build_ee.ys \
               -t light -o model.smt2 \
-              -f benchmarks/verilog/LED/formula_ee_f.hq -k 101 -s hpes"
+              -f ${FOLDER}LED/formula_ee_f.hq -k 101 -s hpes"
             ;;
 
         *)

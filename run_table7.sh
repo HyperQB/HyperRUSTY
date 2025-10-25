@@ -14,6 +14,7 @@ else
 fi
 
 # ---- Paths for results/logs ----
+FOLDER="benchmarks/loop_conditions/"
 RESULTS_DIR="_outfiles"
 LOG_DIR="${RESULTS_DIR}/logs"
 CSV="${RESULTS_DIR}/table1_runtimes.csv"
@@ -107,7 +108,7 @@ render_tables() {
 }
 
 
-FOLDER="benchmarks/async/"
+
 # --------------------------
 # ---- Case definitions ----
 # --------------------------
@@ -123,9 +124,9 @@ case_abp() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "cargo run --release -- -n \
-              benchmarks/loop_conditions/abp/abp_1.smv \
-              benchmarks/loop_conditions/abp/abp_2.smv \
-              -f benchmarks/loop_conditions/abp/abp.hq -l"
+              ${FOLDER}abp/abp_1.smv \
+              ${FOLDER}abp/abp_2.smv \
+              -f ${FOLDER}abp/abp.hq -l"
             ;;
 
         *)
@@ -144,9 +145,9 @@ case_abp_buggy() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "cargo run --release -- -n \
-              benchmarks/loop_conditions/abp/abp_1_buggy.smv \
-              benchmarks/loop_conditions/abp/abp_2_buggy.smv \
-              -f benchmarks/loop_conditions/abp/abp.hq -l"
+              ${FOLDER}abp/abp_1_buggy.smv \
+              ${FOLDER}abp/abp_2_buggy.smv \
+              -f ${FOLDER}abp/abp.hq -l"
             ;;
 
         *)
@@ -165,9 +166,9 @@ case_mm() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "cargo run --release -- -n \
-              benchmarks/loop_conditions/mm/mm1.smv \
-              benchmarks/loop_conditions/mm/mm2.smv \
-              -f benchmarks/loop_conditions/mm/mm.hq -l"
+              ${FOLDER}mm/mm1.smv \
+              ${FOLDER}mm/mm2.smv \
+              -f ${FOLDER}mm/mm.hq -l"
             ;;
 
         *)
@@ -186,9 +187,9 @@ case_mm_buggy() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "cargo run --release -- -n \
-              benchmarks/loop_conditions/mm/mm1_buggy.smv \
-              benchmarks/loop_conditions/mm/mm2_buggy.smv \
-              -f benchmarks/loop_conditions/mm/mm.hq -l"
+              ${FOLDER}mm/mm1_buggy.smv \
+              ${FOLDER}mm/mm2_buggy.smv \
+              -f ${FOLDER}mm/mm.hq -l"
             ;;
 
         *)
@@ -207,9 +208,9 @@ case_cbf() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "cargo run --release -- -n \
-              benchmarks/loop_conditions/cbf/cbf1.smv \
-              benchmarks/loop_conditions/cbf/cbf2.smv \
-              -f benchmarks/loop_conditions/cbf/cbf.hq -l"
+              ${FOLDER}cbf/cbf1.smv \
+              ${FOLDER}cbf/cbf2.smv \
+              -f ${FOLDER}cbf/cbf.hq -l"
             ;;
 
         *)
@@ -228,9 +229,9 @@ case_cbf_buggy() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "cargo run --release -- -n \
-              benchmarks/loop_conditions/cbf/cbf1_buggy.smv \
-              benchmarks/loop_conditions/cbf/cbf2_buggy.smv \
-              -f benchmarks/loop_conditions/cbf/cbf.hq -l"
+              ${FOLDER}cbf/cbf1_buggy.smv \
+              ${FOLDER}cbf/cbf2_buggy.smv \
+              -f ${FOLDER}cbf/cbf.hq -l"
             ;;
 
         *)
@@ -249,9 +250,9 @@ case_rp() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "cargo run --release -- -n \
-              benchmarks/loop_conditions/robust_path_planning/rp_1.smv \
-              benchmarks/loop_conditions/robust_path_planning/rp_2.smv \
-              -f benchmarks/loop_conditions/robust_path_planning/rp.hq -l"
+              ${FOLDER}robust_path_planning/rp_1.smv \
+              ${FOLDER}robust_path_planning/rp_2.smv \
+              -f ${FOLDER}robust_path_planning/rp.hq -l"
             ;;
 
         *)
@@ -270,9 +271,9 @@ case_rp_nosol() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "cargo run --release -- -n \
-              benchmarks/loop_conditions/robust_path_planning/rp_1_no_sol.smv \
-              benchmarks/loop_conditions/robust_path_planning/rp_2.smv \
-              -f benchmarks/loop_conditions/robust_path_planning/rp.hq -l"
+              ${FOLDER}robust_path_planning/rp_1_no_sol.smv \
+              ${FOLDER}robust_path_planning/rp_2.smv \
+              -f ${FOLDER}robust_path_planning/rp.hq -l"
             ;;
 
         *)
@@ -291,9 +292,9 @@ case_gcw() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "cargo run --release -- -n \
-              benchmarks/loop_conditions/gcw/gcw1.smv \
-              benchmarks/loop_conditions/gcw/gcw2.smv \
-              -f benchmarks/loop_conditions/gcw/gcw.hq -l"
+              ${FOLDER}gcw/gcw1.smv \
+              ${FOLDER}gcw/gcw2.smv \
+              -f ${FOLDER}gcw/gcw.hq -l"
             ;;
 
         *)
@@ -312,9 +313,9 @@ case_gcw_buggy() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "cargo run --release -- -n \
-              benchmarks/loop_conditions/gcw/gcw1_buggy.smv \
-              benchmarks/loop_conditions/gcw/gcw2_buggy.smv \
-              -f benchmarks/loop_conditions/gcw/gcw.hq -l"
+              ${FOLDER}gcw/gcw1_buggy.smv \
+              ${FOLDER}gcw/gcw2_buggy.smv \
+              -f ${FOLDER}gcw/gcw.hq -l"
             ;;
 
         *)

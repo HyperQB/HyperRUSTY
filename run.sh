@@ -429,11 +429,8 @@
 # # === Concurrent Leak ===#
 # cargo run --release -- -n benchmarks/async/2_concleaks/flattened/concleaks_2procs.smv benchmarks/async/2_concleaks/flattened/concleaks_2procs.smv  -f benchmarks/async/2_concleaks/flattened/od.hq -k 11 -m 22 -s hpes 
 
-# === Concurrent Leak - ndet ===#
+# === Concurrent Leak_ndet ===#
 # cargo run --release -- -n benchmarks/async/2_concleaks/flattened/concleaks_3procs.smv benchmarks/async/2_concleaks/flattened/concleaks_3procs.smv  -f benchmarks/async/2_concleaks/flattened/od.hq -k 18 -m 36 -s hpes 
-
-# === Concurrent Leak - ndet bug ===#
-# cargo run --release -- -n benchmarks/async/2_concleaks/flattened/concleaks_3procs_bug.smv benchmarks/async/2_concleaks/flattened/concleaks_3procs_bug.smv  -f benchmarks/async/2_concleaks/flattened/od.hq -k 18 -m 36 -s hpes -q
 
 
 #=== Speculative Execution - V1 ===#
@@ -460,7 +457,6 @@
 # time cargo run --release -- -n benchmarks/async/3_speculative/flattened/v5_se.smv benchmarks/async/3_speculative/flattened/v5_nse.smv -f benchmarks/async/3_speculative/flattened/se_prop.hq -k 6 -m 12 -s hpes 
 
 
-
 #=== Speculative Execution - V6 ===#
 
 # time cargo run --release -- -n benchmarks/async/3_speculative/flattened/v6_se.smv benchmarks/async/3_speculative/flattened/v6_nse.smv -f benchmarks/async/3_speculative/flattened/se_prop.hq -k 6 -m 12 -s hpes 
@@ -475,20 +471,26 @@
 # time cargo run --release -- -n benchmarks/async/4_optimization/original/dbe/DBE_source.smv benchmarks/async/4_optimization/original/dbe/DBE_target.smv -f benchmarks/async/4_optimization/original/dbe/DBE.hq -k 4 -m 8 -s hpes 
 
 
-#=== Optimization - DBE ndet ===#
+#=== Optimization - DBE_ndet ===#
 # time cargo run --release -- -n benchmarks/async/4_optimization/with_ndet/dbe/DBE_source_ndet.smv benchmarks/async/4_optimization/with_ndet/dbe/DBE_target_ndet.smv -f benchmarks/async/4_optimization/with_ndet/dbe/DBE.hq -k 13 -m 26 -s hpes 
 
-#=== Optimization - DBE ndet w/bug ===#
+#=== Optimization - DBE_ndet_bug ===#
 # time cargo run --release -- -n benchmarks/async/4_optimization/with_ndet/dbe/DBE_source_ndet.smv benchmarks/async/4_optimization/with_ndet/dbe/DBE_target_wrong_ndet.smv -f benchmarks/async/4_optimization/with_ndet/dbe/DBE.hq -k 13 -m 26 -s hpes 
 
 
 #=== Optimization - LP ===#
 # time cargo run --release -- -n benchmarks/async/4_optimization/original/lp/LP_source.smv benchmarks/async/4_optimization/original/lp/LP_target.smv -f benchmarks/async/4_optimization/original/lp/LP.hq -k 23 -m 45 -s hpes -q
 
+
+#=== Optimization - LP_ndet ===#
 # time cargo run --release -- -n benchmarks/async/4_optimization/with_ndet/lp/LP_source_ndet.smv benchmarks/async/4_optimization/with_ndet/lp/LP_target_wrong_ndet.smv -f benchmarks/async/4_optimization/with_ndet/lp/LP.hq -k 17 -m 34 -s hpes 
 
+
+#=== Optimization - LP_loop ===#
 # time cargo run --release -- -n benchmarks/async/4_optimization/with_loops/lp/LP_source_ndet.smv benchmarks/async/4_optimization/with_loops/lp/LP_target_ndet.smv -f benchmarks/async/4_optimization/with_loops/lp/LP.hq -k 35 -m 70 -s hpes 
 
+
+#=== Optimization - LP_loop_buggy ===#
 # time cargo run --release -- -n benchmarks/async/4_optimization/with_loops/lp/LP_source_ndet.smv benchmarks/async/4_optimization/with_loops/lp/LP_target_wrong_ndet.smv -f benchmarks/async/4_optimization/with_loops/lp/LP.hq -k 17 -m 34 -s hpes
 
 
@@ -496,11 +498,11 @@
 # time cargo run --release -- -n benchmarks/async/4_optimization/original/eflp/EFLP_source.smv benchmarks/async/4_optimization/original/eflp/EFLP_target.smv -f benchmarks/async/4_optimization/original/eflp/EFLP.hq -k 32 -m 64 -s hpes -q
 
 
-#=== Optimization - EFLP -ndet ===#
+#=== Optimization - EFLP_ndet ===#
 # time cargo run --release -- -n benchmarks/async/4_optimization/with_ndet/eflp/EFLP_source_ndet.smv benchmarks/async/4_optimization/with_ndet/eflp/EFLP_target_ndet.smv -f benchmarks/async/4_optimization/with_ndet/eflp/EFLP.hq -k 22 -m 44 -s hpes 
 
 
-#=== Optimization - EFLP -ndet -loop ===#
+#=== Optimization - EFLP_ndet_loop ===#
 # time cargo run --release -- -n benchmarks/async/4_optimization/with_loops/eflp/EFLP_source_ndet.smv benchmarks/async/4_optimization/with_loops/eflp/EFLP_target_ndet.smv -f benchmarks/async/4_optimization/with_loops/eflp/EFLP.hq -k 45 -m 90 -s hpes 
 
 
@@ -508,12 +510,4 @@
 #=== CACHE ===#
 # time cargo run --release -- -n benchmarks/async/5_cache/cache_flattened.smv benchmarks/async/5_cache/cache_flattened.smv -f benchmarks/async/5_cache/odnd.hq -k 13 -m 26 -s hpes 
 
-
-
-#=== CACHE -ndet ===#
-# time cargo run --release -- -n benchmarks/async/5_cache/flattened/cache_ndet.smv benchmarks/async/5_cache/flattened/cache_ndet.smv -f benchmarks/async/5_cache/flattened/odnd.hq -k 58 -m 116 -s hpes 
-
-
-#=== CACHE -ndet -loop ===#
-# time cargo run --release -- -n benchmarks/async/5_cache/flattened/cache_loops.smv benchmarks/async/5_cache/flattened/cache_loops.smv -f benchmarks/async/5_cache/flattened/odnd.hq -k 35 -m 70 -s hpes 
 

@@ -66,4 +66,4 @@
     esac;
 
   DEFINE
-  halt := ((PC=4) & (loop_count=3));
+    halt := ((PC=4) & (loop_count=3));

@@ -1,9 +1,9 @@
 {
-  "name": "Alternating Bit Protocol (Buggy)",
+  "name": "Common Branch Factorization",
   "inputLanguage": "nusmv",
   "files": {
-    "nusmvFiles": ["abp_1_buggy.smv", "abp_2_buggy.smv"],
-    "formula": "abp.hq"
+    "nusmvFiles": ["cbf1.smv", "cbf2.smv"],
+    "formula": "cbf.hq"
   },
   "options": {
     "useLoopConditions": true,

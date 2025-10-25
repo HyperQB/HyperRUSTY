@@ -1,9 +1,9 @@
 {
-  "name": "Alternating Bit Protocol (Buggy)",
+  "name": "Wolf–Goat–Cabbage",
   "inputLanguage": "nusmv",
   "files": {
-    "nusmvFiles": ["abp_1_buggy.smv", "abp_2_buggy.smv"],
-    "formula": "abp.hq"
+    "nusmvFiles": ["gcw1.smv", "gcw2.smv"],
+    "formula": "gcw.hq"
   },
   "options": {
     "useLoopConditions": true,

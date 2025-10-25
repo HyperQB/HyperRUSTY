@@ -1,9 +1,9 @@
 {
-  "name": "Alternating Bit Protocol (Buggy)",
+  "name": "Matrix Multiplication",
   "inputLanguage": "nusmv",
   "files": {
-    "nusmvFiles": ["abp_1_buggy.smv", "abp_2_buggy.smv"],
-    "formula": "abp.hq"
+    "nusmvFiles": ["mm1.smv", "mm2.smv"],
+    "formula": "mm.hq"
   },
   "options": {
     "useLoopConditions": true,

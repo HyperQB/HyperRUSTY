@@ -1,4 +1,3 @@
-use std::collections::VecDeque;
 use std::env;
 use std::fs::File;
 use std::path::{PathBuf};
@@ -7,7 +6,6 @@ use crate::parser::Parser;
 use crate::symbol_map::SymbolMap;
 use logging::{Logger};
 use crate::create_gates_from_cdf;
-use std::fmt::Write;
 
 /// Function to replace the last occurrence of one string with another
 pub fn replace_last_occurrence(atom: &str, target: &str, replacement: &str) -> String {
@@ -66,7 +64,7 @@ fn get_string_quantifiers_and_ends(
         let layer1_constants = &mut String::new();
 
         // *********** Gets the header and quantifiers ***********
-        for (key, mut value) in symbol_map_vec {
+        for (key, value) in symbol_map_vec {
             if debug {
                 map_string.push_str(&format!("{}]", replace_last_occurrence(key, "_", "[")));
             } else {
@@ -173,11 +171,10 @@ pub fn get_output_string(model_map: &Vec<(String, i32)>,max_gate_number: i32, lo
     // Here we do the model gates so M1/\M2->phi is exists M1, forall M2, phi
     let mut last_and = &mut String::new();
     let mut quantifier_output_gate = gate+quantifiers.len() as i32;
-    let mut temp = 0;
     // THH: patch: avoid forward referencing
     let mut bmc = "".to_string();
     for (quantifier, _) in quantifiers {
-        temp = quantifier_output_gate -1;
+        let mut temp = quantifier_output_gate -1;
         // println!("{}", negated);
         if (temp == gate) & negated{ // if its the last quantifier in the loop and the parser ended with a negation
             temp = 0-temp
@@ -280,11 +277,10 @@ pub fn get_output_string_encoding_version(model_map: &Vec<(String, i32)>,max_gat
     // Here we do the model gates so M1/\M2->phi is exists M1, forall M2, phi
     let mut last_and = &mut String::new();
     let mut quantifier_output_gate = gate+quantifiers.len() as i32;
-    let mut temp = 0;
     // THH: patch: avoid forward referencing
     let mut bmc = "".to_string();
     for (quantifier, _) in quantifiers {
-        temp = quantifier_output_gate -1;
+        let mut temp = quantifier_output_gate -1;
         // println!("{}", negated);
         if (temp == gate) & negated{ // if its the last quantifier in the loop and the parser ended with a negation
             temp = 0-temp
@@ -352,7 +348,7 @@ fn get_string_quantifiers_and_ends_encoding_version(model_map: &Vec<(String, i32
         let layer1_constants = &mut String::new();
 
         // *********** Gets the header and quantifiers ***********
-        for (key, mut value) in symbol_map_vec {
+        for (key, value) in symbol_map_vec {
             if key.contains("_helper_"){
                 if debug {
                     helper_map_string.push_str(&format!("{}]", replace_last_occurrence(key, "_", "[")));
@@ -427,11 +423,11 @@ fn get_string_quantifiers_and_ends_encoding_version(model_map: &Vec<(String, i32
 /// This is the same as the original but alters the headers slightly for the new helper variables
 pub fn get_output_string_unified(model_map: &Vec<(String, i32)>, mut max_gate_number: i32, logger: &Logger, formula: &str, quantifiers: &Vec<(String, String)>, semantics: &String, layers: i32, symbol_map: &mut SymbolMap, model_bool: bool, model_flag: &String) -> String {
     // Beginning and end of the output string
-    let (starting_header,footer,final_ands) = get_string_quantifiers_and_ends_unified(model_map, quantifiers, logger, symbol_map, model_bool, model_flag); // has the header and quantifiers
+    let (starting_header,footer, mut final_ands) = get_string_quantifiers_and_ends_unified(model_map, quantifiers, logger, symbol_map, model_bool, model_flag); // has the header and quantifiers
     // TODO: Here should be the new final_ands function call. It should build the and gates for the initial values
     // My thought is to use the gate_builder to build the gates. It does the or/and for us. Easy to reuse.
     let mut counter = 0;
-    let mut final_ands: Vec<String> = Vec::new();
+    // let mut final_ands: Vec<String> = Vec::new();
     let mut final_ands_string = String::new();
     while  counter < model_map.len() as i32 {
         symbol_map.model = counter;
@@ -496,12 +492,11 @@ pub fn get_output_string_unified(model_map: &Vec<(String, i32)>, mut max_gate_nu
     // Here we do the model gates so M1/\M2->phi is exists M1, forall M2, phi
     let mut last_and = &mut String::new();
     let mut quantifier_output_gate = gate+quantifiers.len() as i32;
-    let mut temp = 0;
     // THH: patch: avoid forward referencing
     let mut bmc = "".to_string();
     
     for (quantifier, _) in quantifiers {
-        temp = quantifier_output_gate -1;
+        let mut temp = quantifier_output_gate -1;
         // println!("{}", negated);
         if (temp == gate) & negated{ // if its the last quantifier in the loop and the parser ended with a negation
             temp = 0-temp
@@ -534,7 +529,7 @@ pub fn get_output_string_unified(model_map: &Vec<(String, i32)>, mut max_gate_nu
     last_and = &mut binding;
     middle_string.push_str(&last_and);
     // THH: patch: avoid forward referencing
-    let mut binding = bmc.trim_end_matches(",").to_string();
+    // let mut binding = bmc.trim_end_matches(",").to_string();
 
     // Now combine all parts
     let mut output_string = String::new();
@@ -573,7 +568,7 @@ fn get_string_quantifiers_and_ends_unified(model_map: &Vec<(String, i32)>, quant
         let layer1_constants = &mut String::new();
 
         // *********** Gets the header and quantifiers ***********
-        for (key, mut value) in symbol_map_vec {
+        for (key, value) in symbol_map_vec {
             if key.contains("_helper_"){
                 if debug {
                     helper_map_string.push_str(&format!("{}]", replace_last_occurrence(key, "_", "[")));
@@ -638,8 +633,7 @@ fn get_string_quantifiers_and_ends_unified(model_map: &Vec<(String, i32)>, quant
         // (model_bool & model_flag.is_empty()) | (model_bool & (counter == *symbol_map.get_model_number_from_name(model_flag)))
         // is what this is building
 
-        let mut truth = false;
-        truth = model_bool & model_flag.is_empty();
+        let mut truth = model_bool & model_flag.is_empty();
         if truth == false{
             truth = model_bool & (counter == *symbol_map.get_model_number_from_name(model_flag));
         }

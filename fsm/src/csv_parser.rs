@@ -1,13 +1,11 @@
 use expressions::*;
 use csv::ReaderBuilder;
-use csv::WriterBuilder;
 use std::io::BufRead;
-use serde::Deserialize;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::error::Error;
 use std::fs::File;
-use std::io::{self, Write};
+use std::io::{self};
 use regex::Regex;
 use std::path::Path;
 
@@ -68,13 +66,13 @@ impl VariableStates {
         // Box::new(self.next.iter().cloned().collect())
     }
 
-    fn initial_states_size(&self) -> usize {
-        self.initial.len()
-    }
+    // fn initial_states_size(&self) -> usize {
+    //     self.initial.len()
+    // }
 
-    fn final_states_size(&self) -> usize {
-        self.next.len()
-    }
+    // fn final_states_size(&self) -> usize {
+    //     self.next.len()
+    // }
 }
 
 #[derive(Debug, Clone)]
@@ -89,9 +87,9 @@ impl StateMap {
         }
     }
 
-    fn add_variable(&mut self, name: String) {
-        self.variables.insert(name, VariableStates::new());
-    }
+    // fn add_variable(&mut self, name: String) {
+    //     self.variables.insert(name, VariableStates::new());
+    // }
 
     fn add_initial_state(&mut self, name: String, state: Box<Expression>) {
         if let Some(var_states) = self.variables.get_mut(&name) {
@@ -119,13 +117,13 @@ impl StateMap {
     //         .and_then(|var_states| var_states.get_states(state_type))
     // }
 
-    fn get_initial_states(&self, name: &str) -> Option<impl Iterator<Item = &Box<Expression>>> {
-        self.variables.get(name).map(|vs| vs.get_initial_states())
-    }
+    // fn get_initial_states(&self, name: &str) -> Option<impl Iterator<Item = &Box<Expression>>> {
+    //     self.variables.get(name).map(|vs| vs.get_initial_states())
+    // }
 
-    fn get_next_states(&self, name: &str) -> Option<impl Iterator<Item = &Box<Expression>>> {
-        self.variables.get(name).map(|vs| vs.get_next_states())
-    }
+    // fn get_next_states(&self, name: &str) -> Option<impl Iterator<Item = &Box<Expression>>> {
+    //     self.variables.get(name).map(|vs| vs.get_next_states())
+    // }
 
     fn collect_all_initial_states(&self) -> HashSet<Box<Expression>> {
         self.variables.values()
@@ -177,7 +175,7 @@ fn parse_vars_file() -> io::Result<HashMap<String, i32>> {
             }
         }
     }
-    for (key, value) in &result_map {
+    for (_, _) in &result_map {
         // println!("+++++RESULT MAP => {} : {}", key, value);
     }
 
@@ -200,12 +198,11 @@ fn parse_csv(trans_stack: &mut Vec<Box<Expression>>, max_bit_map: &HashMap<Strin
     let mut prev_id_value = "0".to_string();
 
     let mut state_vec: Vec<StateMap> = Vec::new();
-    let mut state_map = StateMap::new();
     // let mut value = state_vec.push(state_map.clone());
     for result in rdr.records() {
         let record = result?;
         let curr_id_value = record.get(curr_id_index).unwrap().to_string();
-        state_map = StateMap::new();
+        let mut state_map = StateMap::new();
 
         // create new state map for each transition, some transitions in the csv file are on more than one row
         if prev_id_value != curr_id_value {
@@ -301,25 +298,25 @@ fn state_vec_to_expr(state_vec: &Vec<StateMap>) -> Box<Expression>{
 
         // combine initial and next states
 
-        let mut combined_init: Box<Expression> = Box::new(Expression::Literal(Literal::Atom("STATE_VEC_BUG".to_string())));
-        let mut combined_next: Box<Expression> = Box::new(Expression::Literal(Literal::Atom("STATE_VEC_BUG".to_string())));
+        // let mut combined_init: Box<Expression> = Box::new(Expression::Literal(Literal::Atom("STATE_VEC_BUG".to_string())));
+        // let mut combined_next: Box<Expression> = Box::new(Expression::Literal(Literal::Atom("STATE_VEC_BUG".to_string())));
         
         // if initial is only one element, no need for AND gate
-        if initial_states.len() < 2 {
-            combined_init = initial_states[0].clone(); 
+        let combined_init = if initial_states.len() < 2 {
+            initial_states[0].clone() 
         // } else if initial_states.len() == 2 {
         //     combined_init = Box::new(Expression::And(initial_states[0].clone(), initial_states[1].clone()));
         } else {
-            combined_init = Box::new(Expression::MAnd(initial_states));
-        }
+            Box::new(Expression::MAnd(initial_states))
+        };
 
-        if next_states.len() < 2 {
-            combined_next = next_states[0].clone(); 
+        let combined_next = if next_states.len() < 2 {
+            next_states[0].clone() 
         // } else if next_states.len() == 2 {
         //     combined_next = Box::new(Expression::And(next_states[0].clone(), next_states[1].clone()));
         } else {
-            combined_next = Box::new(Expression::MAnd(next_states));
-        }
+            Box::new(Expression::MAnd(next_states))
+        };
         // let combined_init: Box<Expression> = Box::new(Expression::MAnd(initial_states));
         // let combined_next: Box<Expression> = Box::new(Expression::MAnd(next_states));
 
@@ -366,58 +363,58 @@ fn state_vec_to_expr(state_vec: &Vec<StateMap>) -> Box<Expression>{
     return full_expr;
 }
 
-fn map_to_expr(state_map: &StateMap) -> Box<Expression> {
+// fn map_to_expr(state_map: &StateMap) -> Box<Expression> {
 
-    let initial_states: Vec<Box<Expression>> = state_map.collect_all_initial_states().into_iter().collect();
-    let next_states: Vec<Box<Expression>> = state_map.collect_all_next_states().into_iter().collect();
+//     let initial_states: Vec<Box<Expression>> = state_map.collect_all_initial_states().into_iter().collect();
+//     let next_states: Vec<Box<Expression>> = state_map.collect_all_next_states().into_iter().collect();
 
-    // println!("{:?}", initial_states);
-    // println!("{:?}", next_states);
+//     // println!("{:?}", initial_states);
+//     // println!("{:?}", next_states);
 
-    // let mut combined_init: Box<Expression> = Box::new(Expression::Literal(Literal::Atom("".to_string())));
-    // let mut combined_next: Box<Expression> = Box::new(Expression::Literal(Literal::Atom("".to_string())));
+//     // let mut combined_init: Box<Expression> = Box::new(Expression::Literal(Literal::Atom("".to_string())));
+//     // let mut combined_next: Box<Expression> = Box::new(Expression::Literal(Literal::Atom("".to_string())));
 
-    let combined_init: Box<Expression> = Box::new(Expression::MAnd(initial_states));
-    let combined_next: Box<Expression> = Box::new(Expression::MAnd(next_states));
+//     let combined_init: Box<Expression> = Box::new(Expression::MAnd(initial_states));
+//     let combined_next: Box<Expression> = Box::new(Expression::MAnd(next_states));
 
-    // // TODO: make this a function
-    // if initial_states.len() > 1 {
-    //     for i in 0..initial_states.len() {
-    //         if i == 0 {
-    //             combined_init = initial_states[i].clone();
-    //         } else {
-    //             combined_init = Box::new(Expression::And(initial_states[i].clone(), combined_init.clone()));
-    //         } 
-    //     }
-    // } else {
-    //     combined_init = initial_states[0].clone();
-    // }
+//     // // TODO: make this a function
+//     // if initial_states.len() > 1 {
+//     //     for i in 0..initial_states.len() {
+//     //         if i == 0 {
+//     //             combined_init = initial_states[i].clone();
+//     //         } else {
+//     //             combined_init = Box::new(Expression::And(initial_states[i].clone(), combined_init.clone()));
+//     //         } 
+//     //     }
+//     // } else {
+//     //     combined_init = initial_states[0].clone();
+//     // }
 
-    // if next_states.len() > 1 {
-    //     for i in 0..next_states.len() {
-    //         if i == 0 {
-    //             combined_next = next_states[i].clone();
-    //         } else {
-    //             combined_next = Box::new(Expression::And(next_states[i].clone(), combined_next.clone()));
-    //         } 
-    //     }
-    // } else {
-    //     combined_next = next_states[0].clone();
-    // }
+//     // if next_states.len() > 1 {
+//     //     for i in 0..next_states.len() {
+//     //         if i == 0 {
+//     //             combined_next = next_states[i].clone();
+//     //         } else {
+//     //             combined_next = Box::new(Expression::And(next_states[i].clone(), combined_next.clone()));
+//     //         } 
+//     //     }
+//     // } else {
+//     //     combined_next = next_states[0].clone();
+//     // }
 
-    // println!("COMBINED INIT: {:?}", combined_init);
-    // println!("COMBINED NEXT: {:?}", combined_next);
+//     // println!("COMBINED INIT: {:?}", combined_init);
+//     // println!("COMBINED NEXT: {:?}", combined_next);
 
-    let negate_init = Box::new(Expression::Neg(combined_init));
-    let full_expr = Box::new(Expression::Or(negate_init, combined_next)); // initial -> next
+//     let negate_init = Box::new(Expression::Neg(combined_init));
+//     let full_expr = Box::new(Expression::Or(negate_init, combined_next)); // initial -> next
 
-    // let expr1 = Box::new(Expression::Neg(Box::new(Expression::Literal(Literal::Atom("a".to_string())))));
-    // let expr2 = Box::new(Expression::Literal(Literal::Atom("b".to_string())));
-    // let res1 = Box::new(Expression::Or(expr1,expr2)); // a -> b
+//     // let expr1 = Box::new(Expression::Neg(Box::new(Expression::Literal(Literal::Atom("a".to_string())))));
+//     // let expr2 = Box::new(Expression::Literal(Literal::Atom("b".to_string())));
+//     // let res1 = Box::new(Expression::Or(expr1,expr2)); // a -> b
 
-    return full_expr
+//     return full_expr
 
-}
+// }
 
 fn combine_expr(trans_stack : Vec<Box<Expression>>) -> Box<Expression> {
 
@@ -492,7 +489,7 @@ fn blast_bits(var_name: &str, state_num: i32, max_b: i32, next: bool) -> Box<Exp
     // bit_vector.reverse();
     // bit_vector
     // let mut blasted_var: Box<Expression> = Box::new(Expression::Literal(Literal::Atom("".to_string())));
-    let mut blasted_var: Box<Expression> = Box::new(Expression::MAnd(bit_vector));
+    let blasted_var: Box<Expression> = Box::new(Expression::MAnd(bit_vector));
 
     // for i in 0..bit_vector.len() {
     //     // println!("expression: {:?}", trans_stack[i]);

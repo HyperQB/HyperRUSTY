@@ -32,7 +32,7 @@ fn format_literal(literal: &mut str, symbol_map: &mut SymbolMap, max_gate_number
         is_prime = true;
         return_val = return_val.replace("'", "");
     }
-    if let Some(&gate_number) = symbol_map.get(&(return_val.to_string()+"_0")) {
+    if let Some(&_gate_number) = symbol_map.get(&(return_val.to_string()+"_0")) {
         // do nothing
     } else{
         //println!("Adding to symbol map: {}", return_val);
@@ -133,7 +133,7 @@ pub fn input_to_expression(expression: &str) -> Box<Expression> {
                             }
                             // Deal with next states
                             single_expression_token_match(stack, next_token);
-                            if (next_token != "(")  { // We break if we are recursing with anything other than (
+                            if next_token != "("  { // We break if we are recursing with anything other than (
                                 breaking = true;
                             }
                         }
@@ -260,7 +260,7 @@ pub fn input_to_expression(expression: &str) -> Box<Expression> {
 }
 
 /// This function will take the expression and return the CDF form of the expression
-pub fn input_to_expression_optimized(expression: &str, layers: &i32, symbol_map: &mut SymbolMap, max_gate_number: &mut i32) -> Box<Expression> {
+pub fn input_to_expression_optimized(expression: &str, _layers: &i32, symbol_map: &mut SymbolMap, max_gate_number: &mut i32) -> Box<Expression> {
     // Build the regex pattern dynamically
     // set time
     let pattern = r"~([^)(/]+)";
@@ -298,7 +298,7 @@ pub fn input_to_expression_optimized(expression: &str, layers: &i32, symbol_map:
 
     /// This function will recurse down and pull out the CDF from the expression
     /// It will then return the result of the recursion where each and is a transition to be added to the fsm
-    fn recurse_down(captures: &mut CaptureMatches, stack: &mut Vec<Box<Expression>>, output: &mut Vec<Box<Expression>>, pushed_break : bool, top_layer: bool, symbol_map: &mut SymbolMap, max_gate_number: &mut i32) {
+    fn recurse_down(captures: &mut CaptureMatches, stack: &mut Vec<Box<Expression>>, output: &mut Vec<Box<Expression>>, pushed_break : bool, _top_layer: bool, symbol_map: &mut SymbolMap, max_gate_number: &mut i32) {
         stacker::maybe_grow(32*1024,1024*1024, || {
             while let Some(cap) = captures.next() {
                 let token = cap.get(1).unwrap().as_str();
@@ -320,7 +320,7 @@ pub fn input_to_expression_optimized(expression: &str, layers: &i32, symbol_map:
                                 breaking = true;
                             }
                         } else {
-                            let mut formatted_literal = format_literal(&mut next_token.to_string(), symbol_map, max_gate_number);
+                            let formatted_literal = format_literal(&mut next_token.to_string(), symbol_map, max_gate_number);
                             stack.push(Box::new(Expression::Literal(Literal::Atom(formatted_literal.to_string()))));
                         }
                         // match the token
@@ -343,7 +343,7 @@ pub fn input_to_expression_optimized(expression: &str, layers: &i32, symbol_map:
                             }
                             // Deal with next states
                             single_expression_token_match(stack, next_token);
-                            if (next_token != "(")  { // We break if we are recursing with anything other than (
+                            if next_token != "("  { // We break if we are recursing with anything other than (
                                 breaking = true;
                             }
                         }
@@ -463,7 +463,7 @@ pub fn input_to_expression_optimized(expression: &str, layers: &i32, symbol_map:
                         break;
                     }
                     _ => {
-                        let mut formatted_literal = format_literal(&mut token.to_string(), symbol_map, max_gate_number);
+                        let formatted_literal = format_literal(&mut token.to_string(), symbol_map, max_gate_number);
                         stack.push(Box::new(Expression::Literal(Literal::Atom(formatted_literal.to_string()))));
                     }
                 }

@@ -4,17 +4,14 @@ use pest_derive::Parser;
 use std::collections::HashMap;
 use crate::TrajQuant;
 use crate::Expression::*;
-use crate::expression_to_string;
 use std::collections::HashSet;
-use crate::exprparser::Rule as PRule;
 use regex::Regex;
 // use crate::{Expression, Literal};        // enums you defined
 // use crate::quant::Quant;                 // Quant::{Forall, Exists}
 
 // ---- Your existing ASTs (adjust imports/types to your project) ----
 use crate::{Expression, Literal as Lit, Quant};
-use crate::Literal::*;
-type Variable = String;                         // adjust if you use a dedicated type
+// type Variable = String;                         // adjust if you use a dedicated type
 
 // ---- Result object you likely want to return ----
 pub struct HyperParsed {
@@ -193,7 +190,7 @@ pub fn translate_all_inner_ahltl(
 
 
 // Example: turn `Literal(Atom("line[A][t]"))` into `Literal(Atom(format!("line[{}][{}]", path, i)))`
-type StampAtomFn = dyn Fn(&Expression, usize, &str) -> Expression;
+// type StampAtomFn = dyn Fn(&Expression, usize, &str) -> Expression;
 
 /// Translate an inner AHLTL formula ⟦φ⟧^{j}_{k,m} for a fixed path π, trajectory τ.
 ///
@@ -396,7 +393,7 @@ fn pos_name(path: &str, traj: &str, i: usize, j: usize) -> String {
 }
 
 #[inline]
-fn off_name(path: &str, traj: &str, j: usize) -> String {
+fn off_name(path: &str, traj: &str, _j: usize) -> String {
     format!("off_{}_{:}", path, traj)  // or: format!("off_{}_{:}", j, path, traj)
 }
 
@@ -650,7 +647,6 @@ fn parse_atom_path_traj(s: &str) -> Option<(String, String, String)> {
 
 /// Collect map: traj_name -> set of paths that appear with that traj in `inner`.
 fn collect_traj_path_assoc(inner: &Expression) -> HashMap<String, HashSet<String>> {
-    use Expression::*;
     let mut map: HashMap<String, HashSet<String>> = HashMap::new();
 
     fn visit(e: &Expression, map: &mut HashMap<String, HashSet<String>>) {
@@ -713,47 +709,47 @@ pub fn build_traj_position_prefix(
 
 
 
-fn big_or(mut xs: Vec<Expression>) -> Expression {
-    match xs.len() {
-        0 => Expression::False,
-        1 => xs.pop().unwrap(),
-        _ => Expression::MOr(xs.into_iter().map(Box::new).collect()),
-    }
-}
-fn big_and(mut xs: Vec<Expression>) -> Expression {
-    match xs.len() {
-        0 => Expression::True,
-        1 => xs.pop().unwrap(),
-        _ => Expression::MAnd(xs.into_iter().map(Box::new).collect()),
-    }
-}
+// fn big_or(mut xs: Vec<Expression>) -> Expression {
+//     match xs.len() {
+//         0 => Expression::False,
+//         1 => xs.pop().unwrap(),
+//         _ => Expression::MOr(xs.into_iter().map(Box::new).collect()),
+//     }
+// }
+// fn big_and(mut xs: Vec<Expression>) -> Expression {
+//     match xs.len() {
+//         0 => Expression::True,
+//         1 => xs.pop().unwrap(),
+//         _ => Expression::MAnd(xs.into_iter().map(Box::new).collect()),
+//     }
+// }
 
-fn lit_atom<S: Into<String>>(s: S) -> Expression {
-    Expression::Literal(Lit::Atom(s.into()))
-}
-fn lit_neg_atom<S: Into<String>>(s: S) -> Expression {
-    Expression::Literal(Lit::NegAtom(s.into()))
-}
+// fn lit_atom<S: Into<String>>(s: S) -> Expression {
+//     Expression::Literal(Lit::Atom(s.into()))
+// }
+// fn lit_neg_atom<S: Into<String>>(s: S) -> Expression {
+//     Expression::Literal(Lit::NegAtom(s.into()))
+// }
 
 /// selector name s_<PATH>_<i>
-fn sel_name(path: &str, i: usize) -> String {
-    format!("pos_{}_{}", path, i)
-}
+// fn sel_name(path: &str, i: usize) -> String {
+//     format!("pos_{}_{}", path, i)
+// }
 
 /// p[PATH][i]
-fn atom_at(base: &str, path: &str, i: usize) -> Expression {
-    lit_atom(format!("{base}[{path}][{i}]"))
-}
-fn neg_atom_at(base: &str, path: &str, i: usize) -> Expression {
-    lit_neg_atom(format!("{base}[{path}][{i}]"))
-}
+// fn atom_at(base: &str, path: &str, i: usize) -> Expression {
+//     lit_atom(format!("{base}[{path}][{i}]"))
+// }
+// fn neg_atom_at(base: &str, path: &str, i: usize) -> Expression {
+//     lit_neg_atom(format!("{base}[{path}][{i}]"))
+// }
 
 /// (s_path_i <-> p[path][i])  (or <-> ¬p[path][i] if `neg`)
-fn lane_iff(base: &str, path: &str, i: usize, neg: bool) -> Expression {
-    let s   = lit_atom(sel_name(path, i));
-    let ap  = if neg { neg_atom_at(base, path, i) } else { atom_at(base, path, i) };
-    Expression::Iff(Box::new(s), Box::new(ap))
-}
+// fn lane_iff(base: &str, path: &str, i: usize, neg: bool) -> Expression {
+//     let s   = lit_atom(sel_name(path, i));
+//     let ap  = if neg { neg_atom_at(base, path, i) } else { atom_at(base, path, i) };
+//     Expression::Iff(Box::new(s), Box::new(ap))
+// }
 
 /// Very small parser for variables like `NAME[PATH][TIME]`
 /// Returns (base, path, time) if it matches exactly that shape.
@@ -1370,7 +1366,7 @@ fn parse_form_rec(p: Pair<Rule>) -> Result<Expression, String> {
             match next.as_rule() {
                 Rule::path_formula => {
                     // Nested path quantifier: collect and parse recursively
-                    let (inner_tail, mut more_prefix) = collect_prefix(next)?;
+                    let (inner_tail, _) = collect_prefix(next)?;
                     // We ignore extra nested prefix here; if you want to merge prefixes, do it.
                     let e = parse_form_rec(inner_tail)?;
                     // If you want to expose nested prefixes, change the return type.
@@ -1392,13 +1388,13 @@ fn parse_traj_formula(p: Pair<Rule>) -> Result<Expression, String> {
     // traj_formula = { ("A" | "E") ~ ident ~ "." ~ ahltl_form_rec }
     let mut it = p.into_inner();
     let quant_tok = it.next().unwrap(); // A or E
-    let model_id  = it.next().unwrap(); // ident
+    let _model_id  = it.next().unwrap(); // ident
     let tail      = it.next().unwrap(); // ahltl_form_rec
 
     // For now, we just parse the ALT LTL inside and ignore the model binding here
     // because your stamping later will append [model] anyway.
     let inner = parse_ahltl_form_rec(tail)?;
-    let q = quant_tok.as_str();
+    let _q = quant_tok.as_str();
     // If you want to keep A/E as part of AST, you could wrap with a marker.
     // For now we just return the inner expression.
     Ok(inner)

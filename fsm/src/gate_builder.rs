@@ -1,19 +1,16 @@
 use std::collections::VecDeque;
-use expressions::{Expression, Literal as Lit, Variable, Quant};
-use expressions::expression_to_string;
+use expressions::{Expression, Literal as Lit};
 use std::fmt::Write as FmtWrite;
 use logging::Logger;
 use crate::parser::split_on_value;
 use crate::symbol_map::SymbolMap;
-use stacker;
-use std::collections::{HashMap, HashSet};
 
 
 // ---------- QCIR builder ----------
 // New version: Sep. 2025
 
-#[derive(Debug)]
-pub enum LowerError { Temporal(&'static str) }
+// #[derive(Debug)]
+// pub enum LowerError { Temporal(&'static str) }
 
 
 /// This function will take the CDF and create the gates
@@ -39,7 +36,7 @@ pub fn create_gates_from_cdf(
 ) -> (String, i32, Vec<i32>) {
 
     let mut max_gate_number = starting_gate; // The current gate number
-    let mut max_gate_number = &mut max_gate_number; // ?
+    let max_gate_number = &mut max_gate_number; // ?
     let mut output_string = String::new();
     let mut stack: VecDeque<(&Expression, usize, bool)> = VecDeque::new(); // (expression, previous_layers_string_index)
     let mut next_stack: VecDeque<(&Expression, usize, bool)> = VecDeque::new(); // (expression, previous_layers_string_index)
@@ -59,7 +56,7 @@ pub fn create_gates_from_cdf(
         // let mut temp_currstep: Vec<String> = Vec::new();
 
 
-        while let Some(mut curr_expres) = stack.pop_back(){
+        while let Some(curr_expres) = stack.pop_back(){
             let curr_expression     = curr_expres.0;
             let parent_string_index = curr_expres.1;
             let negation            = curr_expres.2;

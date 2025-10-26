@@ -1,4 +1,4 @@
-use expressions::{Expression, Literal, Variable, Quant};
+use expressions::{Expression, Literal};
 
 
 // === Helpers to time-stamp variable names ===============================
@@ -8,7 +8,7 @@ fn stamp_name_at_time(base: &str, t: usize) -> String {
     // Your variable forms look like "high[A]" (model already embedded).
     // We append "[t]" at the end: "high[A][t]".
     // If you *might* already have a time index, detect it and replace.
-    if let Some(pos) = base.rfind(']') {
+    if let Some(_pos) = base.rfind(']') {
         // If the segment before ']' contains '[' and after that there's another ']',
         // we interpret the last bracket as the model and add time after it.
         // This is conservative and works with "high[A]" → "high[A][t]".
@@ -69,31 +69,31 @@ fn stamp_expr_at_time(e: &Expression, t: usize) -> Expression {
 //  φ R ψ    @i = ∧_{t=i..k} ( ψ@t ∨ ( ∨_{u=i..t-1} φ@u ) )
 // For a *global* property you normally take i=0 after expansion.
 
-fn big_and(mut parts: Vec<Expression>) -> Expression {
-    match parts.len() {
-        0 => Expression::True,
-        1 => parts.pop().unwrap(),
-        _ => Expression::MAnd(parts.into_iter().map(Box::new).collect()),
-    }
-}
-fn big_or(mut parts: Vec<Expression>) -> Expression {
-    match parts.len() {
-        0 => Expression::False,
-        1 => parts.pop().unwrap(),
-        _ => Expression::MOr(parts.into_iter().map(Box::new).collect()),
-    }
-}
+// fn big_and(mut parts: Vec<Expression>) -> Expression {
+//     match parts.len() {
+//         0 => Expression::True,
+//         1 => parts.pop().unwrap(),
+//         _ => Expression::MAnd(parts.into_iter().map(Box::new).collect()),
+//     }
+// }
+// fn big_or(mut parts: Vec<Expression>) -> Expression {
+//     match parts.len() {
+//         0 => Expression::False,
+//         1 => parts.pop().unwrap(),
+//         _ => Expression::MOr(parts.into_iter().map(Box::new).collect()),
+//     }
+// }
 
 fn unroll_at(formula: &Expression, i: usize, k: usize) -> Expression {
     use Expression::*;
 
     // Helpers: empty big-AND/OR semantics and stamping only literals
-    fn big_and(mut xs: Vec<Expression>) -> Expression {
+    fn big_and(xs: Vec<Expression>) -> Expression {
         if xs.is_empty() { Expression::True } else {
             Expression::MAnd(xs.into_iter().map(Box::new).collect())
         }
     }
-    fn big_or(mut xs: Vec<Expression>) -> Expression {
+    fn big_or(xs: Vec<Expression>) -> Expression {
         if xs.is_empty() { Expression::False } else {
             Expression::MOr(xs.into_iter().map(Box::new).collect())
         }

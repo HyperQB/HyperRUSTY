@@ -19,24 +19,24 @@ use indexmap::IndexSet;
 pub struct SymbolMap {
     symbol_map: HashMap<i32, HashMap<String,i32>>, // model -> (symbol -> gate)
     model_map: HashMap<String,i32>, // Model number to model name
-    initial_map: HashMap<i32, String>, // Model-> to initial state
-    expression_map: HashMap<(i32,i32), HashMap<Expression,i32>>, // (layer, model) -> (expression -> gate)
-    models: i32,
+    _initial_map: HashMap<i32, String>, // Model-> to initial state
+    _expression_map: HashMap<(i32,i32), HashMap<Expression,i32>>, // (layer, model) -> (expression -> gate)
+    _models: i32,
     layers: i32,
     pub(crate) model: i32,
     pub(crate) helper_variables: HashMap<i32,IndexSet<String>> // model -> (gate, symbol) only the helper ones
 }
 
 impl SymbolMap {
-    pub fn new(models: i32, layers: i32) -> SymbolMap {
+    pub fn new(_models: i32, layers: i32) -> SymbolMap {
         SymbolMap {
             symbol_map: HashMap::new(),
             model_map: HashMap::new(),
-            expression_map: HashMap::new(),
-            models,
+            _models,
+            _expression_map: HashMap::new(),
             layers,
             model: 0,
-            initial_map: HashMap::new(),
+            _initial_map: HashMap::new(),
             helper_variables: HashMap::new()
         }
     }
@@ -131,11 +131,11 @@ impl SymbolMap {
     }
 
     pub fn add_initials(&mut self, initial: &String){
-        self.initial_map.insert(self.model, initial.clone());
+        self._initial_map.insert(self.model, initial.clone());
     }
 
     pub fn get_initials(& self, model: &i32) -> Vec<String> {
-        let mut temp = self.initial_map.get(model);
+        let temp = self._initial_map.get(model);
         if temp.is_none() {
             return vec![];
         }
@@ -147,7 +147,7 @@ impl SymbolMap {
     }
 
     pub fn get_initial_expression(& self, model:&i32) -> Box<Expression> {
-        let mut temp = self.initial_map.get(model);
+        let temp = self._initial_map.get(model);
         if temp.is_none() {
             return Box::from(Expression::Literal(Literal::Atom("".to_owned())));
         }
@@ -165,7 +165,7 @@ impl SymbolMap {
         let mut stack: VecDeque<(&Expression, bool)> = VecDeque::new();
         let mut initial_states: Vec<String> = Vec::new();
         stack.push_back((&initial_expression, false));
-        while let Some(mut curr_node) = stack.pop_front(){
+        while let Some(curr_node) = stack.pop_front(){
             let expression = curr_node.0;
             let negation = curr_node.1;
             match expression {

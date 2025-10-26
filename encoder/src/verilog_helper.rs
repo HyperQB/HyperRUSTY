@@ -1,21 +1,13 @@
+#![allow(suspicious_double_ref_op)]
 use std::collections::HashSet;
-use core::ptr;
 use indexmap::IndexMap;
-use regex::Regex;
-use std::ffi::CStr;
 use z3::{
-    ast::{Ast, Bool, Dynamic},
-    Context,
-};
-use parser::{
-    UnaryOperator, BinOperator,
-    AstNode,
+    ast::{Ast, Dynamic},
 };
 use ir::EnvState;
-use z3_sys::*;
 
 
-pub fn unrolled_states_from_Z3_ast<'ctx, T: Ast<'ctx>>(
+pub fn unrolled_states_from_z3_ast<'ctx, T: Ast<'ctx>>(
     ast: &T,
     variables: &HashSet<&'ctx str>,
     k: usize

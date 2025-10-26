@@ -85,7 +85,7 @@ pub enum Expression {
 }
 
 /// Drop the expression in a non-recursive way
-pub fn drop_expression(mut expression: Expression) {
+pub fn drop_expression(expression: Expression) {
     let mut stack = vec![expression];
 
     while let Some(mut current) = stack.pop() {

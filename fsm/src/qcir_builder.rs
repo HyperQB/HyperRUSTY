@@ -1,11 +1,4 @@
-use std::collections::VecDeque;
 use expressions::{Expression, Literal as Lit, Variable, Quant};
-use expressions::expression_to_string;
-use std::fmt::Write as FmtWrite;
-use logging::Logger;
-use crate::parser::split_on_value;
-use crate::symbol_map::SymbolMap;
-use stacker;
 use std::collections::{HashMap, HashSet};
 use expressions::TrajQuant;
 
@@ -28,8 +21,8 @@ pub struct QcirBuilder {
     seen: HashSet<Variable>,
     var_by_id: std::collections::HashMap<usize, Variable>, // id -> Variable  (NEW)
     // aux for constants, etc.
-    const_var: Option<usize>,
-    aux_vars: std::collections::BTreeSet<usize>,
+    // const_var: Option<usize>,
+    // aux_vars: std::collections::BTreeSet<usize>,
     // NEW: debug toggle
     debug: bool,
 }
@@ -168,7 +161,7 @@ impl QcirBuilder {
             // negation
             Neg(x) => match &**x {
                 Literal(Lit::Atom(v))    => -(self.intern_var(v) as isize),
-                Literal(Lit::NegAtom(v)) =>  (self.intern_var(v) as isize),
+                Literal(Lit::NegAtom(v)) =>  self.intern_var(v) as isize,
                 _ => {
                     // lower inner to a gate id, then negate the *id*
                     let a = self.lower(x)?;
@@ -247,14 +240,14 @@ pub fn to_qcir_string(
             Expression::And(Box::new(init.clone()), Box::new(body.clone()))
         })
         .collect::<Vec<Expression>>();
-    let QBF_encoding = build_QBF(&prefix, &models, &formula_expr).unwrap();
+    let qbf_encoding = build_qbf(&prefix, &models, &formula_expr).unwrap();
     // Initiate QcirBuilder
     let mut b = QcirBuilder::new();
     
     // b.debug = true; // <--- uncomment this to see VAR name inlined!
 
     // Lower the expression 
-    let out = b.lower(&QBF_encoding)?;
+    let out = b.lower(&qbf_encoding)?;
 
     // Headers at the top
     let mut lines: Vec<String> = vec!["#QCIR-G14".into()];
@@ -282,7 +275,7 @@ pub fn to_qcir_string(
     lines.extend(b.gate_defs().iter().cloned());
 
     // footer, print variable map
-    let mut entries: Vec<_> = b.var_map().iter().collect();
+    // let mut entries: Vec<_> = b.var_map().iter().collect();
     Ok(lines.join("\n"))
 }
 
@@ -304,14 +297,14 @@ pub fn to_async_qcir_string(
             Expression::And(Box::new(init.clone()), Box::new(body.clone()))
         })
         .collect::<Vec<Expression>>();
-    let QBF_encoding = build_async_QBF(&prefix, &models, &formula_expr, &traj_prefix).unwrap();
+    let qbf_encoding = build_async_qbf(&prefix, &models, &formula_expr, &traj_prefix).unwrap();
     // Initiate QcirBuilder
     let mut b = QcirBuilder::new();
 
     // b.debug = true; // <--- uncomment this to see VAR name inlined!
 
     // Lower the expression 
-    let out = b.lower(&QBF_encoding)?;
+    let out = b.lower(&qbf_encoding)?;
 
     // PATCH: make sure elements in traj formulas are recorded
     for (_q, vars) in traj_prefix {
@@ -367,7 +360,7 @@ pub fn to_async_qcir_string(
     lines.extend(b.gate_defs().iter().cloned());
 
     // footer, print variable map
-    let mut entries: Vec<_> = b.var_map().iter().collect();
+    // let mut entries: Vec<_> = b.var_map().iter().collect();
     Ok(lines.join("\n"))
 }
 //
@@ -457,16 +450,16 @@ fn instantiate_once(expr: &Expression, path: &str, i: usize) -> Expression {
 }
 
 /// Build ∧_{i=0}^{k-1} instantiate_once(expr, PATH, i).
-fn unroll_on_path(expr: &Expression, path: &str, k: usize) -> Expression {
-    if k == 0 { return Expression::True; }
-    let mut clauses = Vec::with_capacity(k);
-    for i in 0..k {
-        clauses.push(Box::new(instantiate_once(expr, path, i)));
-    }
-    if clauses.len() == 1 { 
-        *clauses.into_iter().next().unwrap() 
-    } else { Expression::MAnd(clauses) }
-}
+// fn unroll_on_path(expr: &Expression, path: &str, k: usize) -> Expression {
+//     if k == 0 { return Expression::True; }
+//     let mut clauses = Vec::with_capacity(k);
+//     for i in 0..k {
+//         clauses.push(Box::new(instantiate_once(expr, path, i)));
+//     }
+//     if clauses.len() == 1 { 
+//         *clauses.into_iter().next().unwrap() 
+//     } else { Expression::MAnd(clauses) }
+// }
 
 /// Unroll `expr` along `path` for k steps, substituting predicates to a fixpoint
 pub fn unroll_on_path_with_preds(
@@ -510,12 +503,12 @@ pub fn collect_vars_unique(e: &Expression, acc: &mut HashSet<Variable>) {
     }
 }
 
-fn join_ids_debug(b: &QcirBuilder, ids: &[usize]) -> String {
-    ids.iter()
-        .map(|&id| b.fmt_atom(id))   // use name if debug, else gN
-        .collect::<Vec<_>>()
-        .join(", ")
-}
+// fn join_ids_debug(b: &QcirBuilder, ids: &[usize]) -> String {
+//     ids.iter()
+//         .map(|&id| b.fmt_atom(id))   // use name if debug, else gN
+//         .collect::<Vec<_>>()
+//         .join(", ")
+// }
 //
 // ---------- Combined: unrolling + QCIR emission ----------
 //
@@ -566,7 +559,7 @@ pub fn to_qcir_unrolled(
         let p_idx = if n_p == 1 { 0 } else { i };
 
         let (init, trans) = &transitions[t_idx];
-        let (q, path) = &path_prefixes[p_idx];
+        let (_q, path) = &path_prefixes[p_idx];
         // let pred = &predicates[i].clone();
 
         // println!("trans: {:?}", expression_to_string(trans));
@@ -685,7 +678,7 @@ pub fn to_qcir_unrolled_ahltl(
         let p_idx = if n_p == 1 { 0 } else { i };
 
         let (init, trans) = &transitions[t_idx];
-        let (q, path) = &path_prefixes[p_idx];
+        let (_q, path) = &path_prefixes[p_idx];
         // let pred = &predicates[i].clone();
         // Unroll this transition on this path
         let init_expr = build_init_expr(init, &path);
@@ -860,7 +853,7 @@ pub fn build_init_expr(expr: &Expression, path: &str) -> Expression {
 
 
 // prefix: &[(Quant, Vec<Variable>)]
-pub fn build_QBF(
+pub fn build_qbf(
     prefix: &[(Quant, Vec<Variable>)], 
     models: &[Expression], 
     formula: &Expression
@@ -903,11 +896,11 @@ pub fn build_QBF(
 /// - Uses implication for `Forall`, conjunction for `Exists` (as in your original).
 /// - If lengths don’t match perfectly, we fold up to `min(prefix.len(), model_blocks.len()+traj_blocks.len())`.
 // prefix: &[(Quant, Vec<Variable>)]
-pub fn build_async_QBF(
+pub fn build_async_qbf(
     prefix: &[(Quant, Vec<Variable>)], 
     models: &[Expression], 
     formula: &Expression,
-    pos_prefix: &[(Quant, Vec<Variable>)],
+    _pos_prefix: &[(Quant, Vec<Variable>)],
 ) -> Option<Expression> {
     // append formula to the models list
     let mut acc = formula.clone();

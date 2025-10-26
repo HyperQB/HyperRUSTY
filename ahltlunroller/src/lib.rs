@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use ir::*;
 use enchelper::*;
-use z3::{Context,
+use z3::{
     ast::{
-        Ast, Dynamic, Bool, Int,
+        Ast, Bool, Int,
     }
 };
 use parser::{
@@ -300,7 +300,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
         let inner = inner_ltl(self.formula);
 
         // Structure-based construction of the inner encoding
-        if is_E(self.formula) {
+        if is_e(self.formula) {
             let mut lhs_constraints = Vec::with_capacity(self.m + 1);
             for j in 0..=self.m {
                 lhs_constraints.push(self.moves(j, None));
@@ -309,7 +309,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             let lhs = Bool::and(self.envs[0].ctx, &refs);
             return lhs & self.shared_semantics(inner, 0);
         
-        }else if is_A(self.formula) {
+        }else if is_a(self.formula) {
             let mut lhs_constraints = Vec::with_capacity(self.m + 1);
             for j in 0..=self.m {
                 lhs_constraints.push(self.moves(j, None));
@@ -318,13 +318,13 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             let lhs = Bool::and(self.envs[0].ctx, &refs);
             return Bool::implies(&lhs, &self.shared_semantics(inner, 0));
         
-        }else if is_AE(self.formula) {
-            let trajs_A = get_forall_trajs(self.formula);
-            let trajs_E = get_exists_trajs(self.formula);
+        }else if is_ae(self.formula) {
+            let trajs_a = get_forall_trajs(self.formula);
+            let trajs_e = get_exists_trajs(self.formula);
             
             let mut lhs_const = Vec::with_capacity(self.m + 1);
             for j in 0..=self.m {
-                lhs_const.push(self.moves(j, Some(&trajs_A)));
+                lhs_const.push(self.moves(j, Some(&trajs_a)));
             }
             let lhs_refs: Vec<&Bool> = lhs_const.iter().collect();
             let lhs = Bool::and(self.envs[0].ctx, &lhs_refs);
@@ -333,8 +333,8 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             for j in 0..=self.m {
                 rhs_const.push(
                     Bool::implies(
-                        &self.halted(j, Some(&trajs_A)),
-                        &self.moves(j, Some(&trajs_E))
+                        &self.halted(j, Some(&trajs_a)),
+                        &self.moves(j, Some(&trajs_e))
                     )
                 );
             }
@@ -343,13 +343,13 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             let rhs = Bool::and(self.envs[0].ctx, &rhs_refs);
             Bool::implies(&lhs, &rhs)
             
-        }else if is_EA(self.formula) {
-            let trajs_A = get_forall_trajs(self.formula);
-            let trajs_E = get_exists_trajs(self.formula);
+        }else if is_ea(self.formula) {
+            let trajs_a = get_forall_trajs(self.formula);
+            let trajs_e = get_exists_trajs(self.formula);
             
             let mut lhs_const = Vec::with_capacity(self.m + 1);
             for j in 0..=self.m {
-                lhs_const.push(self.moves(j, Some(&trajs_E)));
+                lhs_const.push(self.moves(j, Some(&trajs_e)));
             }
             let lhs_refs: Vec<&Bool> = lhs_const.iter().collect();
             let lhs = Bool::and(self.envs[0].ctx, &lhs_refs);
@@ -358,8 +358,8 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             for j in 0..=self.m {
                 rhs_const.push(
                     Bool::implies(
-                        &self.halted(j, Some(&trajs_E)),
-                        &self.moves(j, Some(&trajs_A))
+                        &self.halted(j, Some(&trajs_e)),
+                        &self.moves(j, Some(&trajs_a))
                     )
                 );
             }
@@ -369,7 +369,7 @@ impl<'env, 'ctx> AHLTLObject<'env, 'ctx> {
             lhs & rhs
 
         }else {
-            panic!("Invalid trajectory quantifier types. Check you formula.");
+            panic!("Invalid trajectory quantifier types. Check your formula.");
         }
     }
 

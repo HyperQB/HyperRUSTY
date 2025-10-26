@@ -175,73 +175,73 @@ pub fn get_forall_trajs(formula: &AstNode) -> Vec<&str> {
 }
 
 // Checks whether the formula has only existential trajectory quantifiers
-pub fn is_E(formula: &AstNode) -> bool {
+pub fn is_e(formula: &AstNode) -> bool {
     match formula {
         AstNode::AAQuantifier{identifier:_, form:_} => false,
         AstNode::HAQuantifier{identifier:_, form} |
         AstNode::HEQuantifier{identifier:_, form} |
-        AstNode::AEQuantifier{identifier:_, form} => is_E(form),
+        AstNode::AEQuantifier{identifier:_, form} => is_e(form),
         _ => true
     }
 }
 
 // Checks whether the formula has only universal trajectory quantifiers
-pub fn is_A(formula: &AstNode) -> bool {
+pub fn is_a(formula: &AstNode) -> bool {
     match formula {
         AstNode::AEQuantifier{identifier:_, form:_} => false,
         AstNode::HAQuantifier{identifier:_, form} |
         AstNode::HEQuantifier{identifier:_, form} |
-        AstNode::AAQuantifier{identifier:_, form} => is_A(form),
+        AstNode::AAQuantifier{identifier:_, form} => is_a(form),
         _ => true
     }
 }
 
 // Checks whether the formula's trajectory quantifiers are AE
 // There needs to be more than 1 quantifiers
-pub fn is_AE(formula: &AstNode) -> bool {
+pub fn is_ae(formula: &AstNode) -> bool {
     // If the formula consists of only one quantifier, reject
-    if is_A(formula) | is_E(formula) {
+    if is_a(formula) | is_e(formula) {
         return false;
     }
-    check_AE_rec(formula)
+    check_ae_rec(formula)
 }
 
-fn check_AE_rec(formula: &AstNode) -> bool {
+fn check_ae_rec(formula: &AstNode) -> bool {
     match formula {
         AstNode::AEQuantifier{identifier:_, form} => {
             match &**form {
                 AstNode::AAQuantifier{identifier:_, form:_} => false,
-                _ => check_AE_rec(form),
+                _ => check_ae_rec(form),
             }
         },
         AstNode::HAQuantifier{identifier:_, form} |
         AstNode::HEQuantifier{identifier:_, form} |
-        AstNode::AAQuantifier{identifier:_, form} => check_AE_rec(form),
+        AstNode::AAQuantifier{identifier:_, form} => check_ae_rec(form),
         _ => true
     }
 }
 
 // Checks whether the formula's trajectory quantifiers are EA
 // There needs to be more than 1 quantifiers
-pub fn is_EA(formula: &AstNode) -> bool {
+pub fn is_ea(formula: &AstNode) -> bool {
     // If the formula consists of only one quantifier, reject
-    if is_A(formula) | is_E(formula) {
+    if is_a(formula) | is_e(formula) {
         return false;
     }
-    check_EA_rec(formula)
+    check_ea_rec(formula)
 }
 
-fn check_EA_rec(formula: &AstNode) -> bool {
+fn check_ea_rec(formula: &AstNode) -> bool {
     match formula {
         AstNode::AAQuantifier{identifier:_, form} => {
             match &**form {
                 AstNode::AEQuantifier{identifier:_, form:_} => false,
-                _ => check_EA_rec(form),
+                _ => check_ea_rec(form),
             }
         },
         AstNode::HAQuantifier{identifier:_, form} |
         AstNode::HEQuantifier{identifier:_, form} |
-        AstNode::AEQuantifier{identifier:_, form} => check_EA_rec(form),
+        AstNode::AEQuantifier{identifier:_, form} => check_ea_rec(form),
         _ => true
     }
 }
@@ -284,7 +284,7 @@ pub fn strip_leading_existentials(formula: &AstNode) -> &AstNode {
     match formula {
         AstNode::HEQuantifier {form, ..} => strip_leading_existentials(form),
         AstNode::AEQuantifier {form, ..} => strip_leading_existentials(form),
-        other => formula
+        _ => formula
     }
 }
 

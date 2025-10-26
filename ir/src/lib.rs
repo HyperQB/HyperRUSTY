@@ -8,7 +8,6 @@ use z3::{
     Context,
 };
 use std::collections::{HashMap, VecDeque};
-use z3::{Solver, SatResult};
 
 
 #[macro_use]
@@ -74,7 +73,7 @@ pub struct SMVEnv<'ctx> {
 
 // Milad: I need this (???)
 impl<'ctx> ReturnType<'ctx> {
-    pub fn into_dynamic(self, ctx: &'ctx z3::Context, env: &SMVEnv<'ctx>, state: &EnvState<'ctx>, var_name: &str) -> Dynamic<'ctx> {
+    pub fn into_dynamic(self, ctx: &'ctx z3::Context, _env: &SMVEnv<'ctx>, state: &EnvState<'ctx>, var_name: &str) -> Dynamic<'ctx> {
         match self {
             ReturnType::Int(vals) => {
                 let sym = int_var!(state, var_name);
@@ -431,7 +430,7 @@ impl<'ctx> SMVEnv<'ctx> {
     use z3::ast::{Bool, Int, BV};
 
     let mut constraints: Vec<Bool> = Vec::new();
-    let mut change_flags: Vec<Bool> = Vec::new(); // track (next != curr) per variable
+    // let mut change_flags: Vec<Bool> = Vec::new(); // track (next != curr) per variable
 
         for (name, variable) in self.variables.iter() {
             // If transitions have been defined for this variable, build a nested if-expression.
@@ -605,10 +604,10 @@ impl<'ctx> SMVEnv<'ctx> {
         state
     }
 
-    pub fn make_enum_dummy_state(&self, ctx: &'ctx z3::Context, idx: usize, model: usize) -> EnvState<'ctx> {
+    pub fn make_enum_dummy_state(&self, ctx: &'ctx z3::Context, _idx: usize, _model: usize) -> EnvState<'ctx> {
         let mut state: EnvState<'ctx> = IndexMap::new();
         for (name, var) in &self.variables {
-            let base = format!("{name}_{idx}_{model}");
+            // let base = format!("{name}_{idx}_{model}");
             let val = match &var.sort {
                 VarType::Bool { .. } => {
                     let ast = z3::ast::Bool::fresh_const(ctx, name);
@@ -818,7 +817,7 @@ impl<'ctx> SMVEnv<'ctx> {
     ) -> Vec<ConcreteState<'ctx>> {
         use z3::{Solver, SatResult};
         let ctx = self.ctx;
-        let mut solver = Solver::new(ctx);
+        let solver = Solver::new(ctx);
 
         // Scope constraints (domains) — safe to add for both curr and next
         for c in self.generate_scope_constraints_for_state(curr_sym) { solver.assert(&c); }
@@ -854,7 +853,7 @@ impl<'ctx> SMVEnv<'ctx> {
                                 let ConcreteVal::I(n) = next_conc.get(name).unwrap() else { unreachable!() };
                                 disj.push(v._eq(&Int::from_i64(ctx, *n)).not());
                             }
-                            VarType::BVector { width, .. } => {
+                            VarType::BVector { .. } => {
                                 let v = bv_var!(next_sym, name);
                                 let ConcreteVal::BV(n, w) = next_conc.get(name).unwrap() else { unreachable!() };
                                 disj.push(v._eq(&BV::from_i64(ctx, *n, *w)).not());
@@ -905,7 +904,7 @@ impl<'ctx> SMVEnv<'ctx> {
         let ctx = self.ctx;
         let curr = &sym[0];
 
-        let mut solver = Solver::new(ctx);
+        let solver = Solver::new(ctx);
         for c in self.generate_scope_constraints_for_state(curr) { solver.assert(&c); }
         for c in self.generate_initial_constraints_for_state(sym, 0) { solver.assert(&c); }
 
@@ -948,7 +947,7 @@ impl<'ctx> SMVEnv<'ctx> {
                                 let ConcreteVal::I(n) = conc.get(name).unwrap() else { unreachable!() };
                                 disj.push(v._eq(&z3::ast::Int::from_i64(ctx, *n)).not());
                             }
-                            VarType::BVector { width, .. } => {
+                            VarType::BVector { .. } => {
                                 let v = bv_var!(curr, name);
                                 let ConcreteVal::BV(n, w) = conc.get(name).unwrap() else { unreachable!() };
                                 disj.push(v._eq(&z3::ast::BV::from_i64(ctx, *n, *w)).not());
@@ -989,7 +988,7 @@ impl<'ctx> SMVEnv<'ctx> {
         let mut enqueued: Vec<bool> = Vec::new();
 
         // Helper that DOES NOT capture outer &muts; we pass them in
-        let mut add_node = |order: &mut Vec<ConcreteState<'ctx>>,
+        let add_node = |order: &mut Vec<ConcreteState<'ctx>>,
                             key_to_idx: &mut HashMap<Vec<ConcreteVal>, usize>,
                             adjacency: &mut Vec<Vec<bool>>,
                             expanded: &mut Vec<bool>,

@@ -1,7 +1,5 @@
-use crate::definitions::*;
 use std::collections::HashMap;
 use z3::ast::{Ast, Bool};
-use z3::Symbol;
 use crate::Expression;
 use crate::Literal;
 
@@ -33,9 +31,9 @@ impl<'a> Parser<'a> {
     fn new(s: &'a str) -> Self { Self { s: s.as_bytes(), i: 0 } }
     fn eof(&self) -> bool { self.i >= self.s.len() }
     fn peek(&self) -> Option<u8> { self.s.get(self.i).copied() }
-    fn bump(&mut self) -> Option<u8> {
-        if self.eof() { None } else { let c = self.s[self.i]; self.i += 1; Some(c) }
-    }
+    // fn bump(&mut self) -> Option<u8> {
+    //     if self.eof() { None } else { let c = self.s[self.i]; self.i += 1; Some(c) }
+    // }
     fn skip_ws(&mut self) { while matches!(self.peek(), Some(b' ' | b'\t' | b'\n' | b'\r')) { self.i += 1; } }
 
     // ---------- lexical helpers ----------
@@ -261,13 +259,12 @@ pub fn blast_bits(var_name: &str, state_num: i32, max_b: i32, bracket: &str) -> 
     let mut bit_vector: Vec<String> = Vec::new();
     let mut bit = String::new();
     let mut max_bit = String::new();
-    let mut var = String::new();
     let mut state = state_num.clone();
     let mut max = max_b.clone();
     
     while state != 0 {
         let r = if state % 2 == 0 { "0" } else { "1" };
-        var = format!("{}_{}_{}", var_name, bit_order, bracket);
+        let var = format!("{}_{}_{}", var_name, bit_order, bracket);
         if r == "0" {
             bit_vector.push(format!("~{}", var));
         } else {
@@ -288,7 +285,7 @@ pub fn blast_bits(var_name: &str, state_num: i32, max_b: i32, bracket: &str) -> 
     }
     
     while max_bit_order != bit_order {
-        var = format!("{}_{}_{}", var_name, bit_order, bracket);
+        let var = format!("{}_{}_{}", var_name, bit_order, bracket);
         bit_vector.push(format!("~{}", var));
         bit_order += 1;
         // println!("3");

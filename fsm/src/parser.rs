@@ -1,6 +1,5 @@
 use std::any::{Any};
 use expressions::{Expression, Literal};
-use expressions::expression_to_string;
 use std::collections::HashMap;
 use std::fmt::Write as FmtWrite;
 use crate::symbol_map::SymbolMap;
@@ -76,9 +75,9 @@ impl Parser<'_>{
         }
     }
 
-    fn get_expression(&self) -> Box<Expression> {
-        self.expression.clone()
-    }
+    // fn get_expression(&self) -> Box<Expression> {
+    //     self.expression.clone()
+    // }
 
     /// Function takes output from a layer in the create_gates function and then checks edge cases
     ///
@@ -311,7 +310,7 @@ impl Parser<'_>{
         // Run the recursive function and then output it
         let mut gates = vec![];
         for i in 0..self.layers {
-            let mut neg : bool;
+            let neg : bool;
             let max;
             (max, neg) = recursive_gate_print(&mut self.max_gate_number, expression, &mut symbol_map, i, output_string, self.debug, self.model_map, &self.logger);
             // If the layer only goes up by one, then it was just a single gate so it wasn't printed
@@ -534,7 +533,7 @@ impl Parser<'_>{
             //     return (output, right_gate_num, neg);
             // }
             _ => {
-                let test = expression_to_string(expression);
+                // let test = expression_to_string(expression);
                 // println!("Test: {:?}", test);
                 unreachable!("Shouldn't have gotten here")}
         }
@@ -544,7 +543,7 @@ impl Parser<'_>{
     pub fn ltl_parser(&mut self) -> (String, i32, bool) {
         // Now run to get the gates it will use
         let expression = &*self.expression.clone();
-        let test = expression_to_string(expression);
+        // let test = expression_to_string(expression);
         // println!("Test: {:?}", test);
         return self.process_g_expressions(expression, &mut false);
     }

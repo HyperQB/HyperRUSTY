@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::Write as FmtWrite;
 use crate::symbol_map::SymbolMap;
-use stacker;
 use logging::{Logger};
 use crate::parser::split_on_value;
 
@@ -18,9 +17,9 @@ use crate::parser::split_on_value;
 /// * `index` - The current index in the association vector
 pub struct Encoder<'a> {
     layers: i32,
-    models: i32,
-    association: HashMap<i32,Vec<((i32, i32, String))>>,
-    index: i32,
+    // models: i32,
+    association: HashMap<i32,Vec<(i32, i32, String)>>,
+    // index: i32,
     symbol_map: &'a mut SymbolMap
 
 }
@@ -31,12 +30,12 @@ impl Encoder<'_> {
     /// # Arguments
     /// * `layers` - The number of layers
     /// * `models` - The number of models
-    pub fn new(layers: i32, models: i32, symbol_map: &mut SymbolMap) -> Encoder {
+    pub fn new(layers: i32, _models: i32, symbol_map: &mut SymbolMap) -> Encoder {
         Encoder {
             layers,
-            models,
+            // models,
             association: HashMap::new(),
-            index: 0,
+            // index: 0,
             symbol_map
         }
     }
@@ -47,7 +46,7 @@ impl Encoder<'_> {
             let mut association_vec: Vec<(i32, i32, String)> = Vec::new();
             let helpers = self.symbol_map.helper_variables.get(&model).unwrap();
             for helper in helpers{
-                let (mut name, mut layer) = split_on_value(helper, '_');
+                let (name, layer) = split_on_value(helper, '_');
                 if layer != "0" {
                     continue
                 }
@@ -62,17 +61,17 @@ impl Encoder<'_> {
     }
 
     /// prints the association vector
-    pub fn print_association(&self) {
-        for (model, vec) in &self.association {
-            // println!("Model: {}", model);
-            for (helper, real, name) in vec {
-                // println!("Helper: {}, Real: {}, Name: {}", helper, real, name);
-            }
-        }
-    }
+    // pub fn print_association(&self) {
+    //     for (model, vec) in &self.association {
+    //         // println!("Model: {}", model);
+    //         for (helper, real, name) in vec {
+    //             // println!("Helper: {}, Real: {}, Name: {}", helper, real, name);
+    //         }
+    //     }
+    // }
 
     /// builds the association gates
-    pub fn build_association_gates(&self, logger: &Logger, max_gate_number: &mut i32, output: &mut String, T_gate: &i32) {
+    pub fn build_association_gates(&self, logger: &Logger, max_gate_number: &mut i32, output: &mut String, t_gate: &i32) {
         /*
         We have T(v,v') so now build the rest of the model
         ((x_pre <-> x[0]) /\ (x_post <-> x[1])) \/
@@ -117,7 +116,7 @@ impl Encoder<'_> {
             write!(output, "{} = or({})\n", *max_gate_number+1, variable_gates.iter().map(|gate| gate.to_string()).collect::<Vec<String>>().join(",")).unwrap();
             *max_gate_number += 1;
             // now we do the implication
-            write!(output, "{} = or({},{})\n", *max_gate_number+1, -*max_gate_number, T_gate).unwrap();
+            write!(output, "{} = or({},{})\n", *max_gate_number+1, -*max_gate_number, t_gate).unwrap();
             *max_gate_number += 1;
             write!(output, "# Ending association gates for model {}\n", self.symbol_map.model);
         } else{
@@ -148,7 +147,7 @@ impl Encoder<'_> {
             write!(output, "g{} = or({})\n", *max_gate_number+1, variable_gates.iter().map(|gate| format!("g{}", gate)).collect::<Vec<String>>().join(",")).unwrap();
             *max_gate_number += 1;
             // now we do the implication
-            write!(output, "g{} = or({},g{})\n", *max_gate_number+1, format!("-g{}",*max_gate_number), T_gate).unwrap();
+            write!(output, "g{} = or({},g{})\n", *max_gate_number+1, format!("-g{}",*max_gate_number), t_gate).unwrap();
             *max_gate_number += 1;
             write!(output, "# Ending association gates for model {}\n", self.symbol_map.model);
         }

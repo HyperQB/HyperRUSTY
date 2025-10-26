@@ -1,3 +1,4 @@
+#![allow(suspicious_double_ref_op)]
 use z3::{
     ast::{
         Ast, Bool, Dynamic, 
@@ -6,8 +7,7 @@ use z3::{
     Context, Model,
 };
 use std::collections::{HashMap, HashSet};
-use std::ffi::{CString, CStr};
-use indexmap::IndexMap;
+use std::ffi::{CString};
 use ahltlunroller::*;
 
 use hltlunroller::*;
@@ -15,7 +15,6 @@ use regex::Regex;
 use enchelper::*;
 use parser::*;
 use z3_sys::*;
-use std::ptr;
 use ir::*;
 
 mod verilog_helper;
@@ -352,7 +351,7 @@ pub fn get_verilog_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, models: &
         // Record current path encoding
         path_constraints.push(d.clone());
         // create unrolled states from AST
-        let (unrolled_states, quantified_vars) = verilog_helper::unrolled_states_from_Z3_ast(&d, &var_mapping[idx], k);
+        let (unrolled_states, quantified_vars) = verilog_helper::unrolled_states_from_z3_ast(&d, &var_mapping[idx], k);
         // Record current states
         states.push(unrolled_states);
         // record bounded variables

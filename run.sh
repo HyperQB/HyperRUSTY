@@ -7,7 +7,7 @@
 #=== BAKERY ===#
 
 # echo "bakery 3"
-# cargo run --release -- -n benchmarks/1_bakery/bakery.smv benchmarks/1_bakery/bakery.smv -f benchmarks/1_bakery/symmetry.hq -k 10 -s hpes
+# cargo run --release -- -n benchmarks/sync/1_bakery/bakery.smv benchmarks/sync/1_bakery/bakery.smv -f benchmarks/sync/1_bakery/symmetry.hq -k 10 -s hpes
 
 # echo "AutoHyper"
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/1_bakery/bakery.smv benchmarks/AH_formulas/1.1.hq
@@ -375,7 +375,7 @@
 
 # cargo run --release -- -n benchmarks/loop_conditions/robust_path_planning/rp_1_no_sol.smv benchmarks/loop_conditions/robust_path_planning/rp_2.smv -f benchmarks/loop_conditions/robust_path_planning/rp.hq -l
 
- cargo run --release -- -n benchmarks/loop_conditions/simple_loop/simple_loop1.smv benchmarks/loop_conditions/simple_loop/simple_loop2.smv -f benchmarks/loop_conditions/simple_loop/simple_loop.hq -l
+#  cargo run --release -- -n benchmarks/loop_conditions/simple_loop/simple_loop1.smv benchmarks/loop_conditions/simple_loop/simple_loop2.smv -f benchmarks/loop_conditions/simple_loop/simple_loop.hq -l
 
 # cargo run --release -- -n benchmarks/loop_conditions/test_loop/rs1.smv benchmarks/loop_conditions/test_loop/rs2.smv -f benchmarks/loop_conditions/test_loop/rs.hq -l
 

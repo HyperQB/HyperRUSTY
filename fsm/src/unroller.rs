@@ -25,9 +25,9 @@ pub fn legacy_unwrap(   expression: Vec<(String,String)>,
     let mut symbol_map = SymbolMap::new(expression.len() as i32, layers);
     symbol_map.setup_model_map(quantifiers);
     let mut model_map: Vec<(String, i32)> = Vec::new();
-    let mut max_gate_number = 0;
-    let mut conjunction_list: Vec<i32>;
-    let mut output_str = String::new();
+    let max_gate_number = 0;
+    // let mut conjunction_list: Vec<i32>;
+    // let mut output_str = String::new();
 
     for (initial, transitions) in expression {
         // println!("\nINIT:  {}", initial);
@@ -43,7 +43,7 @@ pub fn legacy_unwrap(   expression: Vec<(String,String)>,
         //logger.log(&*format!("The fsm is: {:?}", fsm), 1);
         // output is (output_string, max_gate_number, symbol_map) for that model
         logger.log("Starting create gates from cdf", 1);
-        (output_str, max_gate_number, conjunction_list) = create_gates_from_cdf(&fsm, logger, max_gate_number, layers, &mut symbol_map);
+        let (output_str, max_gate_number, _conjunction_list) = create_gates_from_cdf(&fsm, logger, max_gate_number, layers, &mut symbol_map);
         symbol_map.model += 1;
         model_map.push((output_str, max_gate_number));
 
@@ -88,15 +88,15 @@ pub fn unwrap(  expression: Vec<Box<Expression>>,
     // add the models from quantifiers to the symbol map
     symbol_map.setup_model_map(quantifiers);
 
-    let mut output_str;
     let mut model_map: Vec<(String, i32)> = Vec::new();
-    let mut max_gate_number = 0;
-    let mut conjunction_list: Vec<i32>;
+    // let mut output_str;
+    let max_gate_number = 0;
+    // let mut conjunction_list: Vec<i32>;
     for expr in expression {
         let fsm = expr.clone();
 
         // output is (output_string, max_gate_number, symbol_map) for that model
-        (output_str, max_gate_number, conjunction_list) = create_gates_from_cdf(&fsm, logger, max_gate_number, layers, &mut symbol_map);
+        let (output_str, max_gate_number, _conjunction_list) = create_gates_from_cdf(&fsm, logger, max_gate_number, layers, &mut symbol_map);
         symbol_map.model += 1;
         model_map.push((output_str, max_gate_number));
     }
@@ -135,10 +135,10 @@ pub fn encoding_unroll(     expression: Vec<(String, String)>,
     // println!("Encoding unroll");
     let mut symbol_map = SymbolMap::new(expression.len() as i32, layers);
     symbol_map.setup_model_map(quantifiers);
-    let mut output_str = String::new();
     let mut model_map: Vec<(String, i32)> = Vec::new();
+    // let mut output_str = String::new();
     let mut max_gate_number = 0;
-    let mut c_list: Vec<i32>;
+    // let mut c_list: Vec<i32>;
 
     // This is the model to apply encoding to if we specified it
     let mut model_mum = -1;
@@ -156,7 +156,7 @@ pub fn encoding_unroll(     expression: Vec<(String, String)>,
             let fsm = input_to_expression_optimized(&express, &layers, &mut symbol_map, &mut max_gate_number);
 
             // Note that the max_gate_number here is the T(v,v') gate number to be used in encoding
-            (output_str, max_gate_number, c_list) = create_gates_from_cdf(&fsm, logger, max_gate_number, 1, &mut symbol_map);
+            let (mut output_str, mut max_gate_number, c_list) = create_gates_from_cdf(&fsm, logger, max_gate_number, 1, &mut symbol_map);
             let transition_gate = c_list[0];
             let mut encoder = crate::encoder::Encoder::new(layers, 1, &mut symbol_map);
             encoder.build_association();
@@ -178,7 +178,7 @@ pub fn encoding_unroll(     expression: Vec<(String, String)>,
             let fsm = input_to_expression(&express);
             // output is (output_string, max_gate_number, symbol_map) for that model
             logger.log("Starting create gates from cdf", 1);
-            (output_str, max_gate_number, c_list) = create_gates_from_cdf(&fsm, logger, max_gate_number, layers, &mut symbol_map);
+            let (output_str, max_gate_number, _) = create_gates_from_cdf(&fsm, logger, max_gate_number, layers, &mut symbol_map);
             symbol_map.model += 1;
             model_map.push((output_str, max_gate_number));
 

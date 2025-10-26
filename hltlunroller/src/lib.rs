@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use ir::*;
 use enchelper::{Semantics, create_path_mapping, inner_ltl};
-use z3::{Context,
+use z3::{
     ast::{
         Ast, Dynamic, Bool, Int, BV,
     }
@@ -26,7 +26,7 @@ impl<'ctx> UnrollingReturn<'ctx> {
 }
 
 pub fn unroll_hltl_formula<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, formula: &AstNode, paths: &Vec<Vec<EnvState<'ctx>>>, sem: &Semantics) -> Bool<'ctx> {
-    let ctx = envs[0].ctx;
+    let _ctx = envs[0].ctx;
     // Create a mapping from path quantifiers to the relevent state
     let mapping = create_path_mapping(formula, 0);
     // Sanity check

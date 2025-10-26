@@ -28,14 +28,21 @@ use clap::{arg, value_parser, ArgGroup, Command};
 fn main() {
 
     //clap setup
-    let cli = Command::new("hyperqb")
+    let mut cli = Command::new("HyperQB 2.0")
+        .override_usage(
+            "\nhyperqb -f <FORMULA> -v <FILE>... -t <TOP_MODULE> -o <SMT2_FILE> -l\n\
+            hyperqb -f <FORMULA> -v <FILE>... -t <TOP_MODULE> -o <SMT2_FILE> -k <K> -s <SEM> [-m <B>] [-c] [-q]\n\
+            hyperqb -f <FORMULA> -n <FILE>... -l\n\
+            hyperqb -f <FORMULA> -n <FILE>... -k <K> -s <SEM> [-m <B>] [-c] [-q]"
+        )
         .arg(
             arg!(
                 -v --verilog <FILE> "Yosys build file"
             )
             .required(false)
             .num_args(1..)
-            .value_parser(value_parser!(PathBuf)),
+            .value_parser(value_parser!(PathBuf))
+            .requires_all(&["top", "yosys_output"]) // if -v, require -t and -o
         )
         .arg(
             arg!(
@@ -56,41 +63,48 @@ fn main() {
             arg!(
                 -k --unrolling_bound <FILE> "Unrolling bound"
             )
-            .required(false)  // Changed from true to false
-            .value_parser(value_parser!(usize)),
+            .required(false)
+            .value_parser(value_parser!(usize))
+            .requires("semantics") // if -k, must have -s; -m is optional
+            .conflicts_with("loop_conditions") // -k vs -l
         )
         .arg(
             arg!(
-                -s --semantics <FILE> "Choice of semantics"
+                -s --semantics <FILE> "Choice of semantics (pes, opt, hpes, hopt)"
             )
-            .required(false)  // Changed from true to false
-            .value_parser(value_parser!(String)),
+            .required(false)
+            .value_parser(value_parser!(String))
+            .conflicts_with("loop_conditions") // -s not with -l
         )
         .arg(
             arg!(
                 -c --counterexample "Generates counterexample if formula is unsat"
             )
             .required(false)
+            .conflicts_with("loop_conditions") // -c only in unroll mode
         )
         .arg(
             arg!(
                 -l --loop_conditions "Use loop conditions instead of unrolling"
             )
             .required(false)
-            .action(clap::ArgAction::SetTrue),
+            .action(clap::ArgAction::SetTrue)
+            .conflicts_with_all(&["unrolling_bound","semantics","trajectory_bound","counterexample","qbf_solver"])
         )
         .arg(
             arg!(
                 -m --trajectory_bound <FILE> "Trajectory bound"
             )
             .required(false)
-            .value_parser(value_parser!(usize)),
+            .value_parser(value_parser!(usize))
+            .conflicts_with("loop_conditions") // -m only in unroll mode
         )
         .arg(
             arg!(
                 -q --qbf_solver "Use QBF solver (default is Z3)"
             )
             .required(false)
+            .conflicts_with("loop_conditions") // -q only in unroll mode
         )
         .arg(
             arg!(
@@ -107,12 +121,19 @@ fn main() {
             .required(false)
             .value_parser(value_parser!(PathBuf)),
         )
-        .group(ArgGroup::new("input")
-            .args(["verilog", "nusmv"])
-            .required(true)
-            .multiple(false)
+        .group(
+            ArgGroup::new("input")
+                .args(["verilog", "nusmv"])
+                .required(true)
+                .multiple(false)
+        )
+        // exactly one mode: either -l OR -k (and -k implies -s via requires above)
+        .group(
+            ArgGroup::new("mode")
+                .args(["loop_conditions", "unrolling_bound"])
+                .required(true)
+                .multiple(false)
         );
-
     let matches = cli.get_matches();
     let use_loop_conditions = matches.get_flag("loop_conditions");
     let mut unrolling_bound : usize = 0;

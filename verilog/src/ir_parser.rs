@@ -13,7 +13,7 @@ enum SExp { Atom(String), List(Vec<SExp>) }
 enum Sort { Bool, Int, BV(u32) }
 
 #[derive(Clone, Debug)]
-enum Expr {
+pub enum Expr {
     Sym(String),
     BoolConst(bool),
     IntConst(i64),
@@ -67,9 +67,9 @@ enum Expr {
 }
 
 #[derive(Clone, Debug)]
-struct FnDef {
+pub struct FnDef {
     params: Vec<(String, Sort)>,
-    ret: Sort,
+    _ret: Sort,
     body: Expr,
 }
 
@@ -370,8 +370,6 @@ fn subst_expr(e: &Expr, sub: &IndexMap<String, Expr>) -> Expr {
         Expr::Not(x)    => Expr::Not(Box::new(subst_expr(x, sub))),
         Expr::Xor(xs)   => Expr::Xor(xs.iter().map(|x| subst_expr(x, sub)).collect()),
         Expr::BVXor(xs) => Expr::BVXor(xs.iter().map(|x| subst_expr(x, sub)).collect()),
-        Expr::Xor(xs)     => Expr::Xor(xs.iter().map(|x| subst_expr(x, sub)).collect()),
-        Expr::BVXor(xs)   => Expr::BVXor(xs.iter().map(|x| subst_expr(x, sub)).collect()),
 
         Expr::BVAnd(xs)   => Expr::BVAnd(xs.iter().map(|x| subst_expr(x, sub)).collect()),
         Expr::BVOr(xs)    => Expr::BVOr(xs.iter().map(|x| subst_expr(x, sub)).collect()),
@@ -701,7 +699,7 @@ pub fn build_env_from_flat_smt<'ctx>(ctx: &'ctx Context, smt: &str) -> Result<SM
     let sexps = parse_sexps(smt)?;
 
     struct Decl { name: String, sort: Sort }
-    struct NextDef { var: String, ret: Sort, body: Expr }
+    struct NextDef { var: String, _ret: Sort, body: Expr }
     struct InitDef { var: String, ret: Sort, body: Expr }
 
     let mut decls: Vec<Decl> = Vec::new();
@@ -742,12 +740,12 @@ pub fn build_env_from_flat_smt<'ctx>(ctx: &'ctx Context, smt: &str) -> Result<SM
                 let body = parse_expr(&items[4])?;
 
                 if raw.starts_with("next ") {
-                    nexts.push(NextDef { var: raw["next ".len()..].to_string(), ret, body });
+                    nexts.push(NextDef { var: raw["next ".len()..].to_string(), _ret: ret, body });
                 } else if raw.starts_with("init ") {
                     inits.push(InitDef { var: raw["init ".len()..].to_string(), ret, body });
                 } else {
                     // helper
-                    fns.insert(raw, FnDef { params, ret, body });
+                    fns.insert(raw, FnDef { params, _ret: ret, body });
                 }
             }
             _ => {}
@@ -832,7 +830,7 @@ pub fn build_env_from_flat_smt<'ctx>(ctx: &'ctx Context, smt: &str) -> Result<SM
                         panic!("guard translation failed");
                     }
                 };
-                let g_bool = match g_dyn.as_bool() {
+                let _g_bool = match g_dyn.as_bool() {
                     Some(b) => b,
                     None => {
                         eprintln!(
@@ -843,7 +841,7 @@ pub fn build_env_from_flat_smt<'ctx>(ctx: &'ctx Context, smt: &str) -> Result<SM
                     }
                 };
 
-                let rhs_dyn = match expr_to_ast(&rhs_expr, ctx, &dbg_state) {
+                let _rhs_dyn = match expr_to_ast(&rhs_expr, ctx, &dbg_state) {
                     Ok(x) => x,
                     Err(e) => {
                         eprintln!(
@@ -1324,31 +1322,6 @@ pub fn inline_helpers_memo(
     go(e, fns, memo, 0)
 }
 
-
-//ITE decomposition
-fn collect_ite_pairs_smart(e: &Expr) -> Vec<(Expr, Expr)> {
-    fn go(e: &Expr, path: Expr, out: &mut Vec<(Expr, Expr)>) {
-        match e {
-            Expr::Ite(c, t, f) => {
-                let g_then = simplify_guard(Expr::And(vec![path.clone(), (*c.clone())]));
-                let g_else = simplify_guard(Expr::And(vec![path, Expr::Not(Box::new((*c.clone())))]));
-                if !matches!(g_then, Expr::BoolConst(false)) { go(t, g_then, out); }
-                if !matches!(g_else, Expr::BoolConst(false)) { go(f, g_else, out); }
-            }
-            _ => {
-                let g = simplify_guard(path);
-                if !matches!(g, Expr::BoolConst(false)) {
-                    out.push((g, e.clone()));
-                }
-            }
-        }
-    }
-    let mut out = Vec::new();
-    go(e, Expr::BoolConst(true), &mut out);
-    out
-}
-
-
 use std::collections::{HashMap, HashSet};
 
 /// Fully lift all ITEs out of `e`, returning guarded alternatives whose RHSs
@@ -1356,7 +1329,6 @@ pub fn explode_all_ites_factored(e: &Expr) -> Vec<(Expr, Expr)> {
     const MAX_ROWS: usize = 1 << 14; // 16k; tune if needed
 
     #[inline] fn t() -> Expr { Expr::BoolConst(true) }
-    #[inline] fn f() -> Expr { Expr::BoolConst(false) }
 
     #[inline]
     fn and_guard(a: Expr, b: Expr) -> Expr {

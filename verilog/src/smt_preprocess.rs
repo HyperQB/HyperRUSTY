@@ -1,8 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::env;
-use std::fs;
-use std::io;
-
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum SExpr {
@@ -113,7 +109,7 @@ struct FunDef {
 #[derive(Clone, Debug)]
 struct ModuleState {
     sort_symbol: String,
-    ctor: String,
+    _ctor: String,
     fields: Vec<(String, Sort)>,
 }
 
@@ -167,7 +163,7 @@ fn parse_declare_datatype(ast: &SExpr) -> ModuleState {
             _ => panic!("field entry"),
         }
     }
-    ModuleState { sort_symbol, ctor: ctor_name, fields }
+    ModuleState { sort_symbol, _ctor: ctor_name, fields }
 }
 
 fn load_model_ir(text: &str) -> ModelIR {
@@ -465,7 +461,6 @@ fn build_parametric_helpers(
     let mut helper_bodies = HashMap::<String, SExpr>::new();
     for (hname, f) in &helpers {
         let state_param = &f.params[0].0;
-        let param_map = &helper_params; // for calls
         let selectors: HashSet<String> = field_sort_map.keys().cloned().collect();
 
         fn rewrite(
@@ -701,7 +696,6 @@ pub fn transform(text: &str) -> String {
 
     // Build minimized helpers
     let (helper_rets, helper_params, helper_deps, helper_bodies) = build_parametric_helpers(&ir, module);
-    let helper_names: HashSet<String> = helper_rets.keys().cloned().collect();
 
     // Rewrite next bodies to call helpers with minimal args, collect root helpers
     fn rewrite_next_with_params(
@@ -816,19 +810,4 @@ pub fn transform(text: &str) -> String {
     out.push("".into());
 
     out.join("\n")
-}
-
-// ---------------- main ----------------
-
-fn main() -> io::Result<()> {
-    let args: Vec<String> = env::args().collect();
-    if args.len() != 3 {
-        eprintln!("Usage: {} <input.smt2> <output.smt2>", args.get(0).map(String::as_str).unwrap_or("smt_flatten"));
-        std::process::exit(2);
-    }
-    let text = fs::read_to_string(&args[1])?;
-    let out = transform(&text);
-    fs::write(&args[2], out)?;
-    println!("Wrote {}", &args[2]);
-    Ok(())
 }

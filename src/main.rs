@@ -318,7 +318,7 @@ fn main() {
                         for (state, entries) in grouped {
                             println!("\nState {state}:");
                             for (var, val) in entries {
-                                // println!("  {var} = {val}");
+                                println!("  {var} = {val}");
                             }
                         }
 

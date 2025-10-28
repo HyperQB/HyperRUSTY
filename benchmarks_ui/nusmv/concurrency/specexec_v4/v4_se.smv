@@ -291,23 +291,28 @@ MODULE main
 
     -- static arrays (proc2)
     init(proc2_arrA_pos0) := 0; 
-	next(proc2_arrA_pos0) := proc2_arrA_pos0;
+	  next(proc2_arrA_pos0) := proc2_arrA_pos0;
     init(proc2_arrA_pos1) := 1; 
-	next(proc2_arrA_pos1) := proc2_arrA_pos1;
+	  next(proc2_arrA_pos1) := proc2_arrA_pos1;
     init(proc2_arrA_pos2) := 2; 
-	next(proc2_arrA_pos2) := proc2_arrA_pos2;
+	  next(proc2_arrA_pos2) := proc2_arrA_pos2;
     init(proc2_arrA_pos3) := 3; 
-	next(proc2_arrA_pos3) := proc2_arrA_pos3;
+  	next(proc2_arrA_pos3) := proc2_arrA_pos3;
     init(proc2_arrA_pos4) := 4; 
-	next(proc2_arrA_pos4) := proc2_arrA_pos4;
+	  next(proc2_arrA_pos4) := proc2_arrA_pos4;
 
     init(proc2_arrB_pos0) := 0; 
-	next(proc2_arrB_pos0) := proc2_arrB_pos0;
+	  next(proc2_arrB_pos0) := proc2_arrB_pos0;
     init(proc2_arrB_pos1) := 1; 
-	next(proc2_arrB_pos1) := proc2_arrB_pos1;
+  	next(proc2_arrB_pos1) := proc2_arrB_pos1;
     init(proc2_arrB_pos2) := 2; 
-	next(proc2_arrB_pos2) := proc2_arrB_pos2;
+	  next(proc2_arrB_pos2) := proc2_arrB_pos2;
     init(proc2_arrB_pos3) := 3; 
-	next(proc2_arrB_pos3) := proc2_arrB_pos3;
+	  next(proc2_arrB_pos3) := proc2_arrB_pos3;
     init(proc2_arrB_pos4) := 4; 
-	next(proc2_arrB_pos4) := proc2_arrB_pos4;
+	  next(proc2_arrB_pos4) := proc2_arrB_pos4;
+
+
+DEFINE
+    -- halting condition
+    halt := ((proc1_line=8) & (proc2_line=8));

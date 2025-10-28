@@ -1,0 +1,13 @@
+{
+  "name": "Robotic Shortest Path 100",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["robotic_sp_100.smv", "robotic_sp_100.smv"],
+    "formula": "robotic_sp_formula.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 20,
+    "semantics": "hpes"
+  }
+}

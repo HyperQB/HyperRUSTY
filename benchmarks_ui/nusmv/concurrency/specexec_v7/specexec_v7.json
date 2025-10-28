@@ -1,13 +1,14 @@
 {
-  "name": "Speculative Execution v5 (non-speculative)",
+  "name": "Speculative Execution v7",
   "inputLanguage": "nusmv",
   "files": {
-    "nusmvFiles": ["v5_nse.smv"],
+    "nusmvFiles": ["v7_se.smv", "v7_nse.smv"],
     "formula": "se_prop.hq"
   },
   "options": {
     "useLoopConditions": false,
-    "unrollingBound": 12,
+    "unrollingBound": 6,
+    "trajectoryBound": 12,
     "semantics": "hpes"
   }
 }

@@ -299,3 +299,8 @@ ASSIGN
     init(proc2_arrB_pos2) := 2; next(proc2_arrB_pos2) := proc2_arrB_pos2;
     init(proc2_arrB_pos3) := 3; next(proc2_arrB_pos3) := proc2_arrB_pos3;
     init(proc2_arrB_pos4) := 4; next(proc2_arrB_pos4) := proc2_arrB_pos4;
+
+
+DEFINE
+    -- halting condition
+    halt := ((proc1_line=8) & (proc2_line=8));

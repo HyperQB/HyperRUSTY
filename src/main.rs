@@ -318,7 +318,7 @@ fn main() {
                         for (state, entries) in grouped {
                             println!("\nState {state}:");
                             for (var, val) in entries {
-                                // println!("  {var} = {val}");
+                                println!("  {var} = {val}");
                             }
                         }
 
@@ -433,9 +433,9 @@ fn main() {
                     let model = solver.get_model().unwrap();
                     let grouped = extract_grouped_model(&model);
                     for (state, entries) in grouped {
-                        // println!("\nState {state}:");
+                        println!("\nState {state}:");
                         for (var, val) in entries {
-                            // println!("  {var} = {val}");
+                            println!("  {var} = {val}");
                         }
                     }
 

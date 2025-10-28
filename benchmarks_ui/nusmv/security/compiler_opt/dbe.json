@@ -7,7 +7,8 @@
   },
   "options": {
     "useLoopConditions": false,
-    "unrollingBound": 5,
+    "unrollingBound": 4,
+    "trajectoryBound": 8,
     "semantics": "hpes"
   }
 }

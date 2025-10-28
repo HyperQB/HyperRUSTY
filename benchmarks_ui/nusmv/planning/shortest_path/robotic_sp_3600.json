@@ -1,0 +1,16 @@
+{
+  "name": "Robotic Shortest Path 3600",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": [
+      "robotic_sp_3600.smv",
+      "robotic_sp_3600.smv"
+    ],
+    "formula": "robotic_sp_formula.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 120,
+    "semantics": "hpes"
+  }
+}

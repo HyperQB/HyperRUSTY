@@ -1,5 +1,5 @@
 # build.ys
-read_verilog -pwires ./benchmarks/verilog/SPI/spi_slave.v
+read_verilog -pwires verilog1.v
 hierarchy -top SPISlave
 proc
 flatten

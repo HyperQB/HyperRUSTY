@@ -1,5 +1,5 @@
 # build.ys
-read_verilog -pwires ./benchmarks/verilog/LED/system_ee.v
+read_verilog -pwires verilog1.v
 hierarchy -check -top light
 proc
 flatten

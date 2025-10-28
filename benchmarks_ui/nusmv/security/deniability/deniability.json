@@ -2,7 +2,7 @@
   "name": "Deniability",
   "inputLanguage": "nusmv",
   "files": {
-    "nusmvFiles": ["electronic_wallet.smv", "electronic_wallet.smv"],
+    "nusmvFiles": ["electronic_wallet.smv", "electronic_wallet.smv", "electronic_wallet.smv"],
     "formula": "den.hq"
   },
   "options": {

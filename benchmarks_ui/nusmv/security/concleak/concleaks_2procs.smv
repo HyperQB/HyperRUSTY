@@ -11,7 +11,7 @@ VAR
     ID_two   : 0..2;
     ID_three : 0..2;
 
-    halt : boolean;
+    -- halt : boolean;
 
     -- flattened state for proc1: programs(ID_one, SCHEDULE, LOW, in_HIGH, var_X, var_Y, 0)
     proc1_line       : 0..8;
@@ -70,12 +70,12 @@ ASSIGN
             TRUE                   : {0,1};
         esac;
 
-    init(halt) := FALSE;
-    next(halt) :=
-        case
-            ((proc1_loop_count = 2) & (proc2_loop_count = 2)) : TRUE;
-            TRUE                                              : halt;
-        esac;
+    -- init(halt) := FALSE;
+    -- next(halt) :=
+    --     case
+    --         ((proc1_loop_count = 2) & (proc2_loop_count = 2)) : TRUE;
+    --         TRUE                                              : halt;
+    --     esac;
 
     ----------------------------------------------------------------
     -- proc1: programs(ID_one, SCHEDULE, LOW, in_HIGH, var_X, var_Y, 0) — flattened
@@ -151,3 +151,4 @@ DEFINE
     obs_X_is_one  := (proc2_line = 7) & (in_HIGH = TRUE);
     obs_Y_is_zero := (proc2_line = 8) & (in_HIGH = FALSE);
     obs_Y_is_one  := (proc2_line = 8) & (in_HIGH = TRUE);
+    halt := ((proc1_loop_count = 2) & (proc2_loop_count = 2))

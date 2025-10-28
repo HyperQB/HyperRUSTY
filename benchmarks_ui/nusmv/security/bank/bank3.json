@@ -1,0 +1,17 @@
+{
+  "name": "Bank V3",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": [
+      "bank3_complex_V3.smv",
+      "bank3_complex_V3.smv",
+      "bank3_complex_V3.smv"
+    ],
+    "formula": "gmni.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

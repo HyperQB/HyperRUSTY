@@ -151,4 +151,5 @@ DEFINE
     obs_X_is_one  := (proc2_line = 7) & (in_HIGH = TRUE);
     obs_Y_is_zero := (proc2_line = 8) & (in_HIGH = FALSE);
     obs_Y_is_one  := (proc2_line = 8) & (in_HIGH = TRUE);
-    halt := ((proc1_loop_count = 2) & (proc2_loop_count = 2));
+    -- halting condition
+    halt := ((proc1_line=8) & (proc2_line=8));

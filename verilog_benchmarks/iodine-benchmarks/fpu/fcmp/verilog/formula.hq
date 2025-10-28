@@ -1,1 +1,0 @@
-Forall A . Forall B . ~(G ((aeqb[A] & aeqb[B])))

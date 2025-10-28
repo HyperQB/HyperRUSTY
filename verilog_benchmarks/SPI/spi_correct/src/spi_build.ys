@@ -1,9 +1,0 @@
-# build.ys
-read_verilog -pwires ./verilog_benchmarks/SPI/spi_correct/src/spi_slave.v
-hierarchy -top SPISlave
-proc
-flatten
-techmap -map +/dff2ff.v
-delete SPISlave/clk
-synth
-write_smt2 -stdt -nobv -wires spi.smt2

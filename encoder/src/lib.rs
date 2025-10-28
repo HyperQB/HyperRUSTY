@@ -352,7 +352,7 @@ pub fn get_verilog_encoding<'env, 'ctx>(envs: &'env Vec<SMVEnv<'ctx>>, models: &
         // Record current path encoding
         path_constraints.push(d.clone());
         // create unrolled states from AST
-        let (unrolled_states, quantified_vars) = verilog_helper::unrolled_states_from_Z3_ast(&d, &var_mapping[idx], k);
+        let (unrolled_states, quantified_vars) = verilog_helper::unrolled_states_from_z3_ast(&d, &var_mapping[idx], k);
         // Record current states
         states.push(unrolled_states);
         // record bounded variables

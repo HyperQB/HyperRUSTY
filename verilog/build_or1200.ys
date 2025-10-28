@@ -1,9 +1,0 @@
-# build.ys
-read_verilog -pwires ./designs/original_or1200/rtl/verilog/*.v
-hierarchy -check -top or1200_top
-proc
-flatten
-async2sync
-dffunmap
-opt_clean -purge
-write_smt2 -stdt -wires MULTI_TEST.txt

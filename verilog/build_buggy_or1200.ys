@@ -1,9 +1,0 @@
-# build.ys
-read_verilog -pwires ./designs/buggy-or1200/*.v
-hierarchy -check -top or1200_top
-proc
-flatten
-async2sync
-dffunmap
-opt_clean -purge
-write_smt2 -stdt -wires MULTI_TEST.txt

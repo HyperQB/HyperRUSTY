@@ -17,6 +17,7 @@ pub struct SMTVariables {
 
 /// Unrolls the design in-place, modifying the SMT2 string to include unrolling constraints.
 /// Returns the modified SMT2 string, a list of states' names, and the mapping of the getters
+#[allow(dead_code)]
 pub fn unroll_in_place(smt2: &str, mod_name: &str, bound: usize, trace_id: &str, variable_filter: Option<Vec<String>>) -> Result<(String, Vec<String>, HashMap<String, String>), ExtractError> {
     // Parse the variables to get their names
     let id_to_name = parse_variables(smt2, mod_name)?;
@@ -93,7 +94,7 @@ fn collect_smt_vars(smt2: &str) -> Vec<SMTVariables> {
             getter,
         });
     }
-    //println!("Collected SMT Variables: {:#?}", variables);
+
     variables
 }
 
@@ -103,10 +104,7 @@ fn add_unrolling_constraints(smt2: &str, mod_name: &str, bound: usize, trace_id:
     let mut result = smt2.to_string();
     // Add constraints for unrolling
     
-    //Variable probes
-    // Here is where we would add a filter for which variables to probe
-    // Vector of tuples (probe_name, state_name, var_getter, time_step)
-    let mut probe_assertions: Vec<String> = Vec::new();
+    let probe_assertions: Vec<String> = Vec::new();
     for var in &smt_vars {
         if let Some(ref filter) = var_filter {
             if !filter.contains(&var.name) {
@@ -124,7 +122,7 @@ fn add_unrolling_constraints(smt2: &str, mod_name: &str, bound: usize, trace_id:
                 probe_name,
                 var.var_type
             ));
-            let clause = format!(
+            let _clause = format!(
                 "(= {} ({} {}))",
                 probe_name,
                 var.getter,
@@ -133,7 +131,6 @@ fn add_unrolling_constraints(smt2: &str, mod_name: &str, bound: usize, trace_id:
             //probe_assertions.push(clause);
         }
     }
-    //println!("Probe assertions: {:#?}", probe_assertions);
     
     // State unrolling
     //Add contants for each step

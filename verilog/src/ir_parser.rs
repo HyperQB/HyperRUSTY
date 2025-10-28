@@ -4,12 +4,7 @@ use z3::{ast::{Ast, Bool, Dynamic, Int, BV}, Context};
 type InlineKey = (String, Vec<u64>);
 type InlineMemo = IndexMap<InlineKey, Expr>;
 
-// === Bring your IR into scope (adjust paths) ===
 use ir::{SMVEnv, VarType, ReturnType, Variable};
-
-// ---------------------------
-// S-expression + Mini-IR
-// ---------------------------
 
 #[derive(Clone, Debug)]
 enum SExp { Atom(String), List(Vec<SExp>) }
@@ -18,7 +13,7 @@ enum SExp { Atom(String), List(Vec<SExp>) }
 enum Sort { Bool, Int, BV(u32) }
 
 #[derive(Clone, Debug)]
-enum Expr {
+pub enum Expr {
     Sym(String),
     BoolConst(bool),
     IntConst(i64),
@@ -31,10 +26,9 @@ enum Expr {
     Or(Vec<Expr>),
     Not(Box<Expr>),
 
-    Xor(Vec<Expr>),         // Bool XOR (already present)
-    BVXor(Vec<Expr>),       // BV XOR (already present)
+    Xor(Vec<Expr>),
+    BVXor(Vec<Expr>),
 
-    // === New: BV algebra / logic ===
     BVAnd(Vec<Expr>),
     BVOr(Vec<Expr>),
     BVNot(Box<Expr>),
@@ -72,17 +66,12 @@ enum Expr {
     App(String, Vec<Expr>),
 }
 
-
 #[derive(Clone, Debug)]
-struct FnDef {
+pub struct FnDef {
     params: Vec<(String, Sort)>,
-    ret: Sort,
+    _ret: Sort,
     body: Expr,
 }
-
-// ---------------------------
-// Tokenize / Parse SExp
-// ---------------------------
 
 fn strip_pipes(s: &str) -> String {
     let s = s.trim();
@@ -147,10 +136,6 @@ fn parse_sexps(s: &str) -> Result<Vec<SExp>, String> {
     }
     Ok(items)
 }
-
-// ---------------------------
-// SMT sorts / Expr parser
-// ---------------------------
 
 fn parse_sort(s: &SExp) -> Result<Sort, String> {
     match s {
@@ -341,7 +326,6 @@ fn parse_expr(e: &SExp) -> Result<Expr, String> {
                     Ok(Expr::BVSge(Box::new(parse_expr(&v[1])?), Box::new(parse_expr(&v[2])?)))
                 }
                 "distinct" => {
-                    // SMT-LIB allows 0+ args; we accept any arity here.
                     let mut xs = Vec::with_capacity(v.len().saturating_sub(1));
                     for a in &v[1..] { xs.push(parse_expr(a)?); }
                     Ok(Expr::Distinct(xs))
@@ -368,10 +352,6 @@ impl AsAtom for SExp {
     }
 }
 
-// ---------------------------
-// Helpers: inline-on-demand
-// ---------------------------
-
 type FnTable = IndexMap<String, FnDef>;
 
 fn subst_expr(e: &Expr, sub: &IndexMap<String, Expr>) -> Expr {
@@ -390,8 +370,6 @@ fn subst_expr(e: &Expr, sub: &IndexMap<String, Expr>) -> Expr {
         Expr::Not(x)    => Expr::Not(Box::new(subst_expr(x, sub))),
         Expr::Xor(xs)   => Expr::Xor(xs.iter().map(|x| subst_expr(x, sub)).collect()),
         Expr::BVXor(xs) => Expr::BVXor(xs.iter().map(|x| subst_expr(x, sub)).collect()),
-        Expr::Xor(xs)     => Expr::Xor(xs.iter().map(|x| subst_expr(x, sub)).collect()),
-        Expr::BVXor(xs)   => Expr::BVXor(xs.iter().map(|x| subst_expr(x, sub)).collect()),
 
         Expr::BVAnd(xs)   => Expr::BVAnd(xs.iter().map(|x| subst_expr(x, sub)).collect()),
         Expr::BVOr(xs)    => Expr::BVOr(xs.iter().map(|x| subst_expr(x, sub)).collect()),
@@ -429,84 +407,6 @@ fn subst_expr(e: &Expr, sub: &IndexMap<String, Expr>) -> Expr {
         Expr::App(n, args) => Expr::App(n.clone(), args.iter().map(|x| subst_expr(x, sub)).collect()),
     }
 }
-
-
-fn inline_helpers(e: &Expr, fns: &FnTable, depth: usize) -> Result<Expr, String> {
-    if depth > 256 { return Err("helper expansion depth exceeded".into()); }
-    match e {
-        Expr::App(name, args) if fns.contains_key(name) => {
-            let def = &fns[name];
-            if def.params.len() != args.len() {
-                return Err(format!("arity mismatch in call {}: expected {}, got {}", name, def.params.len(), args.len()));
-            }
-            // first inline args
-            let mut inlined_args = Vec::new();
-            for a in args { inlined_args.push(inline_helpers(a, fns, depth+1)?); }
-            // build substitution map
-            let mut sub = IndexMap::new();
-            for ((p, _psort), act) in def.params.iter().zip(inlined_args.into_iter()) {
-                sub.insert(p.clone(), act);
-            }
-            // substitute into body, then continue inlining recursively
-            let body_sub = subst_expr(&def.body, &sub);
-            inline_helpers(&body_sub, fns, depth+1)
-        }
-        // Recurse
-        Expr::Eq(a,b) => Ok(Expr::Eq(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-        Expr::Ite(c,t,ee) => Ok(Expr::Ite(
-            Box::new(inline_helpers(c,fns,depth+1)?),
-            Box::new(inline_helpers(t,fns,depth+1)?),
-            Box::new(inline_helpers(ee,fns,depth+1)?),
-        )),
-        Expr::Extract{hi,lo,e:ee} => Ok(Expr::Extract{hi:*hi,lo:*lo,e:Box::new(inline_helpers(ee,fns,depth+1)?) }),
-        Expr::And(xs) => Ok(Expr::And(xs.iter().map(|x| inline_helpers(x,fns,depth+1)).collect::<Result<Vec<_>,_>>()?)),
-        Expr::Or(xs)  => Ok(Expr::Or(xs.iter().map(|x| inline_helpers(x,fns,depth+1)).collect::<Result<Vec<_>,_>>()?)),
-        Expr::Not(x)  => Ok(Expr::Not(Box::new(inline_helpers(x,fns,depth+1)?))),
-        Expr::Xor(xs)   => Ok(Expr::Xor(xs.iter().map(|x| inline_helpers(x,fns,depth+1)).collect::<Result<Vec<_>,_>>()?)),
-        Expr::BVXor(xs) => Ok(Expr::BVXor(xs.iter().map(|x| inline_helpers(x,fns,depth+1)).collect::<Result<Vec<_>,_>>()?)),
-
-        Expr::BVAnd(xs) => Ok(Expr::BVAnd(xs.iter().map(|x| inline_helpers(x,fns,depth+1)).collect::<Result<Vec<_>,_>>()?)),
-        Expr::BVOr(xs)  => Ok(Expr::BVOr(xs.iter().map(|x| inline_helpers(x,fns,depth+1)).collect::<Result<Vec<_>,_>>()?)),
-        Expr::BVNot(x)  => Ok(Expr::BVNot(Box::new(inline_helpers(x,fns,depth+1)?))),
-        Expr::BVNeg(x)  => Ok(Expr::BVNeg(Box::new(inline_helpers(x,fns,depth+1)?))),
-
-        Expr::BVAdd(xs) => Ok(Expr::BVAdd(xs.iter().map(|x| inline_helpers(x,fns,depth+1)).collect::<Result<Vec<_>,_>>()?)),
-        Expr::BVSub(a,b)=> Ok(Expr::BVSub(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-        Expr::BVMul(xs) => Ok(Expr::BVMul(xs.iter().map(|x| inline_helpers(x,fns,depth+1)).collect::<Result<Vec<_>,_>>()?)),
-
-        Expr::BVUDiv(a,b)=> Ok(Expr::BVUDiv(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-        Expr::BVURem(a,b)=> Ok(Expr::BVURem(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-        Expr::BVSDiv(a,b)=> Ok(Expr::BVSDiv(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-        Expr::BVSRem(a,b)=> Ok(Expr::BVSRem(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-        Expr::BVSMod(a,b)=> Ok(Expr::BVSMod(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-
-        Expr::BVShl (a,b)=> Ok(Expr::BVShl (Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-        Expr::BVLshr(a,b)=> Ok(Expr::BVLshr(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-        Expr::BVAshr(a,b)=> Ok(Expr::BVAshr(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-
-        Expr::Concat(xs) => Ok(Expr::Concat(xs.iter().map(|x| inline_helpers(x,fns,depth+1)).collect::<Result<Vec<_>,_>>()?)),
-        Expr::ZeroExtend{k,e} => Ok(Expr::ZeroExtend{ k:*k, e:Box::new(inline_helpers(e,fns,depth+1)?) }),
-        Expr::SignExtend{k,e} => Ok(Expr::SignExtend{ k:*k, e:Box::new(inline_helpers(e,fns,depth+1)?) }),
-
-        Expr::BVUlt(a,b)=> Ok(Expr::BVUlt(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-        Expr::BVUle(a,b)=> Ok(Expr::BVUle(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-        Expr::BVUgt(a,b)=> Ok(Expr::BVUgt(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-        Expr::BVUge(a,b)=> Ok(Expr::BVUge(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-        Expr::BVSlt(a,b)=> Ok(Expr::BVSlt(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-        Expr::BVSle(a,b)=> Ok(Expr::BVSle(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-        Expr::BVSgt(a,b)=> Ok(Expr::BVSgt(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-        Expr::BVSge(a,b)=> Ok(Expr::BVSge(Box::new(inline_helpers(a,fns,depth+1)?), Box::new(inline_helpers(b,fns,depth+1)?))),
-
-        // leaves
-        _ => Ok(e.clone()),
-    }
-}
-
-// ---------------------------
-// Expr -> Z3 AST
-// ---------------------------
-
-struct TyCtxt { vars: IndexMap<String, Sort> }
 
 fn bv_from_bits<'ctx>(ctx: &'ctx Context, bits: &str) -> BV<'ctx> {
     let width = bits.len() as u32;
@@ -759,30 +659,7 @@ fn expr_to_ast<'ctx>(
     }
 }
 
-// ---------------------------
-// ITE decomposition
-// ---------------------------
-
-fn collect_ite_pairs(e: &Expr) -> Vec<(Expr, Expr)> {
-    fn go(e: &Expr, path: Expr, out: &mut Vec<(Expr, Expr)>) {
-        match e {
-            Expr::Ite(c, t, f) => {
-                let g_then = Expr::And(vec![path.clone(), (*c.clone())]);
-                let g_else = Expr::And(vec![path, Expr::Not(Box::new((*c.clone())))]);
-                go(t, g_then, out);
-                go(f, g_else, out);
-            }
-            _ => out.push((Expr::And(vec![path, Expr::BoolConst(true)]), e.clone())), // normalize
-        }
-    }
-    let mut out = Vec::new();
-    go(e, Expr::BoolConst(true), &mut out);
-    out
-}
-
-
 fn simplify_guard(e: Expr) -> Expr {
-    // Tiny normalizer: and(true, X) => X; and() => true; or() => false; not(not x) => x
     match e {
         Expr::And(mut xs) => {
             let mut flat = Vec::new();
@@ -816,17 +693,13 @@ fn simplify_guard(e: Expr) -> Expr {
     }
 }
 
-// ---------------------------
-// Top-level: build SMVEnv
-// ---------------------------
-
 fn leak_str(s: &str) -> &'static str { Box::leak(s.to_string().into_boxed_str()) }
 
 pub fn build_env_from_flat_smt<'ctx>(ctx: &'ctx Context, smt: &str) -> Result<SMVEnv<'ctx>, String> {
     let sexps = parse_sexps(smt)?;
 
     struct Decl { name: String, sort: Sort }
-    struct NextDef { var: String, ret: Sort, body: Expr }
+    struct NextDef { var: String, _ret: Sort, body: Expr }
     struct InitDef { var: String, ret: Sort, body: Expr }
 
     let mut decls: Vec<Decl> = Vec::new();
@@ -867,19 +740,19 @@ pub fn build_env_from_flat_smt<'ctx>(ctx: &'ctx Context, smt: &str) -> Result<SM
                 let body = parse_expr(&items[4])?;
 
                 if raw.starts_with("next ") {
-                    nexts.push(NextDef { var: raw["next ".len()..].to_string(), ret, body });
+                    nexts.push(NextDef { var: raw["next ".len()..].to_string(), _ret: ret, body });
                 } else if raw.starts_with("init ") {
                     inits.push(InitDef { var: raw["init ".len()..].to_string(), ret, body });
                 } else {
                     // helper
-                    fns.insert(raw, FnDef { params, ret, body });
+                    fns.insert(raw, FnDef { params, _ret: ret, body });
                 }
             }
             _ => {}
         }
     }
 
-    // Build env & auto-bounds for BV (signed full range to match bvsge/bvsle in your env)
+    // Build env & auto-bounds for BV
     let mut env = SMVEnv::new(ctx);
     for d in &decls {
         let nm: &'static str = leak_str(&d.name);
@@ -887,21 +760,18 @@ pub fn build_env_from_flat_smt<'ctx>(ctx: &'ctx Context, smt: &str) -> Result<SM
             Sort::Bool => env.register_variable(nm, VarType::Bool { init: None }),
             Sort::Int  => env.register_variable(nm, VarType::Int  { init: None, lower: None, upper: None }),
             Sort::BV(w) => {
-                // Unsigned domain: [0, 2^w - 1]. Only set upper when it fits in i64.
                 let lo = Some(0i64);
                 let hi = if w <= 63 {
-                    Some(((1u128 << w) - 1) as i64) // fits up to 2^63-1
+                    Some(((1u128 << w) - 1) as i64)
                 } else {
-                    None // leave unbounded if it wouldn't fit into i64
+                    None
                 };
-                // unbounded gives marginally
                 env.register_variable(nm, VarType::BVector { width: w, lower: lo, upper: hi, init: None });
             }
         }
         
     }
 
-    // Apply INITs (still expect constants)
     for i in &inits {
         let nm: &'static str = leak_str(&i.var);
         let vt = env.get_variable_type(nm).ok_or_else(|| format!("init for undeclared {}", i.var))?.clone();
@@ -920,7 +790,6 @@ pub fn build_env_from_flat_smt<'ctx>(ctx: &'ctx Context, smt: &str) -> Result<SM
             }
             (VarType::BVector{width, ..}, Sort::BV(_)) => {
                 let bits = match &i.body { Expr::BVConst{bits} => bits.clone(), _ => return Err(format!("init {} must be BV const", i.var)) };
-                // convert to i64
                 let bv = bv_from_bits(ctx, &bits);
                 let as_u = bv.as_u64().unwrap_or(0);
                 if let Some(v) = env.get_variable_mut(nm) {
@@ -939,30 +808,18 @@ pub fn build_env_from_flat_smt<'ctx>(ctx: &'ctx Context, smt: &str) -> Result<SM
     }
 
     // Register transitions from NEXT defs:
-    //  - inline helpers in the next-body
-    //  - decompose ITEs into (guard, rhs) pairs
-    //  - for each pair, register_transition(var, guard, update)
     for n in &nexts {
         let var_nm: &'static str = leak_str(&n.var);
-    
-        // 1) Inline helpers on-demand with memoization (fast & shared)
+
         let mut memo = InlineMemo::default();
         let inlined = inline_helpers_memo(&n.body, &fns, &mut memo)?;
     
-        // 2) Decompose into disjoint (guard, rhs) pairs
-        //let pairs = collect_ite_pairs_smart(&inlined);
         let pairs = explode_all_ites_factored(&inlined);
 
-        
-    
-        // 3) Register each pair as a transition (guards/updates are arbitrary ASTs)
-        // 3) Print & register each pair as a transition (guards/updates are arbitrary ASTs)
         {
-            // Create a stable dummy state once per target variable (nice names for printing)
             let dbg_state = env.make_dummy_state(ctx);
 
             for (rule_idx, (g_expr, rhs_expr)) in pairs.into_iter().enumerate() {
-                // --- DEBUG: compile to Z3 and print before registering ---
                 let g_dyn = match expr_to_ast(&g_expr, ctx, &dbg_state) {
                     Ok(x) => x,
                     Err(e) => {
@@ -973,7 +830,7 @@ pub fn build_env_from_flat_smt<'ctx>(ctx: &'ctx Context, smt: &str) -> Result<SM
                         panic!("guard translation failed");
                     }
                 };
-                let g_bool = match g_dyn.as_bool() {
+                let _g_bool = match g_dyn.as_bool() {
                     Some(b) => b,
                     None => {
                         eprintln!(
@@ -984,7 +841,7 @@ pub fn build_env_from_flat_smt<'ctx>(ctx: &'ctx Context, smt: &str) -> Result<SM
                     }
                 };
 
-                let rhs_dyn = match expr_to_ast(&rhs_expr, ctx, &dbg_state) {
+                let _rhs_dyn = match expr_to_ast(&rhs_expr, ctx, &dbg_state) {
                     Ok(x) => x,
                     Err(e) => {
                         eprintln!(
@@ -994,17 +851,6 @@ pub fn build_env_from_flat_smt<'ctx>(ctx: &'ctx Context, smt: &str) -> Result<SM
                         panic!("rhs translation failed");
                     }
                 };
-
-                // Print the actual Z3 ASTs
-                /*println!(
-                    "[IR DEBUG] {}[{}]: Guard ='{}' -> Update = '{}'",
-                    var_nm,
-                    rule_idx,
-                    g_bool.to_string(),
-                    rhs_dyn.to_string()
-                );*/
-
-                // --- Register transition (same closures as before) ---
                 let g_expr_cloned = g_expr.clone();
                 let rhs_expr_cloned = rhs_expr.clone();
                 let var_label = var_nm;
@@ -1050,10 +896,7 @@ pub fn build_env_from_flat_smt<'ctx>(ctx: &'ctx Context, smt: &str) -> Result<SM
                 );
                 total_transitions += 1;
             }
-        } // dbg_state drops here
-
-
-        // NOTE: We do NOT rely on stutter default; the pairs cover all cases from the ITEs.
+        }
     }
     eprintln!("[IR] Built SMVEnv with {} total transitions", total_transitions);
     Ok(env)
@@ -1113,25 +956,6 @@ fn fmt_expr(e: &Expr) -> String {
     }
 }
 
-
-
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
-
-// ---------- Structural fingerprint (no trait impls needed) ----------
-fn fp_u64(mut h: u64, x: u64) -> u64 { // FNV-1a style mix (simple and fast)
-    const P: u64 = 0x100000001b3;
-    h ^= x;
-    h = h.wrapping_mul(P);
-    h
-}
-fn fp_bytes(mut h: u64, bs: &[u8]) -> u64 {
-    for &b in bs { h = fp_u64(h, b as u64); }
-    h
-}
-use std::cmp::Ordering;
-
-/// Deterministic 64-bit FNV-1a
 #[inline]
 fn fnv1a_mix_u64(state: &mut u64, x: u64) {
     const FNV_PRIME: u64 = 0x0000_0001_0000_01B3;
@@ -1177,7 +1001,6 @@ pub fn fingerprint_expr(e: &Expr) -> u64 {
             Expr::BVConst { bits }  => combine2("BVConst", hash_str_d64(bits), &[]),
 
             Expr::Eq(a, b) => {
-                // canonicalize equality (commutative)
                 let mut xs = [go(a), go(b)];
                 xs.sort_unstable();
                 combine_tag_parts("Eq", &xs)
@@ -1187,7 +1010,6 @@ pub fn fingerprint_expr(e: &Expr) -> u64 {
             Expr::Extract { hi, lo, e } =>
                 combine_tag_parts("Extract", &[*hi as u64, *lo as u64, go(e)]),
 
-            // Boolean connectives (AC)
             Expr::And(xs) => {
                 let mut ps: Vec<u64> = xs.iter().map(go).collect();
                 ps.sort_unstable();
@@ -1199,8 +1021,6 @@ pub fn fingerprint_expr(e: &Expr) -> u64 {
                 combine_tag_parts("Or", &ps)
             }
             Expr::Not(x) => combine_tag_parts("Not", &[go(x)]),
-
-            // XORs are AC
             Expr::Xor(xs) => {
                 let mut ps: Vec<u64> = xs.iter().map(go).collect();
                 ps.sort_unstable();
@@ -1211,10 +1031,6 @@ pub fn fingerprint_expr(e: &Expr) -> u64 {
                 ps.sort_unstable();
                 combine_tag_parts("BVXor", &ps)
             }
-
-            // ==== New BV ops ====
-
-            // AC families
             Expr::BVAnd(xs) => {
                 let mut ps: Vec<u64> = xs.iter().map(go).collect();
                 ps.sort_unstable();
@@ -1292,9 +1108,7 @@ pub fn fingerprint_expr(e: &Expr) -> u64 {
 
 
 
-// ---------- Memoized helper inliner (apps → bodies), high-performance ----------
-
-
+// Memoized helper inliner (apps → bodies)
 pub fn inline_helpers_memo(
     e: &Expr,
     fns: &FnTable,
@@ -1310,7 +1124,6 @@ pub fn inline_helpers_memo(
             return Err("helper expansion depth exceeded".into());
         }
         match e {
-            // --- Inline helper applications with memoization ---
             Expr::App(name, args) if fns.contains_key(name) => {
                 let def = &fns[name];
                 if def.params.len() != args.len() {
@@ -1320,7 +1133,7 @@ pub fn inline_helpers_memo(
                     ));
                 }
 
-                // 1) Inline arguments first
+                // 1) Inline arguments
                 let mut inlined_args = Vec::with_capacity(args.len());
                 for a in args {
                     inlined_args.push(go(a, fns, memo, depth + 1)?);
@@ -1350,7 +1163,7 @@ pub fn inline_helpers_memo(
                 Ok(res)
             }
 
-            // --- Recurse structurally through all other nodes ---
+            // Recurse structurally through all other nodes
             Expr::Eq(a, b) => Ok(Expr::Eq(
                 Box::new(go(a, fns, memo, depth + 1)?),
                 Box::new(go(b, fns, memo, depth + 1)?),
@@ -1387,8 +1200,6 @@ pub fn inline_helpers_memo(
                     .map(|x| go(x, fns, memo, depth + 1))
                     .collect::<Result<Vec<_>, _>>()?,
             )),
-
-            // === New BV nodes (structural recursion only) ===
             Expr::BVAnd(xs) => Ok(Expr::BVAnd(
                 xs.iter()
                     .map(|x| go(x, fns, memo, depth + 1))
@@ -1504,63 +1315,26 @@ pub fn inline_helpers_memo(
             )),
             
 
-            // Leaves / passthroughs
-            Expr::App(_, _) => Ok(e.clone()), // not a known helper: leave as-is
+            Expr::App(_, _) => Ok(e.clone()),
             Expr::Sym(_) | Expr::BoolConst(_) | Expr::IntConst(_) | Expr::BVConst{..} => Ok(e.clone()),
         }
     }
     go(e, fns, memo, 0)
 }
 
-
-// ---------- Smart ITE decomposition (skips obviously-false branches) ----------
-fn collect_ite_pairs_smart(e: &Expr) -> Vec<(Expr, Expr)> {
-    fn go(e: &Expr, path: Expr, out: &mut Vec<(Expr, Expr)>) {
-        match e {
-            Expr::Ite(c, t, f) => {
-                let g_then = simplify_guard(Expr::And(vec![path.clone(), (*c.clone())]));
-                let g_else = simplify_guard(Expr::And(vec![path, Expr::Not(Box::new((*c.clone())))]));
-                // prune trivially-false guards early
-                if !matches!(g_then, Expr::BoolConst(false)) { go(t, g_then, out); }
-                if !matches!(g_else, Expr::BoolConst(false)) { go(f, g_else, out); }
-            }
-            _ => {
-                // terminal RHS under current guard
-                let g = simplify_guard(path);
-                if !matches!(g, Expr::BoolConst(false)) {
-                    out.push((g, e.clone()));
-                }
-            }
-        }
-    }
-    let mut out = Vec::new();
-    go(e, Expr::BoolConst(true), &mut out);
-    out
-}
-
-
 use std::collections::{HashMap, HashSet};
 
 /// Fully lift all ITEs out of `e`, returning guarded alternatives whose RHSs
-/// contain **no Expr::Ite** anywhere. Includes mitigations:
-///  - left-to-right combination with early pruning,
-///  - skip singletons,
-///  - guard factoring on a common condition across children,
-///  - contradiction pruning (C ∧ ¬C),
-///  - soft cap on intermediate rows (prevents pathologies).
 pub fn explode_all_ites_factored(e: &Expr) -> Vec<(Expr, Expr)> {
     const MAX_ROWS: usize = 1 << 14; // 16k; tune if needed
 
     #[inline] fn t() -> Expr { Expr::BoolConst(true) }
-    #[inline] fn f() -> Expr { Expr::BoolConst(false) }
 
     #[inline]
     fn and_guard(a: Expr, b: Expr) -> Expr {
         simplify_guard(Expr::And(vec![a, b]))
     }
 
-    // ---------- Literal extraction on top-level AND ----------
-    // We treat a "literal" as either X or (not X) where X is not And/Or/Not.
     #[derive(Clone, Copy, PartialEq, Eq)]
     enum Pol { Pos, Neg }
 
@@ -1576,20 +1350,17 @@ pub fn explode_all_ites_factored(e: &Expr) -> Vec<(Expr, Expr)> {
         fn collect<'a>(g: &'a Expr, pos: &mut HashSet<u64>, neg: &mut HashSet<u64>) {
             match g {
                 Expr::BoolConst(true) => {}
-                Expr::BoolConst(false) => { /* caller should have pruned */ }
+                Expr::BoolConst(false) => {}
                 Expr::And(xs) => { for x in xs { collect(x, pos, neg); } }
                 Expr::Not(b) => {
                     if is_atomic(b) {
                         neg.insert(fingerprint_expr(b));
                     } else {
-                        // Nested not of non-atomic: keep recursively, we might still see literals inside
                         collect(b, pos, neg);
                     }
                 }
                 x if is_atomic(x) => { pos.insert(fingerprint_expr(x)); }
                 other => {
-                    // Non-atomic non-not/non-and: treat as a single literal to be safe
-                    // (keeps factoring conservative)
                     pos.insert(fingerprint_expr(other));
                 }
             }
@@ -1613,14 +1384,12 @@ pub fn explode_all_ites_factored(e: &Expr) -> Vec<(Expr, Expr)> {
     fn guards_contradict(a: &Expr, b: &Expr) -> bool {
         let (pa, na) = guard_literals(a);
         let (pb, nb) = guard_literals(b);
-        // if a has X and b has ¬X (or vice versa), conjunction contradicts
         !pa.is_disjoint(&nb) || !pb.is_disjoint(&na)
     }
 
-    // ---------- Everywhere ITE-lifting core ----------
     fn go(e: &Expr) -> Vec<(Expr, Expr)> {
         match e {
-            // ---- ITE: hoist condition into guards, recursively eliminating nested ITEs in cond/branches ----
+            // ITE: hoist condition into guards, recursively eliminating nested ITEs in cond/branches
             Expr::Ite(c, t_e, f_e) => {
                 let c_alts = go(c);
                 let t_alts = go(t_e);
@@ -1697,8 +1466,6 @@ pub fn explode_all_ites_factored(e: &Expr) -> Vec<(Expr, Expr)> {
         }
     }
 
-    // ---- unary/n-ary/binary helpers (with mitigations inside) ----
-
     fn map_unary(v: Vec<(Expr, Expr)>, build: impl Fn(Expr) -> Expr) -> Vec<(Expr, Expr)> {
         v.into_iter().map(|(g, e)| (g, build(e))).collect()
     }
@@ -1723,7 +1490,7 @@ pub fn explode_all_ites_factored(e: &Expr) -> Vec<(Expr, Expr)> {
         out
     }
 
-    // Guard factoring over a vector of children (already ITE-lifted) with an n-ary builder.
+    // Guard factoring over a vector of children
     fn combine_n(
         xs: &[Expr],
         build: impl Fn(Vec<Expr>) -> Expr + Copy,
@@ -1743,9 +1510,6 @@ pub fn explode_all_ites_factored(e: &Expr) -> Vec<(Expr, Expr)> {
             let mut neg_parts = Vec::with_capacity(parts.len());
 
             for ch in &parts {
-                // Filter per branch:
-                //  - take those that explicitly mention the branch literal,
-                //  - or those neutral to cond (mention neither), which we keep in both branches.
                 let mut pos_vec = Vec::new();
                 let mut neg_vec = Vec::new();
                 for (g, e) in ch {
@@ -1754,12 +1518,11 @@ pub fn explode_all_ites_factored(e: &Expr) -> Vec<(Expr, Expr)> {
                     if has_pos { pos_vec.push((g.clone(), e.clone())); }
                     if has_neg { neg_vec.push((g.clone(), e.clone())); }
                     if !has_pos && !has_neg {
-                        // neutral: allowed in both branches
                         pos_vec.push((g.clone(), e.clone()));
                         neg_vec.push((g.clone(), e.clone()));
                     }
                 }
-                // If a branch becomes empty, factoring is not helpful; abort factoring.
+
                 if pos_vec.is_empty() || neg_vec.is_empty() {
                     return ltr_product(parts, build);
                 }
@@ -1771,7 +1534,6 @@ pub fn explode_all_ites_factored(e: &Expr) -> Vec<(Expr, Expr)> {
             let mut out = Vec::new();
 
             for (g, rhs) in ltr_product(pos_parts, build) {
-                // add `cond_repr` to guard (even if some children already had it; harmless)
                 let g2 = and_guard(g, cond_repr.clone());
                 if !matches!(g2, Expr::BoolConst(false)) { out.push((g2, rhs)); }
                 if out.len() > MAX_ROWS { return out; }
@@ -1839,11 +1601,8 @@ pub fn explode_all_ites_factored(e: &Expr) -> Vec<(Expr, Expr)> {
         rows.into_iter().map(|(g, ys)| (g, build(ys))).collect()
     }
 
-    /// Pick a "best" common condition across children to factor on.
-    /// We look for a literal L that appears (positively or negatively) in **multiple children**.
     fn choose_common_cond(parts: &[Vec<(Expr, Expr)>]) -> Option<(u64, Expr)> {
-        // For each candidate fingerprint, count in how many children it appears at least once.
-        // Also keep one representative Expr for pretty/guard insertion.
+
         let mut child_presence: HashMap<u64, usize> = HashMap::new();
         let mut any_repr: HashMap<u64, Expr> = HashMap::new();
 
@@ -1855,8 +1614,7 @@ pub fn explode_all_ites_factored(e: &Expr) -> Vec<(Expr, Expr)> {
                     if seen_in_child.insert(*k) {
                         *child_presence.entry(*k).or_insert(0) += 1;
                         if !any_repr.contains_key(k) {
-                            // Try to find a positive representative literal for readability; fallback to first thing we see.
-                            // Here we can't recover the *exact* literal Expr from the set, so we re-scan once to find one.
+
                             any_repr.insert(*k, pick_literal_expr(g, *k).unwrap_or_else(|| Expr::Sym(format!("lit_{}", k))));
                         }
                     }
@@ -1867,13 +1625,11 @@ pub fn explode_all_ites_factored(e: &Expr) -> Vec<(Expr, Expr)> {
         // Choose the candidate seen in the most children (>= 2)
         let (best_key, best_count) = child_presence
         .iter()
-        .max_by_key(|(_, c)| *c)    // c: &usize -> compare by value
-        .map(|(k, c)| (*k, *c))?;   // copy out (&u64, &usize) -> (u64, usize)
+        .max_by_key(|(_, c)| *c)   
+        .map(|(k, c)| (*k, *c))?;  
 
         if best_count < 2 { return None; }
 
-        // Representative literal to conjoin in branches; if it was negative in the only occurrence,
-        // we still return the base (positive) form and layer polarity in the branch.
         let rep = any_repr.get(&best_key)?.clone();
         Some((best_key, rep))
     }

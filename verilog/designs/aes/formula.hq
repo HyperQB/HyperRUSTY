@@ -1,1 +1,0 @@
-Forall A . Forall B . G((state_lo0_i[A] = state_lo0_i[B]) & (key_lo0_i[A] = key_lo0_i[B]))

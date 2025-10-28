@@ -1,1 +1,0 @@
-Exists A . Forall B . F ~(read_data_state[A] =  read_data_state[B])

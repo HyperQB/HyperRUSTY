@@ -1,9 +1,0 @@
-# build.ys
-read_verilog -pwires ./verilog/designs/aes/test.v \
-./verilog/designs/aes/aes_256.v \
-./verilog/designs/aes/round.v \
-./verilog/designs/aes/table.v
-prep -rdff -flatten -top aes256_ct_tb
-memory -nordff
-stat -json
-write_smt2 -stdt -wires aes_256.smt2

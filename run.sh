@@ -375,7 +375,7 @@
 
 # cargo run --release -- -n benchmarks/loop_conditions/robust_path_planning/rp_1_no_sol.smv benchmarks/loop_conditions/robust_path_planning/rp_2.smv -f benchmarks/loop_conditions/robust_path_planning/rp.hq -l
 
-#  cargo run --release -- -n benchmarks/loop_conditions/simple_loop/simple_loop1.smv benchmarks/loop_conditions/simple_loop/simple_loop2.smv -f benchmarks/loop_conditions/simple_loop/simple_loop.hq -l
+# cargo run --release -- -n benchmarks/loop_conditions/simple_loop/simple_loop1.smv benchmarks/loop_conditions/simple_loop/simple_loop2.smv -f benchmarks/loop_conditions/simple_loop/simple_loop.hq -l
 
 # cargo run --release -- -n benchmarks/loop_conditions/test_loop/rs1.smv benchmarks/loop_conditions/test_loop/rs2.smv -f benchmarks/loop_conditions/test_loop/rs.hq -l
 
@@ -408,7 +408,7 @@
 # cargo run --release -- -v benchmarks/verilog/SPI/spi_build.ys benchmarks/verilog/SPI/spi_build.ys -t SPISlave -o spi.smt2 -f benchmarks/verilog/SPI/formula.hq -k 8 -s hpes
 
 #=== fpu2 ===#
-# RUST_BACKTRACE=full cargo run --release -- -v benchmarks/verilog/divider/divider.ys benchmarks/verilog/divider/divider.ys -t divider -o model.smt2 -f benchmarks/verilog/divider/formula.hq -k 8 -s pes
+ RUST_BACKTRACE=full cargo run --release -- -v benchmarks/verilog/divider/divider.ys benchmarks/verilog/divider/divider.ys -t divider -o model.smt2 -f benchmarks/verilog/divider/formula.hq -k 8 -s pes
 
 
 #=== A-HLTL cases ===#

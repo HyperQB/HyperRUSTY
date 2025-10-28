@@ -1,4 +1,0 @@
-# build.ys
-read_verilog -pwires ./verilog_benchmarks/iodine-benchmarks/fpu2/divider/divider.v
-prep -top divider -flatten
-write_smt2 -stdt -wires model.smt2

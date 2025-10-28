@@ -1,6 +1,0 @@
-# build.ys
-read_verilog verilog_benchmarks/iodine-benchmarks/fpu/verilog/fdiv_tb.v \
-		verilog_benchmarks/iodine-benchmarks/fpu/verilog/fpu_minimal.v \
-        verilog_benchmarks/iodine-benchmarks/fpu/verilog/div_r2.v
-prep -top fdiv_tb -flatten
-write_smt2 -stdt fpu.smt2

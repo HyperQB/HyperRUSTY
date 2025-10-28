@@ -1,6 +1,0 @@
-# build.ys
-read_verilog verilog_benchmarks/iodine-benchmarks/fpu/fcmp/verilog/fcmp_top.v
-hierarchy -top fcmptop
-proc
-flatten
-write_smt2 -stdt -wires fcmp.smt2

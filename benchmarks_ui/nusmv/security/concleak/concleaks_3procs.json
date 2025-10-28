@@ -1,5 +1,5 @@
 {
-  "name": "Concurrent leakage (3 procs)",
+  "name": "ConcLeak 3 processes",
   "inputLanguage": "nusmv",
   "files": {
     "nusmvFiles": ["concleaks_3procs.smv", "concleaks_3procs.smv"],

@@ -1,0 +1,13 @@
+{
+  "name": "Keypad",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["keypad.smv", "keypad.smv"],
+    "formula": "keypad_2.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

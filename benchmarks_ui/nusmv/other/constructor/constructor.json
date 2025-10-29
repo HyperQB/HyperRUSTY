@@ -1,0 +1,13 @@
+{
+  "name": "Constructor",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["constructor_conc.smv", "constructor_seq.smv"],
+    "formula": "linearizability.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

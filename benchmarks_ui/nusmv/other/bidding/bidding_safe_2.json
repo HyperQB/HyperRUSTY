@@ -1,0 +1,13 @@
+{
+  "name": "Bidding V2",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["bid_safe_2.smv", "bid_safe_2.smv"],
+    "formula": "bidding.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

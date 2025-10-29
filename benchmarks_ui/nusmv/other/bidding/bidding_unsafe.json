@@ -1,0 +1,13 @@
+{
+  "name": "Bidding V4",
+  "inputLanguage": "nusmv",
+  "files": {
+    "nusmvFiles": ["bid_unsafe.smv", "bid_unsafe.smv"],
+    "formula": "bidding.hq"
+  },
+  "options": {
+    "useLoopConditions": false,
+    "unrollingBound": 10,
+    "semantics": "hpes"
+  }
+}

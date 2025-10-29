@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-TIMEOUT_SEC=${TIMEOUT_SEC:-1}  # seconds
+TIMEOUT_SEC=${TIMEOUT_SEC:-10}  # seconds
 
 # Detect timeout binary safely (avoid unbound variable errors)
 if command -v gtimeout >/dev/null 2>&1; then
@@ -1163,79 +1163,90 @@ case_lazy_list() {
 # MAIN DRIVER
 # ------------
 
-# Register the cases available for -compare
+# Register the cases available for -compare (use names without the `case_` prefix)
 CASES=(
   # --- Co-termination ---
-  case_coterm1
+  coterm1
 
   # --- Deniability ---
-  case_e_wallet
+  e_wallet
 
   # --- Shared buffer ---
-  case_buffer_scheduled_classic
-  case_buffer_scheduled_intrans_od # MMMMM
-  case_buffer_scheduled_intrans_gmni
-  case_buffer_unscheduled_classic
+  buffer_scheduled_classic
+  buffer_scheduled_intrans_od
+  buffer_scheduled_intrans_gmni
+  buffer_unscheduled_classic
 
   # --- Non-determinism Experience ---
-  case_niexp_tini
-  case_niexp_tsni
+  niexp_tini
+  niexp_tsni
 
   # --- k-safety ---
-  case_ksafety_doubleSquare # MMMMM
+  ksafety_doubleSquare
 
   # --- Mapping synthesis ---
-  case_mapsynth_msynth
-  case_mapsynth_msynth2
+  mapsynth_msynth
+  mapsynth_msynth2
 
   # --- TEAM LTL ---
-  case_teamltl_team
-  case_teamltl_team2
+  teamltl_team
+  teamltl_team2
 
   # --- NDET ---
-  case_ndet_ni_v1 # MMMMMM
-  case_ndet_ni_v2 # MMMMMM
-  case_ndet_ni_v3 # MMMMMM
+  ndet_ni_v1
+  ndet_ni_v2
+  ndet_ni_v3
 
   # --- Bank ---
-  case_bank_v1
-  case_bank_v2
-  case_bank_v3
+  bank_v1
+  bank_v2
+  bank_v3
 
   # --- Constructor (LIN) ---
-  case_constructor
+  constructor
 
   # --- Bidding ---
-  case_bidding_safe_1
-  case_bidding_safe_2
-  case_bidding_safe_3
-  case_bidding_unsafe
+  bidding_safe_1
+  bidding_safe_2
+  bidding_safe_3
+  bidding_unsafe
 
   # --- IQueue (LIN) ---
-  case_iqueue
+  iqueue
 
   # --- Keypad ---
-  case_keypad
+  keypad
 
   # --- Queue (LIN) ---
-  case_queue_lin # MMMMM
+  queue_lin
 
   # --- EMM_ABA (LIN) ---
-  case_emm_aba
+  emm_aba
 
   # --- Lazy list (LIN) ---
-  case_lazy_list
+  lazy_list
 )
+
+LIGHT_CASES=()
+for case_fn in "${CASES[@]}"; do
+  case "$case_fn" in
+    mapsynth_msynth2|iqueue|lazy_list) ;;
+    *) LIGHT_CASES+=("$case_fn");;
+  esac
+done
 
 usage() {
   cat <<EOF
-Usage: $0 [mode]
-  -compare all             Run all CASES with all modes (smt, ah, qbf)
-  -compare <case_name>     Run only the specified case with all modes
-  -smt|-ah|-qbf            Run all CASES with the chosen mode
-  -light                   Run a lightweight subset (edit inside)
-  -case <func> <mode>      Run a single case function with mode (smt|ah|qbf)
-  -list                    List available case functions
+Usage: $0 [option]
+  -all <mode>             Run all cases with the chosen mode (smt|ah|qbf)
+  -light <mode>           Run lightweight cases (excluding MapSynth2, IQueue, LazyList) with the chosen mode
+  -compare all            Run all cases with all modes (smt/ah/qbf)
+  -compare light          Run lightweight cases with all modes
+  -compare <case>         Run one case with all modes (see -list for names)
+  -case <case> <mode>     Run one case with the selected mode (smt|ah|qbf)
+  -list                   List available case names
+
+Case names are specified without the leading 'case_' prefix.
 EOF
   exit 1
 }
@@ -1248,9 +1259,42 @@ list_cases() {
 run_matrix() {
   local modes=("$@")
   for c in "${CASES[@]}"; do
+    local fn="case_${c}"
+    if ! declare -f "$fn" >/dev/null 2>&1; then
+      echo "(!) Missing case function: $fn"
+      exit 1
+    fi
     for m in "${modes[@]}"; do
-      "$c" "$m"
+      "$fn" "$m"
     done
+  done
+  render_tables
+}
+
+run_light_compare_matrix() {
+  local modes=("$@")
+  for c in "${LIGHT_CASES[@]}"; do
+    local fn="case_${c}"
+    if ! declare -f "$fn" >/dev/null 2>&1; then
+      echo "(!) Missing case function: $fn"
+      exit 1
+    fi
+    for m in "${modes[@]}"; do
+      "$fn" "$m"
+    done
+  done
+  render_tables
+}
+
+run_light_mode() {
+  local mode="$1"
+  for c in "${LIGHT_CASES[@]}"; do
+    local fn="case_${c}"
+    if ! declare -f "$fn" >/dev/null 2>&1; then
+      echo "(!) Missing case function: $fn"
+      exit 1
+    fi
+    "$fn" "$mode"
   done
   render_tables
 }
@@ -1258,13 +1302,14 @@ run_matrix() {
 run_single_case_matrix() {
   local case_name="$1"; shift
   local modes=("$@")
-  if declare -f "$case_name" >/dev/null 2>&1; then
+  local fn="case_${case_name}"
+  if declare -f "$fn" >/dev/null 2>&1; then
     for m in "${modes[@]}"; do
-      "$case_name" "$m"
+      "$fn" "$m"
     done
     render_tables
   else
-    echo "(!) Unknown case function: $case_name"
+    echo "(!) Unknown case: $case_name"
     list_cases
     exit 1
   fi
@@ -1273,47 +1318,67 @@ run_single_case_matrix() {
 case "${1:-}" in
   -compare)
     shift
-    if [[ -z "${1:-}" ]]; then
+    compare_target="${1:-}"
+    if [[ -z "$compare_target" ]]; then
       echo "(!) The '-compare' option requires an argument."
-      echo "   Usage: $0 -compare [all|<case_name>]"
+      echo "   Usage: $0 -compare [all|light|<case>]"
       echo
       list_cases
       exit 1
-    elif [[ "$1" == "all" ]]; then
-      run_matrix smt ah qbf
-    elif [[ "$1" == "battle" ]]; then
-      run_matrix smt ah 
-    else
-      run_single_case_matrix "$1" smt ah qbf
     fi
-    ;;
-    
-  -all)
-    run_matrix smt
+    case "$compare_target" in
+      all)
+        run_matrix smt ah qbf
+        ;;
+      light)
+        run_light_compare_matrix smt ah qbf
+        ;;
+      *)
+        run_single_case_matrix "$compare_target" smt ah qbf
+        ;;
+    esac
     ;;
 
-  -smt|-ah|-qbf)
-    mode="${1#-}"
+  -all)
+    shift
+    mode_raw="${1:-}"
+    [[ -z "$mode_raw" ]] && usage
+    mode="$(printf '%s' "$mode_raw" | tr '[:upper:]' '[:lower:]')"
+    case "$mode" in
+      smt|ah|qbf) ;;
+      *)
+        echo "(!) Unknown mode for -all: $mode_raw"
+        exit 1
+        ;;
+    esac
     run_matrix "$mode"
     ;;
 
   -light)
-    local_subset=(case_bakery3 case_bakery5)
-    for c in "${local_subset[@]}"; do
-      "$c" smt
-    done
-    render_tables
+    shift
+    mode_raw="${1:-}"
+    [[ -z "$mode_raw" ]] && usage
+    mode="$(printf '%s' "$mode_raw" | tr '[:upper:]' '[:lower:]')"
+    case "$mode" in
+      smt|ah|qbf) ;;
+      *)
+        echo "(!) Unknown mode for -light: $mode_raw"
+        exit 1
+        ;;
+    esac
+    run_light_mode "$mode"
     ;;
 
   -case)
     shift
     func="${1:-}"; mode="${2:-}"
     [[ -z "$func" || -z "$mode" ]] && usage
-    if declare -f "$func" >/dev/null 2>&1; then
-      "$func" "$mode"
+    fn="case_${func}"
+    if declare -f "$fn" >/dev/null 2>&1; then
+      "$fn" "$mode"
       render_tables
     else
-      echo "(!) Unknown case function: $func"
+      echo "Unknown case: $func"
       list_cases
       exit 1
     fi

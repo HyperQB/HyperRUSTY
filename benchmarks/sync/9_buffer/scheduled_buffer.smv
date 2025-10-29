@@ -38,9 +38,25 @@ ASSIGN
       (P1_sec_in = 3): 3;
     esac;
     
-  next(P2_unclass_in) := P2_unclass_in;
-  next(sec_write) := sec_write;
-  next(unclass_write) := unclass_write;
+  next(P2_unclass_in) := 
+    case  
+      (P2_unclass_in = 0) : 0;
+      (P2_unclass_in = 1) : 1;
+      (P2_unclass_in = 2) : 2;
+      (P2_unclass_in = 3) : 3;
+    esac;
+
+  next(sec_write) := 
+    case
+      (sec_write): TRUE;
+      TRUE: FALSE;
+    esac; 
+
+  next(unclass_write) := 
+    case
+      unclass_write: TRUE;
+      TRUE: FALSE;
+    esac;
 
   --scheduled
   next(sec_read) :=

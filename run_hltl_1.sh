@@ -1,7 +1,13 @@
 #!/bin/bash
 set -euo pipefail
 
-TIMEOUT_SEC=${TIMEOUT_SEC:-60}  # seconds
+TIMEOUT_SEC=${TIMEOUT_SEC:-300}  # seconds
+
+CARGO_BIN=${CARGO_BIN:-target/release/HyperRUSTY}
+if [[ ! -x "$CARGO_BIN" ]]; then
+  echo "Building HyperQB (release)…"
+  cargo build --release
+fi
 
 # Detect timeout binary safely (avoid unbound variable errors)
 if command -v gtimeout >/dev/null 2>&1; then
@@ -18,6 +24,7 @@ RESULTS_DIR="_outfiles"
 LOG_DIR="${RESULTS_DIR}/logs"
 CSV="${RESULTS_DIR}/table4_runtimes.csv"
 MD="${RESULTS_DIR}/table4_runtimes.md"
+
 
 # Fresh start: recreate logs dir and reset CSV/MD
 mkdir -p "$RESULTS_DIR"
@@ -120,17 +127,33 @@ render_tables() {
 
 case_bakery3() {
     local case_name="Bakery3"
-    local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    local mode="${1:-}"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    shift
+    local extra_flags=("$@")
+    local want_witness=0
+    for flag in "${extra_flags[@]}"; do
+        if [[ "$flag" == "give_witness" ]]; then
+            want_witness=1
+        fi
+    done
 
     case "$mode" in
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}1_bakery/bakery3.smv \
                ${FOLDER}1_bakery/bakery3.smv \
                -f ${FOLDER}1_bakery/symmetry3.hq \
                -k 10 -s hpes"
+            if (( want_witness )); then
+                time_run "$case_name" "SMT_witness" \
+                  "${CARGO_BIN} \
+                   -n ${FOLDER}1_bakery/bakery3.smv \
+                   ${FOLDER}1_bakery/bakery3.smv \
+                   -f ${FOLDER}1_bakery/symmetry3.hq \
+                   -k 10 -s hpes -c"
+            fi
             ;;
         2|ah)
             printf "\n[AutoHyper]   Running %s...\n" "$case_name"
@@ -138,11 +161,17 @@ case_bakery3() {
               "AutoHyper/app/AutoHyper \
                --nusmv ${FOLDER}1_bakery/bakery3.smv \
                ${FOLDER}AH_formulas/1.1.hq"
+            if (( want_witness )); then
+                time_run "$case_name" "AH_witness" \
+                  "AutoHyper/app/AutoHyper \
+                   --nusmv ${FOLDER}1_bakery/bakery3.smv \
+                   ${FOLDER}AH_formulas/1.1.hq --witness"
+            fi
             ;;
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}1_bakery/bakery3.smv \
                ${FOLDER}1_bakery/bakery3.smv \
                -f ${FOLDER}1_bakery/symmetry3.hq \
@@ -157,17 +186,33 @@ case_bakery3() {
 
 case_bakery7() {
     local case_name="Bakery7"
-    local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    local mode="${1:-}"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    shift
+    local extra_flags=("$@")
+    local want_witness=0
+    for flag in "${extra_flags[@]}"; do
+        if [[ "$flag" == "give_witness" ]]; then
+            want_witness=1
+        fi
+    done
 
     case "$mode" in
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}1_bakery/bakery7.smv \
                ${FOLDER}1_bakery/bakery7.smv \
                -f ${FOLDER}1_bakery/symmetry7.hq \
                -k 10 -s hpes"
+            if (( want_witness )); then
+                time_run "$case_name" "SMT_witness" \
+                  "${CARGO_BIN} \
+                   -n ${FOLDER}1_bakery/bakery7.smv \
+                   ${FOLDER}1_bakery/bakery7.smv \
+                   -f ${FOLDER}1_bakery/symmetry7.hq \
+                   -k 10 -s hpes -c"
+            fi
             ;;
         2|ah)
             printf "\n[AutoHyper]   Running %s...\n" "$case_name"
@@ -175,11 +220,17 @@ case_bakery7() {
               "AutoHyper/app/AutoHyper \
                --nusmv ${FOLDER}1_bakery/bakery7.smv \
                ${FOLDER}AH_formulas/1.7.hq"
+            if (( want_witness )); then
+                time_run "$case_name" "AH_witness" \
+                  "AutoHyper/app/AutoHyper \
+                   --nusmv ${FOLDER}1_bakery/bakery7.smv \
+                   ${FOLDER}AH_formulas/1.7.hq --witness"
+            fi
             ;;
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}1_bakery/bakery7.smv \
                ${FOLDER}1_bakery/bakery7.smv \
                -f ${FOLDER}1_bakery/symmetry7.hq \
@@ -194,17 +245,33 @@ case_bakery7() {
 
 case_bakery9() {
     local case_name="Bakery9"
-    local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    local mode="${1:-}"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    shift
+    local extra_flags=("$@")
+    local want_witness=0
+    for flag in "${extra_flags[@]}"; do
+        if [[ "$flag" == "give_witness" ]]; then
+            want_witness=1
+        fi
+    done
 
     case "$mode" in
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}1_bakery/bakery9.smv \
                ${FOLDER}1_bakery/bakery9.smv \
                -f ${FOLDER}1_bakery/symmetry9.hq \
                -k 10 -s hpes"
+            if (( want_witness )); then
+                time_run "$case_name" "SMT_witness" \
+                  "${CARGO_BIN} \
+                   -n ${FOLDER}1_bakery/bakery9.smv \
+                   ${FOLDER}1_bakery/bakery9.smv \
+                   -f ${FOLDER}1_bakery/symmetry9.hq \
+                   -k 10 -s hpes -c"
+            fi
             ;;
         2|ah)
             printf "\n[AutoHyper]   Running %s...\n" "$case_name"
@@ -212,11 +279,17 @@ case_bakery9() {
               "AutoHyper/app/AutoHyper \
                --nusmv ${FOLDER}1_bakery/bakery9.smv \
                ${FOLDER}AH_formulas/1.9.hq"
+            if (( want_witness )); then
+                time_run "$case_name" "AH_witness" \
+                  "AutoHyper/app/AutoHyper \
+                   --nusmv ${FOLDER}1_bakery/bakery9.smv \
+                   ${FOLDER}AH_formulas/1.9.hq --witness"
+            fi
             ;;
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}1_bakery/bakery9.smv \
                ${FOLDER}1_bakery/bakery9.smv \
                -f ${FOLDER}1_bakery/symmetry9.hq \
@@ -231,17 +304,33 @@ case_bakery9() {
 
 case_bakery11() {
     local case_name="Bakery11"
-    local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    local mode="${1:-}"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    shift
+    local extra_flags=("$@")
+    local want_witness=0
+    for flag in "${extra_flags[@]}"; do
+        if [[ "$flag" == "give_witness" ]]; then
+            want_witness=1
+        fi
+    done
 
     case "$mode" in
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}1_bakery/bakery11.smv \
                ${FOLDER}1_bakery/bakery11.smv \
                -f ${FOLDER}1_bakery/symmetry11.hq \
                -k 10 -s hpes"
+            if (( want_witness )); then
+                time_run "$case_name" "SMT_witness" \
+                  "${CARGO_BIN} \
+                   -n ${FOLDER}1_bakery/bakery11.smv \
+                   ${FOLDER}1_bakery/bakery11.smv \
+                   -f ${FOLDER}1_bakery/symmetry11.hq \
+                   -k 10 -s hpes -c"
+            fi
             ;;
         2|ah)
             printf "\n[AutoHyper]   Running %s...\n" "$case_name"
@@ -249,11 +338,17 @@ case_bakery11() {
               "AutoHyper/app/AutoHyper \
                --nusmv ${FOLDER}1_bakery/bakery11.smv \
                ${FOLDER}AH_formulas/1.11.hq"
+            if (( want_witness )); then
+                time_run "$case_name" "AH_witness" \
+                  "AutoHyper/app/AutoHyper \
+                   --nusmv ${FOLDER}1_bakery/bakery11.smv \
+                   ${FOLDER}AH_formulas/1.11.hq --witness"
+            fi
             ;;
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}1_bakery/bakery11.smv \
                ${FOLDER}1_bakery/bakery11.smv \
                -f ${FOLDER}1_bakery/symmetry11.hq \
@@ -268,17 +363,33 @@ case_bakery11() {
 
 case_snark1() {
     local case_name="SNARK1"
-    local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    local mode="${1:-}"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    shift
+    local extra_flags=("$@")
+    local want_witness=0
+    for flag in "${extra_flags[@]}"; do
+        if [[ "$flag" == "give_witness" ]]; then
+            want_witness=1
+        fi
+    done
 
     case "$mode" in
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}2_snark/snark1_conc.smv \
                ${FOLDER}2_snark/snark1_seq.smv \
                -f ${FOLDER}2_snark/lin.hq \
                -k 18 -s hpes"
+            if (( want_witness )); then
+                time_run "$case_name" "SMT_witness" \
+                  "${CARGO_BIN} \
+                   -n ${FOLDER}2_snark/snark1_conc.smv \
+                   ${FOLDER}2_snark/snark1_seq.smv \
+                   -f ${FOLDER}2_snark/lin.hq \
+                   -k 18 -s hpes -c"
+            fi
             ;;
         2|ah)
             printf "\n[AutoHyper]   Running %s...\n" "$case_name"
@@ -287,11 +398,18 @@ case_snark1() {
                --nusmv ${FOLDER}2_snark/snark1_conc.smv \
                ${FOLDER}2_snark/snark1_seq.smv \
                ${FOLDER}AH_formulas/2.1.hq"
+            if (( want_witness )); then
+                time_run "$case_name" "AH_witness" \
+                  "AutoHyper/app/AutoHyper \
+                   --nusmv ${FOLDER}2_snark/snark1_conc.smv \
+                   ${FOLDER}2_snark/snark1_seq.smv \
+                   ${FOLDER}AH_formulas/2.1.hq --witness"
+            fi
             ;;
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}2_snark/snark1_conc.smv \
                ${FOLDER}2_snark/snark1_seq.smv \
                -f ${FOLDER}2_snark/lin.hq \
@@ -313,7 +431,7 @@ case_ni_correct() {
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}3_ni/NI_correct.smv \
                ${FOLDER}3_ni/NI_correct.smv \
                -f ${FOLDER}3_ni/NI_formula.hq \
@@ -329,7 +447,7 @@ case_ni_correct() {
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}3_ni/NI_correct.smv \
                ${FOLDER}3_ni/NI_correct.smv \
                -f ${FOLDER}3_ni/NI_formula.hq \
@@ -345,17 +463,33 @@ case_ni_correct() {
 
 case_ni_incorrect() {
     local case_name="NI_incorrect"
-    local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    local mode="${1:-}"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    shift
+    local extra_flags=("$@")
+    local want_witness=0
+    for flag in "${extra_flags[@]}"; do
+        if [[ "$flag" == "give_witness" ]]; then
+            want_witness=1
+        fi
+    done
 
     case "$mode" in
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}3_ni/NI_incorrect.smv \
                ${FOLDER}3_ni/NI_incorrect.smv \
                -f ${FOLDER}3_ni/NI_formula.hq \
                -k 50 -s hopt"
+            if (( want_witness )); then
+                time_run "$case_name" "SMT_witness" \
+                  "${CARGO_BIN} \
+                   -n ${FOLDER}3_ni/NI_incorrect.smv \
+                   ${FOLDER}3_ni/NI_incorrect.smv \
+                   -f ${FOLDER}3_ni/NI_formula.hq \
+                   -k 50 -s hopt -c"
+            fi
             ;;
         2|ah)
             printf "\n[AutoHyper]   Running %s...\n" "$case_name"
@@ -363,11 +497,17 @@ case_ni_incorrect() {
               "AutoHyper/app/AutoHyper \
                --nusmv ${FOLDER}3_ni/NI_incorrect.smv \
                ${FOLDER}AH_formulas/3.hq"
+            if (( want_witness )); then
+                time_run "$case_name" "AH_witness" \
+                  "AutoHyper/app/AutoHyper \
+                   --nusmv ${FOLDER}3_ni/NI_incorrect.smv \
+                   ${FOLDER}AH_formulas/3.hq --witness"
+            fi
             ;;
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}3_ni/NI_incorrect.smv \
                ${FOLDER}3_ni/NI_incorrect.smv \
                -f ${FOLDER}3_ni/NI_formula.hq \
@@ -383,17 +523,33 @@ case_ni_incorrect() {
 
 case_nrp_correct() {
     local case_name="NRP_correct"
-    local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    local mode="${1:-}"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    shift
+    local extra_flags=("$@")
+    local want_witness=0
+    for flag in "${extra_flags[@]}"; do
+        if [[ "$flag" == "give_witness" ]]; then
+            want_witness=1
+        fi
+    done
 
     case "$mode" in
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}4_nrp/NRP_correct.smv \
                ${FOLDER}4_nrp/NRP_correct.smv \
                -f ${FOLDER}4_nrp/NRP_formula.hq \
                -k 20 -s pes"
+            if (( want_witness )); then
+                time_run "$case_name" "SMT_witness" \
+                  "${CARGO_BIN} \
+                   -n ${FOLDER}4_nrp/NRP_correct.smv \
+                   ${FOLDER}4_nrp/NRP_correct.smv \
+                   -f ${FOLDER}4_nrp/NRP_formula.hq \
+                   -k 20 -s pes -c"
+            fi
             ;;
         2|ah)
             printf "\n[AutoHyper]   Running %s...\n" "$case_name"
@@ -401,11 +557,17 @@ case_nrp_correct() {
               "AutoHyper/app/AutoHyper \
                --nusmv ${FOLDER}4_nrp/NRP_correct.smv \
                ${FOLDER}AH_formulas/4.hq"
+            if (( want_witness )); then
+                time_run "$case_name" "AH_witness" \
+                  "AutoHyper/app/AutoHyper \
+                   --nusmv ${FOLDER}4_nrp/NRP_correct.smv \
+                   ${FOLDER}AH_formulas/4.hq --witness"
+            fi
             ;;
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}4_nrp/NRP_correct.smv \
                ${FOLDER}4_nrp/NRP_correct.smv \
                -f ${FOLDER}4_nrp/NRP_formula.hq \
@@ -427,7 +589,7 @@ case_nrp_incorrect() {
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}4_nrp/NRP_incorrect.smv \
                ${FOLDER}4_nrp/NRP_incorrect.smv \
                -f ${FOLDER}4_nrp/NRP_formula.hq \
@@ -443,7 +605,7 @@ case_nrp_incorrect() {
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}4_nrp/NRP_incorrect.smv \
                ${FOLDER}4_nrp/NRP_incorrect.smv \
                -f ${FOLDER}4_nrp/NRP_formula.hq \
@@ -465,7 +627,7 @@ case_rb100() {
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_robustness_100.smv \
                ${FOLDER}5_planning/robotic_robustness_100.smv \
                -f ${FOLDER}5_planning/robotic_robustness_formula.hq \
@@ -482,7 +644,7 @@ case_rb100() {
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_robustness_100.smv \
                ${FOLDER}5_planning/robotic_robustness_100.smv \
                -f ${FOLDER}5_planning/robotic_robustness_formula.hq \
@@ -503,7 +665,7 @@ case_rb100_witness() {
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_robustness_100.smv \
                ${FOLDER}5_planning/robotic_robustness_100.smv \
                -f ${FOLDER}5_planning/robotic_robustness_formula.hq \
@@ -520,7 +682,7 @@ case_rb100_witness() {
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_robustness_100.smv \
                ${FOLDER}5_planning/robotic_robustness_100.smv \
                -f ${FOLDER}5_planning/robotic_robustness_formula.hq \
@@ -543,7 +705,7 @@ case_rb400() {
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_robustness_400.smv \
                ${FOLDER}5_planning/robotic_robustness_400.smv \
                -f ${FOLDER}5_planning/robotic_robustness_formula.hq \
@@ -560,7 +722,7 @@ case_rb400() {
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_robustness_400.smv \
                ${FOLDER}5_planning/robotic_robustness_400.smv \
                -f ${FOLDER}5_planning/robotic_robustness_formula.hq \
@@ -582,7 +744,7 @@ case_rb1600() {
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_robustness_1600.smv \
                ${FOLDER}5_planning/robotic_robustness_1600.smv \
                -f ${FOLDER}5_planning/robotic_robustness_formula.hq \
@@ -599,7 +761,7 @@ case_rb1600() {
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_robustness_1600.smv \
                ${FOLDER}5_planning/robotic_robustness_1600.smv \
                -f ${FOLDER}5_planning/robotic_robustness_formula.hq \
@@ -621,7 +783,7 @@ case_rb3600() {
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_robustness_3600.smv \
                ${FOLDER}5_planning/robotic_robustness_3600.smv \
                -f ${FOLDER}5_planning/robotic_robustness_formula.hq \
@@ -639,7 +801,7 @@ case_rb3600() {
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_robustness_3600.smv \
                ${FOLDER}5_planning/robotic_robustness_3600.smv \
                -f ${FOLDER}5_planning/robotic_robustness_formula.hq \
@@ -655,17 +817,33 @@ case_rb3600() {
 
 case_sp100() {
     local case_name="SP100"
-    local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    local mode="${1:-}"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    shift
+    local extra_flags=("$@")
+    local want_witness=0
+    for flag in "${extra_flags[@]}"; do
+        if [[ "$flag" == "give_witness" ]]; then
+            want_witness=1
+        fi
+    done
 
     case "$mode" in
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_sp_100.smv \
                ${FOLDER}5_planning/robotic_sp_100.smv \
                -f ${FOLDER}5_planning/robotic_sp_formula.hq \
                -k 20 -s hpes"
+            if (( want_witness )); then
+                time_run "$case_name" "SMT_witness" \
+                  "${CARGO_BIN} \
+                   -n ${FOLDER}5_planning/robotic_sp_100.smv \
+                   ${FOLDER}5_planning/robotic_sp_100.smv \
+                   -f ${FOLDER}5_planning/robotic_sp_formula.hq \
+                   -k 20 -s hpes -c"
+            fi
             ;;
         2|ah)
             printf "\n[AutoHyper]   Running %s...\n" "$case_name"
@@ -674,11 +852,18 @@ case_sp100() {
                --nusmv ${FOLDER}5_planning/robotic_sp_100.smv \
                ${FOLDER}AH_formulas/5.2.hq \
                "
+            if (( want_witness )); then
+                time_run "$case_name" "AH_witness" \
+                  "AutoHyper/app/AutoHyper \
+                   --nusmv ${FOLDER}5_planning/robotic_sp_100.smv \
+                   ${FOLDER}AH_formulas/5.2.hq \
+                   --witness"
+            fi
             ;;
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_sp_100.smv \
                ${FOLDER}5_planning/robotic_sp_100.smv \
                -f ${FOLDER}5_planning/robotic_sp_formula.hq \
@@ -694,17 +879,33 @@ case_sp100() {
 
 case_sp400() {
     local case_name="SP400"
-    local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    local mode="${1:-}"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    shift
+    local extra_flags=("$@")
+    local want_witness=0
+    for flag in "${extra_flags[@]}"; do
+        if [[ "$flag" == "give_witness" ]]; then
+            want_witness=1
+        fi
+    done
 
     case "$mode" in
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_sp_400.smv \
                ${FOLDER}5_planning/robotic_sp_400.smv \
                -f ${FOLDER}5_planning/robotic_sp_formula.hq \
                -k 40 -s hpes"
+            if (( want_witness )); then
+                time_run "$case_name" "SMT_witness" \
+                  "${CARGO_BIN} \
+                   -n ${FOLDER}5_planning/robotic_sp_400.smv \
+                   ${FOLDER}5_planning/robotic_sp_400.smv \
+                   -f ${FOLDER}5_planning/robotic_sp_formula.hq \
+                   -k 40 -s hpes -c"
+            fi
             ;;
         2|ah)
             printf "\n[AutoHyper]   Running %s...\n" "$case_name"
@@ -713,11 +914,18 @@ case_sp400() {
                --nusmv ${FOLDER}5_planning/robotic_sp_400.smv \
                ${FOLDER}AH_formulas/5.2.hq \
                "
+            if (( want_witness )); then
+                time_run "$case_name" "AH_witness" \
+                  "AutoHyper/app/AutoHyper \
+                   --nusmv ${FOLDER}5_planning/robotic_sp_400.smv \
+                   ${FOLDER}AH_formulas/5.2.hq \
+                   --witness"
+            fi
             ;;
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_sp_400.smv \
                ${FOLDER}5_planning/robotic_sp_400.smv \
                -f ${FOLDER}5_planning/robotic_sp_formula.hq \
@@ -733,17 +941,33 @@ case_sp400() {
 
 case_sp1600() {
     local case_name="SP1600"
-    local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    local mode="${1:-}"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    shift
+    local extra_flags=("$@")
+    local want_witness=0
+    for flag in "${extra_flags[@]}"; do
+        if [[ "$flag" == "give_witness" ]]; then
+            want_witness=1
+        fi
+    done
 
     case "$mode" in
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_sp_1600.smv \
                ${FOLDER}5_planning/robotic_sp_1600.smv \
                -f ${FOLDER}5_planning/robotic_sp_formula.hq \
                -k 40 -s hpes"
+            if (( want_witness )); then
+                time_run "$case_name" "SMT_witness" \
+                  "${CARGO_BIN} \
+                   -n ${FOLDER}5_planning/robotic_sp_1600.smv \
+                   ${FOLDER}5_planning/robotic_sp_1600.smv \
+                   -f ${FOLDER}5_planning/robotic_sp_formula.hq \
+                   -k 40 -s hpes -c"
+            fi
             ;;
         2|ah)
             printf "\n[AutoHyper]   Running %s...\n" "$case_name"
@@ -752,11 +976,18 @@ case_sp1600() {
                --nusmv ${FOLDER}5_planning/robotic_sp_1600.smv \
                ${FOLDER}AH_formulas/5.2.hq \
                "
+            if (( want_witness )); then
+                time_run "$case_name" "AH_witness" \
+                  "AutoHyper/app/AutoHyper \
+                   --nusmv ${FOLDER}5_planning/robotic_sp_1600.smv \
+                   ${FOLDER}AH_formulas/5.2.hq \
+                   --witness"
+            fi
             ;;
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_sp_1600.smv \
                ${FOLDER}5_planning/robotic_sp_1600.smv \
                -f ${FOLDER}5_planning/robotic_sp_formula.hq \
@@ -769,20 +1000,35 @@ case_sp1600() {
     esac
 }
 
-
 case_sp3600() {
     local case_name="SP3600"
-    local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    local mode="${1:-}"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    shift
+    local extra_flags=("$@")
+    local want_witness=0
+    for flag in "${extra_flags[@]}"; do
+        if [[ "$flag" == "give_witness" ]]; then
+            want_witness=1
+        fi
+    done
 
     case "$mode" in
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_sp_3600.smv \
                ${FOLDER}5_planning/robotic_sp_3600.smv \
                -f ${FOLDER}5_planning/robotic_sp_formula.hq \
                -k 120 -s hpes"
+            if (( want_witness )); then
+                time_run "$case_name" "SMT_witness" \
+                  "${CARGO_BIN} \
+                   -n ${FOLDER}5_planning/robotic_sp_3600.smv \
+                   ${FOLDER}5_planning/robotic_sp_3600.smv \
+                   -f ${FOLDER}5_planning/robotic_sp_formula.hq \
+                   -k 120 -s hpes -c"
+            fi
             ;;
         2|ah)
             printf "\n[AutoHyper]   Running %s...\n" "$case_name"
@@ -791,11 +1037,18 @@ case_sp3600() {
                --nusmv ${FOLDER}5_planning/robotic_sp_3600.smv \
                ${FOLDER}AH_formulas/5.2.hq \
                "
+            if (( want_witness )); then
+                time_run "$case_name" "AH_witness" \
+                  "AutoHyper/app/AutoHyper \
+                   --nusmv ${FOLDER}5_planning/robotic_sp_3600.smv \
+                   ${FOLDER}AH_formulas/5.2.hq \
+                   --witness"
+            fi
             ;;
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}5_planning/robotic_sp_3600.smv \
                ${FOLDER}5_planning/robotic_sp_3600.smv \
                -f ${FOLDER}5_planning/robotic_sp_formula.hq \
@@ -810,17 +1063,33 @@ case_sp3600() {
 
 case_mutation() {
     local case_name="Mutation"
-    local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    local mode="${1:-}"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+    shift
+    local extra_flags=("$@")
+    local want_witness=0
+    for flag in "${extra_flags[@]}"; do
+        if [[ "$flag" == "give_witness" ]]; then
+            want_witness=1
+        fi
+    done
 
     case "$mode" in
         1|smt)
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}6_mutation/mutation_testing.smv \
                ${FOLDER}6_mutation/mutation_testing.smv \
                -f ${FOLDER}6_mutation/mutation_testing.hq \
                -k 5 -s pes"
+            if (( want_witness )); then
+                time_run "$case_name" "SMT_witness" \
+                  "${CARGO_BIN} \
+                   -n ${FOLDER}6_mutation/mutation_testing.smv \
+                   ${FOLDER}6_mutation/mutation_testing.smv \
+                   -f ${FOLDER}6_mutation/mutation_testing.hq \
+                   -k 5 -s pes -c"
+            fi
             ;;
         2|ah)
             printf "\n[AutoHyper]   Running %s...\n" "$case_name"
@@ -828,11 +1097,17 @@ case_mutation() {
               "AutoHyper/app/AutoHyper \
                --nusmv ${FOLDER}6_mutation/mutation_testing.smv \
                ${FOLDER}AH_formulas/6.hq"
+            if (( want_witness )); then
+                time_run "$case_name" "AH_witness" \
+                  "AutoHyper/app/AutoHyper \
+                   --nusmv ${FOLDER}6_mutation/mutation_testing.smv \
+                   ${FOLDER}AH_formulas/6.hq --witness"
+            fi
             ;;
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
-              "cargo run --release -- \
+              "${CARGO_BIN} \
                -n ${FOLDER}6_mutation/mutation_testing.smv \
                ${FOLDER}6_mutation/mutation_testing.smv \
                -f ${FOLDER}6_mutation/mutation_testing.hq \
@@ -891,11 +1166,14 @@ usage() {
 Usage: $0 [mode]
   -all <mode>             Run all cases with the chosen mode (smt|ah|qbf)
   -light <mode>           Run lightweight cases with the chosen mode (smt|ah|qbf)
-  -compare all            Run all cases with all modes (smt/ah/qbf)
-  -compare light          Run lightweight cases with all modes (smt/ah/qbf)
+  -compare all [extras]   Run all cases with all modes (smt/ah/qbf)
+  -compare light [extras] Run lightweight cases with all modes (smt/ah/qbf)
   -list                   List all available case functions
-  -compare <case_name>    Run one case with all modes (see -list for case selections)
-  -case <func> <mode>     Run one case with selected mode (smt|ah|qbf)
+  -compare <case> [extras] Run one case with all modes (see -list for case selections)
+  -case <case> <mode> [extras] Run one case with selected mode (smt|ah|qbf)
+
+Extra flags:
+  give_witness            Extend SMT/AH variants with witness runs (when supported)
 EOF
   exit 1
 }
@@ -906,7 +1184,20 @@ list_cases() {
 }
 
 run_matrix() {
-  local modes=("$@")
+  local modes=()
+  local extra_args=()
+  local parsing_modes=1
+  for arg in "$@"; do
+    if (( parsing_modes )); then
+      if [[ "$arg" == "--" ]]; then
+        parsing_modes=0
+      else
+        modes+=("$arg")
+      fi
+    else
+      extra_args+=("$arg")
+    fi
+  done
   for c in "${CASES[@]}"; do
     local fn="case_${c}"
     if ! declare -f "$fn" >/dev/null 2>&1; then
@@ -914,7 +1205,7 @@ run_matrix() {
       exit 1
     fi
     for m in "${modes[@]}"; do
-      "$fn" "$m"
+      "$fn" "$m" "${extra_args[@]}"
     done
   done
   render_tables
@@ -929,7 +1220,20 @@ for case_fn in "${CASES[@]}"; do
 done
 
 run_light_compare_matrix() {
-  local modes=("$@")
+  local modes=()
+  local extra_args=()
+  local parsing_modes=1
+  for arg in "$@"; do
+    if (( parsing_modes )); then
+      if [[ "$arg" == "--" ]]; then
+        parsing_modes=0
+      else
+        modes+=("$arg")
+      fi
+    else
+      extra_args+=("$arg")
+    fi
+  done
   for c in "${LIGHT_CASES[@]}"; do
     local fn="case_${c}"
     if ! declare -f "$fn" >/dev/null 2>&1; then
@@ -937,32 +1241,47 @@ run_light_compare_matrix() {
       exit 1
     fi
     for m in "${modes[@]}"; do
-      "$fn" "$m"
+      "$fn" "$m" "${extra_args[@]}"
     done
   done
   render_tables
 }
 
 run_light_mode() {
-  local mode="$1"
+  local mode="${1:-}"
+  shift
+  local extra_args=("$@")
   for c in "${LIGHT_CASES[@]}"; do
     local fn="case_${c}"
     if ! declare -f "$fn" >/dev/null 2>&1; then
       echo "(!) Missing case function: $fn"
       exit 1
     fi
-    "$fn" "$mode"
+    "$fn" "$mode" "${extra_args[@]}"
   done
   render_tables
 }
 
 run_single_case_matrix() {
-  local case_name="$1"; shift
-  local modes=("$@")
+  local case_name="${1:-}"; shift
+  local modes=()
+  local extra_args=()
+  local parsing_modes=1
+  for arg in "$@"; do
+    if (( parsing_modes )); then
+      if [[ "$arg" == "--" ]]; then
+        parsing_modes=0
+      else
+        modes+=("$arg")
+      fi
+    else
+      extra_args+=("$arg")
+    fi
+  done
   local fn="case_${case_name}"
   if declare -f "$fn" >/dev/null 2>&1; then
     for m in "${modes[@]}"; do
-      "$fn" "$m"
+      "$fn" "$m" "${extra_args[@]}"
     done
     render_tables
   else
@@ -983,15 +1302,29 @@ case "${1:-}" in
       list_cases
       exit 1
     fi
+    shift
+    extra_compare_args=("$@")
     case "$compare_target" in
       all)
-        run_matrix smt ah qbf
+        if (( ${#extra_compare_args[@]} )); then
+          run_matrix smt ah qbf -- "${extra_compare_args[@]}"
+        else
+          run_matrix smt ah qbf
+        fi
         ;;
       light)
-        run_light_compare_matrix smt ah qbf
+        if (( ${#extra_compare_args[@]} )); then
+          run_light_compare_matrix smt ah qbf -- "${extra_compare_args[@]}"
+        else
+          run_light_compare_matrix smt ah qbf
+        fi
         ;;
       *)
-        run_single_case_matrix "$compare_target" smt ah qbf
+        if (( ${#extra_compare_args[@]} )); then
+          run_single_case_matrix "$compare_target" smt ah qbf -- "${extra_compare_args[@]}"
+        else
+          run_single_case_matrix "$compare_target" smt ah qbf
+        fi
         ;;
     esac
     ;;
@@ -1008,7 +1341,12 @@ case "${1:-}" in
         exit 1
         ;;
     esac
-    run_matrix "$mode"
+    shift
+    if (( $# )); then
+      run_matrix "$mode" -- "$@"
+    else
+      run_matrix "$mode"
+    fi
     ;;
 
   -light)
@@ -1023,16 +1361,23 @@ case "${1:-}" in
         exit 1
         ;;
     esac
-    run_light_mode "$mode"
+    shift
+    if (( $# )); then
+      run_light_mode "$mode" "$@"
+    else
+      run_light_mode "$mode"
+    fi
     ;;
 
   -case)
     shift
     func="${1:-}"; mode="${2:-}"
     [[ -z "$func" || -z "$mode" ]] && usage
+    shift 2
+    extra_case_args=("$@")
     fn="case_${func}"
     if declare -f "$fn" >/dev/null 2>&1; then
-      "$fn" "$mode"
+      "$fn" "$mode" "${extra_case_args[@]}"
       render_tables
     else
       echo "Unknown case: $func"

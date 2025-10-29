@@ -129,7 +129,7 @@ case_bakery3() {
               "cargo run --release -- \
                -n ${FOLDER}1_bakery/bakery3.smv \
                ${FOLDER}1_bakery/bakery3.smv \
-               -f ${FOLDER}1_bakery/symmetry.hq \
+               -f ${FOLDER}1_bakery/symmetry3.hq \
                -k 10 -s hpes"
             ;;
         2|ah)
@@ -145,7 +145,7 @@ case_bakery3() {
               "cargo run --release -- \
                -n ${FOLDER}1_bakery/bakery3.smv \
                ${FOLDER}1_bakery/bakery3.smv \
-               -f ${FOLDER}1_bakery/symmetry.hq \
+               -f ${FOLDER}1_bakery/symmetry3.hq \
                -k 10 -s hpes -q"
             ;;
         *)
@@ -342,7 +342,7 @@ case_ni_correct() {
     esac
 }
 
-### CHECK(!)
+
 case_ni_incorrect() {
     local case_name="NI_incorrect"
     local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
@@ -418,7 +418,7 @@ case_nrp_correct() {
     esac
 }
 
-### CHECK(!)
+
 case_nrp_incorrect() {
     local case_name="NRP_incorrect"
     local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
@@ -494,6 +494,45 @@ case_rb100() {
             ;;
     esac
 }
+
+case_rb100_witness() {
+    local case_name="Robustness100_witness"
+    local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+
+    case "$mode" in
+        1|smt)
+            printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
+            time_run "$case_name" "SMT" \
+              "cargo run --release -- \
+               -n ${FOLDER}5_planning/robotic_robustness_100.smv \
+               ${FOLDER}5_planning/robotic_robustness_100.smv \
+               -f ${FOLDER}5_planning/robotic_robustness_formula.hq \
+               -k 20 -s hpes -c"
+            ;;
+        2|ah)
+            printf "\n[AutoHyper]   Running %s...\n" "$case_name"
+            time_run "$case_name" "AH" \
+              "AutoHyper/app/AutoHyper \
+               --nusmv ${FOLDER}5_planning/robotic_robustness_100.smv \
+               ${FOLDER}AH_formulas/5.1.hq \
+               --incl-forq --witness"
+            ;;
+        3|qbf)
+            printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
+            time_run "$case_name" "QBF" \
+              "cargo run --release -- \
+               -n ${FOLDER}5_planning/robotic_robustness_100.smv \
+               ${FOLDER}5_planning/robotic_robustness_100.smv \
+               -f ${FOLDER}5_planning/robotic_robustness_formula.hq \
+               -k 20 -s hpes -q"
+            ;;
+        *)
+            echo "Usage: case_rb100 <1|2|3> or <smt|ah|qbf>"
+            return 1
+            ;;
+    esac
+}
+
 
 
 case_rb400() {
@@ -613,7 +652,7 @@ case_rb3600() {
     esac
 }
 
-### CHECK (!)
+
 case_sp100() {
     local case_name="SP100"
     local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
@@ -652,7 +691,7 @@ case_sp100() {
     esac
 }
 
-### CHECK (!)
+
 case_sp400() {
     local case_name="SP400"
     local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
@@ -691,7 +730,7 @@ case_sp400() {
     esac
 }
 
-### CHECK (!)
+
 case_sp1600() {
     local case_name="SP1600"
     local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
@@ -730,7 +769,7 @@ case_sp1600() {
     esac
 }
 
-### CHECK (!)
+
 case_sp3600() {
     local case_name="SP3600"
     local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
@@ -769,7 +808,6 @@ case_sp3600() {
     esac
 }
 
-### CHECK (!)
 case_mutation() {
     local case_name="Mutation"
     local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
@@ -782,7 +820,7 @@ case_mutation() {
                -n ${FOLDER}6_mutation/mutation_testing.smv \
                ${FOLDER}6_mutation/mutation_testing.smv \
                -f ${FOLDER}6_mutation/mutation_testing.hq \
-               -k 2 -s pes"
+               -k 5 -s pes"
             ;;
         2|ah)
             printf "\n[AutoHyper]   Running %s...\n" "$case_name"
@@ -798,7 +836,7 @@ case_mutation() {
                -n ${FOLDER}6_mutation/mutation_testing.smv \
                ${FOLDER}6_mutation/mutation_testing.smv \
                -f ${FOLDER}6_mutation/mutation_testing.hq \
-               -k 1 -s pes -q"
+               -k 5 -s pes -q"
             ;;
         *)
             echo "Usage: case_mutation <1|2|3> or <smt|ah|qbf>"
@@ -806,6 +844,8 @@ case_mutation() {
             ;;
     esac
 }
+
+
 
 # ------------
 # MAIN DRIVER

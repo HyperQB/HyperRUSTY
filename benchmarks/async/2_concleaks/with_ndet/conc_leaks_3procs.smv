@@ -1,6 +1,5 @@
 MODULE main
 	VAR
-		-- LOCKED: boolean; -- semaphore
 		in_HIGH: boolean; -- in_HIGH-value
 		in_LOW: boolean; -- in_LOW-value
 		var_X: boolean; -- X
@@ -68,7 +67,6 @@ MODULE main
 		obs_X_is_one := ((proc2.line=7) & (var_X=TRUE));
 		obs_Y_is_zero := ((proc2.line=8) & (var_Y=FALSE));
 		obs_Y_is_one := ((proc2.line=8) & (var_Y=TRUE));
-		-- halt := (((proc1.line=3)|(proc1.line=5)) & (proc2.line=8) & (proc3.line=11));
 		halt := (proc1.loop_count=2 & proc2.loop_count=2 & proc3.loop_count=2);
 
 
@@ -107,13 +105,6 @@ MODULE programs(ID, SCHEDULE, in_LOW, in_HIGH, var_X, var_Y, initline)
 				(line=6) : {7}; --
 				(line=7) : {8}; -- output x
 				(line=8) : {6}; -- output y
-				-- non-dets
-				-- (line=7) : {8}; -- output x or 0
-				-- (line=8) : {10}; -- output(x)
-				-- (line=9) : {10}; -- output(0)
-				-- (line=10) : {11}; -- output y or 0
-				-- (line=11) : {6}; -- output(y)
-				-- (line=12) : {6}; -- output(0)
 
 
 				--  program3,
@@ -123,13 +114,3 @@ MODULE programs(ID, SCHEDULE, in_LOW, in_HIGH, var_X, var_Y, initline)
 
 				TRUE: line;
 			esac;
-
-		-- init(halt):= FALSE;
-		-- next(halt):=
-		-- 	case
-		-- 	 (line=5 | line=11): TRUE;
-		-- 	 TRUE: FALSE;
-		-- 	esac;
-
-	-- DEFINE
-	-- 	start := (line=0);

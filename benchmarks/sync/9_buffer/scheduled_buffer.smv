@@ -85,4 +85,4 @@ ASSIGN
 
 DEFINE
   halt := (PC=3) ;
-  no_conflict := !(sec_read & unclass_read);
+  no_conflict := (!(sec_read & unclass_read));

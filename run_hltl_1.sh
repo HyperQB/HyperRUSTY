@@ -166,7 +166,7 @@ case_bakery7() {
               "cargo run --release -- \
                -n ${FOLDER}1_bakery/bakery7.smv \
                ${FOLDER}1_bakery/bakery7.smv \
-               -f ${FOLDER}1_bakery/symmetry.hq \
+               -f ${FOLDER}1_bakery/symmetry7.hq \
                -k 10 -s hpes"
             ;;
         2|ah)
@@ -182,7 +182,7 @@ case_bakery7() {
               "cargo run --release -- \
                -n ${FOLDER}1_bakery/bakery7.smv \
                ${FOLDER}1_bakery/bakery7.smv \
-               -f ${FOLDER}1_bakery/symmetry.hq \
+               -f ${FOLDER}1_bakery/symmetry7.hq \
                -k 10 -s hpes -q"
             ;;
         *)
@@ -203,7 +203,7 @@ case_bakery9() {
               "cargo run --release -- \
                -n ${FOLDER}1_bakery/bakery9.smv \
                ${FOLDER}1_bakery/bakery9.smv \
-               -f ${FOLDER}1_bakery/symmetry.hq \
+               -f ${FOLDER}1_bakery/symmetry9.hq \
                -k 10 -s hpes"
             ;;
         2|ah)
@@ -219,7 +219,7 @@ case_bakery9() {
               "cargo run --release -- \
                -n ${FOLDER}1_bakery/bakery9.smv \
                ${FOLDER}1_bakery/bakery9.smv \
-               -f ${FOLDER}1_bakery/symmetry.hq \
+               -f ${FOLDER}1_bakery/symmetry9.hq \
                -k 10 -s hpes -q"
             ;;
         *)
@@ -240,7 +240,7 @@ case_bakery11() {
               "cargo run --release -- \
                -n ${FOLDER}1_bakery/bakery11.smv \
                ${FOLDER}1_bakery/bakery11.smv \
-               -f ${FOLDER}1_bakery/symmetry.hq \
+               -f ${FOLDER}1_bakery/symmetry11.hq \
                -k 10 -s hpes"
             ;;
         2|ah)
@@ -256,7 +256,7 @@ case_bakery11() {
               "cargo run --release -- \
                -n ${FOLDER}1_bakery/bakery11.smv \
                ${FOLDER}1_bakery/bakery11.smv \
-               -f ${FOLDER}1_bakery/symmetry.hq \
+               -f ${FOLDER}1_bakery/symmetry11.hq \
                -k 10 -s hpes -q"
             ;;
         *)

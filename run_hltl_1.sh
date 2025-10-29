@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-TIMEOUT_SEC=${TIMEOUT_SEC:-10}  # seconds
+TIMEOUT_SEC=${TIMEOUT_SEC:-60}  # seconds
 
 # Detect timeout binary safely (avoid unbound variable errors)
 if command -v gtimeout >/dev/null 2>&1; then
@@ -13,6 +13,7 @@ else
 fi
 
 # ---- Paths for results/logs ----
+FOLDER="benchmarks/sync/"
 RESULTS_DIR="_outfiles"
 LOG_DIR="${RESULTS_DIR}/logs"
 CSV="${RESULTS_DIR}/table4_runtimes.csv"
@@ -29,7 +30,7 @@ fi
 
 # Initialize CSV (once per script run)
 # echo "timestamp,case,variant,exit,real_s,user_s,sys_s,max_rss_kb,log" > "$CSV"
-echo "case,variant,result,real_s,user_s,sys_s,max_rss_kb,log" > "$CSV"
+echo "case,variant,result,real_s,log" > "$CSV"
 
 # ---- Timing helper ----
 time_run() {
@@ -81,8 +82,15 @@ time_run() {
 
     # execution finished.  
     # Append one row to CSV (simple real time)
-    printf "%s,%s,%s,%.3f,%.3f,%.3f,%s,%s\n" \
-        "$case_name" "$variant" "$status" "${real_s:-0.0}" "${user_s:-0.0}" "${sys_s:-0.0}" "${max_rss_kb:-0}" "$log_file" >> "$CSV"
+    if [[ "$variant" =~ ^([Ss][Mm][Tt])$ ]]; then
+        local line_count=0
+        line_count=$(wc -l < "$CSV" 2>/dev/null || echo 0)
+        if (( line_count > 1 )); then
+            printf "%s\n" "-----,-----,-----,-----,-----" >> "$CSV"
+        fi
+    fi
+    printf "%s,%s,%s,%.3f,%s\n" \
+        "$case_name" "$variant" "$status" "${real_s:-0.0}" "$log_file" >> "$CSV"
     # Append one row to CSV (full info)
     # printf "%s,%s,%s,%s,%s,%.3f,%.3f,%.3f,%s,%s\n" \
     # "$stamp" "$case_name" "$variant" "$status" "$exit_code" \
@@ -98,15 +106,14 @@ render_tables() {
 
   # Markdown table
   {
-    echo "| Case | Variant | Result | Real (s) | User (s) | Sys (s) | MaxRSS (KB) | Log |"
-    echo "|------|---------|--------|----------:|---------:|--------:|------------:|-----|"
-    tail -n +2 "$CSV" | awk -F, '{printf "| %s | %s | %s | %.3f | %.3f | %.3f | %s | %s |\n",$1,$2,$3,$4,$5,$6,$7,$8}'
+    echo "| Case | Variant | Result | Real (s) | Log |"
+    echo "|------|---------|--------|---------:|-----|"
+    tail -n +2 "$CSV" | awk -F, '{printf "| %s | %s | %s | %.3f | %s |\n",$1,$2,$3,$4,$5}'
   } > "$MD"
   printf "\nMarkdown table written to: $MD"
 }
 
 
-FOLDER="benchmarks/sync/"
 # --------------------------
 # ---- Case definitions ----
 # --------------------------
@@ -122,7 +129,7 @@ case_bakery3() {
               "cargo run --release -- \
                -n ${FOLDER}1_bakery/bakery3.smv \
                ${FOLDER}1_bakery/bakery3.smv \
-               -f ${FOLDER}1_bakery/symmetry.hq \
+               -f ${FOLDER}1_bakery/symmetry3.hq \
                -k 10 -s hpes"
             ;;
         2|ah)
@@ -138,7 +145,7 @@ case_bakery3() {
               "cargo run --release -- \
                -n ${FOLDER}1_bakery/bakery3.smv \
                ${FOLDER}1_bakery/bakery3.smv \
-               -f ${FOLDER}1_bakery/symmetry.hq \
+               -f ${FOLDER}1_bakery/symmetry3.hq \
                -k 10 -s hpes -q"
             ;;
         *)
@@ -297,7 +304,7 @@ case_snark1() {
     esac
 }
 
-### CHECK(!)
+
 case_ni_correct() {
     local case_name="NI_correct"
     local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
@@ -335,7 +342,7 @@ case_ni_correct() {
     esac
 }
 
-### CHECK(!)
+
 case_ni_incorrect() {
     local case_name="NI_incorrect"
     local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
@@ -373,7 +380,7 @@ case_ni_incorrect() {
     esac
 }
 
-### CHECK(!)
+
 case_nrp_correct() {
     local case_name="NRP_correct"
     local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
@@ -411,7 +418,7 @@ case_nrp_correct() {
     esac
 }
 
-### CHECK(!)
+
 case_nrp_incorrect() {
     local case_name="NRP_incorrect"
     local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
@@ -487,6 +494,45 @@ case_rb100() {
             ;;
     esac
 }
+
+case_rb100_witness() {
+    local case_name="Robustness100_witness"
+    local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
+
+    case "$mode" in
+        1|smt)
+            printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
+            time_run "$case_name" "SMT" \
+              "cargo run --release -- \
+               -n ${FOLDER}5_planning/robotic_robustness_100.smv \
+               ${FOLDER}5_planning/robotic_robustness_100.smv \
+               -f ${FOLDER}5_planning/robotic_robustness_formula.hq \
+               -k 20 -s hpes -c"
+            ;;
+        2|ah)
+            printf "\n[AutoHyper]   Running %s...\n" "$case_name"
+            time_run "$case_name" "AH" \
+              "AutoHyper/app/AutoHyper \
+               --nusmv ${FOLDER}5_planning/robotic_robustness_100.smv \
+               ${FOLDER}AH_formulas/5.1.hq \
+               --incl-forq --witness"
+            ;;
+        3|qbf)
+            printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
+            time_run "$case_name" "QBF" \
+              "cargo run --release -- \
+               -n ${FOLDER}5_planning/robotic_robustness_100.smv \
+               ${FOLDER}5_planning/robotic_robustness_100.smv \
+               -f ${FOLDER}5_planning/robotic_robustness_formula.hq \
+               -k 20 -s hpes -q"
+            ;;
+        *)
+            echo "Usage: case_rb100 <1|2|3> or <smt|ah|qbf>"
+            return 1
+            ;;
+    esac
+}
+
 
 
 case_rb400() {
@@ -606,7 +652,7 @@ case_rb3600() {
     esac
 }
 
-### CHECK (!)
+
 case_sp100() {
     local case_name="SP100"
     local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
@@ -645,7 +691,7 @@ case_sp100() {
     esac
 }
 
-### CHECK (!)
+
 case_sp400() {
     local case_name="SP400"
     local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
@@ -684,7 +730,7 @@ case_sp400() {
     esac
 }
 
-### CHECK (!)
+
 case_sp1600() {
     local case_name="SP1600"
     local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
@@ -723,7 +769,7 @@ case_sp1600() {
     esac
 }
 
-### CHECK (!)
+
 case_sp3600() {
     local case_name="SP3600"
     local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
@@ -762,7 +808,6 @@ case_sp3600() {
     esac
 }
 
-### CHECK (!)
 case_mutation() {
     local case_name="Mutation"
     local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
@@ -775,7 +820,7 @@ case_mutation() {
                -n ${FOLDER}6_mutation/mutation_testing.smv \
                ${FOLDER}6_mutation/mutation_testing.smv \
                -f ${FOLDER}6_mutation/mutation_testing.hq \
-               -k 10 -s pes"
+               -k 5 -s pes"
             ;;
         2|ah)
             printf "\n[AutoHyper]   Running %s...\n" "$case_name"
@@ -791,7 +836,7 @@ case_mutation() {
                -n ${FOLDER}6_mutation/mutation_testing.smv \
                ${FOLDER}6_mutation/mutation_testing.smv \
                -f ${FOLDER}6_mutation/mutation_testing.hq \
-               -k 10 -s pes -q"
+               -k 5 -s pes -q"
             ;;
         *)
             echo "Usage: case_mutation <1|2|3> or <smt|ah|qbf>"
@@ -800,6 +845,8 @@ case_mutation() {
     esac
 }
 
+
+
 # ------------
 # MAIN DRIVER
 # ------------
@@ -807,47 +854,48 @@ case_mutation() {
 # Register the cases available for -compare
 CASES=(
   # --- Bakery benchmarks ---
-  case_bakery3
-  case_bakery7
-  case_bakery9
-  case_bakery11
+  bakery3
+  bakery7
+  bakery9
+  bakery11
 
   # --- SNARK linearizability benchmark ---
-  case_snark1
+  snark1
 
   # --- Non-interference (NI) benchmarks ---
-  case_ni_correct
-  case_ni_incorrect
+  ni_correct
+  ni_incorrect
 
   # --- Non-repudiation (NRP) benchmarks ---
-  case_nrp_correct
-  case_nrp_incorrect
+  nrp_correct
+  nrp_incorrect
 
   # --- Robotic Robustness benchmarks ---
-  case_rb100
-  case_rb400
-  case_rb1600
-  case_rb3600
+  rb100
+  rb400
+  rb1600
+  rb3600
 
   # --- Robotic SP (safety policy) benchmarks ---
-  case_sp100
-  case_sp400
-  case_sp1600
-  case_sp3600
+  sp100
+  sp400
+  sp1600
+  sp3600
 
   # --- Mutation testing benchmark ---
-  case_mutation
+  mutation
 )
 
 usage() {
   cat <<EOF
 Usage: $0 [mode]
-  -compare all             Run all CASES with all modes (smt, ah, qbf)
-  -compare <case_name>     Run only the specified case with all modes
-  -smt|-ah|-qbf            Run all CASES with the chosen mode
-  -light                   Run a lightweight subset (edit inside)
-  -case <func> <mode>      Run a single case function with mode (smt|ah|qbf)
-  -list                    List available case functions
+  -all <mode>             Run all cases with the chosen mode (smt|ah|qbf)
+  -light <mode>           Run lightweight cases with the chosen mode (smt|ah|qbf)
+  -compare all            Run all cases with all modes (smt/ah/qbf)
+  -compare light          Run lightweight cases with all modes (smt/ah/qbf)
+  -list                   List all available case functions
+  -compare <case_name>    Run one case with all modes (see -list for case selections)
+  -case <func> <mode>     Run one case with selected mode (smt|ah|qbf)
 EOF
   exit 1
 }
@@ -860,9 +908,50 @@ list_cases() {
 run_matrix() {
   local modes=("$@")
   for c in "${CASES[@]}"; do
+    local fn="case_${c}"
+    if ! declare -f "$fn" >/dev/null 2>&1; then
+      echo "(!) Missing case function: $fn"
+      exit 1
+    fi
     for m in "${modes[@]}"; do
-      "$c" "$m"
+      "$fn" "$m"
     done
+  done
+  render_tables
+}
+
+LIGHT_CASES=()
+for case_fn in "${CASES[@]}"; do
+  case "$case_fn" in
+    bakery9|bakery11|rb1600|rb3600|sp400|sp1600|sp3600) ;;
+    *) LIGHT_CASES+=("$case_fn");;
+  esac
+done
+
+run_light_compare_matrix() {
+  local modes=("$@")
+  for c in "${LIGHT_CASES[@]}"; do
+    local fn="case_${c}"
+    if ! declare -f "$fn" >/dev/null 2>&1; then
+      echo "(!) Missing case function: $fn"
+      exit 1
+    fi
+    for m in "${modes[@]}"; do
+      "$fn" "$m"
+    done
+  done
+  render_tables
+}
+
+run_light_mode() {
+  local mode="$1"
+  for c in "${LIGHT_CASES[@]}"; do
+    local fn="case_${c}"
+    if ! declare -f "$fn" >/dev/null 2>&1; then
+      echo "(!) Missing case function: $fn"
+      exit 1
+    fi
+    "$fn" "$mode"
   done
   render_tables
 }
@@ -870,13 +959,14 @@ run_matrix() {
 run_single_case_matrix() {
   local case_name="$1"; shift
   local modes=("$@")
-  if declare -f "$case_name" >/dev/null 2>&1; then
+  local fn="case_${case_name}"
+  if declare -f "$fn" >/dev/null 2>&1; then
     for m in "${modes[@]}"; do
-      "$case_name" "$m"
+      "$fn" "$m"
     done
     render_tables
   else
-    echo "(!) Unknown case function: $case_name"
+    echo "(!) Unknown case: $case_name"
     list_cases
     exit 1
   fi
@@ -885,47 +975,67 @@ run_single_case_matrix() {
 case "${1:-}" in
   -compare)
     shift
-    if [[ -z "${1:-}" ]]; then
+    compare_target="${1:-}"
+    if [[ -z "$compare_target" ]]; then
       echo "(!) The '-compare' option requires an argument."
-      echo "   Usage: $0 -compare [all|<case_name>]"
+      echo "   Usage: $0 -compare [all|light|<case_name>]"
       echo
       list_cases
       exit 1
-    elif [[ "$1" == "all" ]]; then
-      run_matrix smt ah qbf
-    elif [[ "$1" == "battle" ]]; then
-      run_matrix smt ah 
-    else
-      run_single_case_matrix "$1" smt ah qbf
     fi
+    case "$compare_target" in
+      all)
+        run_matrix smt ah qbf
+        ;;
+      light)
+        run_light_compare_matrix smt ah qbf
+        ;;
+      *)
+        run_single_case_matrix "$compare_target" smt ah qbf
+        ;;
+    esac
     ;;
 
   -all)
-    run_matrix smt
-    ;;
-
-  -smt|-ah|-qbf)
-    mode="${1#-}"
+    shift
+    mode_raw="${1:-}"
+    [[ -z "$mode_raw" ]] && usage
+    mode="$(printf '%s' "$mode_raw" | tr '[:upper:]' '[:lower:]')"
+    case "$mode" in
+      smt|ah|qbf) ;;
+      *)
+        echo "(!) Unknown mode for -all: $mode_raw"
+        exit 1
+        ;;
+    esac
     run_matrix "$mode"
     ;;
 
   -light)
-    local_subset=(case_bakery3 case_bakery7)
-    for c in "${local_subset[@]}"; do
-      "$c" smt
-    done
-    render_tables
+    shift
+    mode_raw="${1:-}"
+    [[ -z "$mode_raw" ]] && usage
+    mode="$(printf '%s' "$mode_raw" | tr '[:upper:]' '[:lower:]')"
+    case "$mode" in
+      smt|ah|qbf) ;;
+      *)
+        echo "(!) Unknown mode for -light: $mode_raw"
+        exit 1
+        ;;
+    esac
+    run_light_mode "$mode"
     ;;
 
   -case)
     shift
     func="${1:-}"; mode="${2:-}"
     [[ -z "$func" || -z "$mode" ]] && usage
-    if declare -f "$func" >/dev/null 2>&1; then
-      "$func" "$mode"
+    fn="case_${func}"
+    if declare -f "$fn" >/dev/null 2>&1; then
+      "$fn" "$mode"
       render_tables
     else
-      echo "❌ Unknown case function: $func"
+      echo "Unknown case: $func"
       list_cases
       exit 1
     fi

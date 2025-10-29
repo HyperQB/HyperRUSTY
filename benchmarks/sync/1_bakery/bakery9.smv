@@ -1,4 +1,7 @@
---BAKERY ALGORITHM
+-- BAKERY ALGORITHM: a 9-process bakery algorithm
+-- NuSMV model adapted from:
+--      Lamport, Leslie. "A new solution of Dijkstra's concurrent programming problem."
+--      Communications of the ACM 17, no. 8 (1974): 453-455.
 MODULE main
 	VAR
 

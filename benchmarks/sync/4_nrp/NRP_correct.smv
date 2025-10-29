@@ -1,12 +1,17 @@
 -- Non-repudiation Protocol
--- (adopted from: Wojciech Jamroga, Sjouke Mauw, and Matthijs Melissen. Fairness in nonrepudiation protocols. In Proc. of the 7th Int’l Workshop on Security and Trust Management (STM’11))
--- (1) skip until P->T: m ;
--- (2) skip until P->T: NRO ;
--- (3) T->Q: m ;
--- (4) skip until Q->T: NRR;
--- (5) T->Q: NRO;
--- (6) T->P: NRR;
--- (7) terminate
+-- NuSMV model adapted from: 
+--     Wojciech Jamroga, Sjouke Mauw, and Matthijs Melissen
+--     "Fairness in nonrepudiation protocols" 
+--     In Proc. of the 7th Int’l Workshop on Security and Trust Management (STM’11))
+-- 
+-- [Pseudocode explanation]
+--		(1) skip until P->T: m ;
+--		(2) skip until P->T: NRO ;
+--		(3) T->Q: m ;
+-- 		(4) skip until Q->T: NRR;
+--		(5) T->Q: NRO;
+-- 		(6) T->P: NRR;
+-- 		(7) terminate
 
 MODULE main
 VAR
@@ -55,24 +60,22 @@ ASSIGN
 
 	next(take_turns) :=
 		case
-			(line = 3) : (take_turns);
-			(line = 5) : (take_turns);
-			(line = 6) : (take_turns);
 			(take_turns = 0) : 1;
 			(take_turns = 1) : 2;
 			(take_turns = 2) : 0;
+			TRUE : take_turns;
 		esac;
 
 	next(sender_actions) :=
 		case
 			(take_turns = 0) : {0,1,2,3,4};
-			!(take_turns = 0) : 0;
+			TRUE: 0;
 		esac;
 
 	next(receiver_actions) :=
 		case
 			(take_turns = 1) : {0,1,2};
-			!(take_turns = 1) : 0;
+			TRUE: 0;
 		esac;
 
 	next(thirdparty_actions) :=
@@ -81,7 +84,7 @@ ASSIGN
 			(line = 5) : {2};
 			(line = 6) : {3};
 			(take_turns = 2) : {0,1,2,3};
-			!(take_turns = 2) : 0;
+			TRUE: 0;
 		esac;
 		
 DEFINE

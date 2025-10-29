@@ -143,9 +143,13 @@ fn unroll_at(formula: &Expression, i: usize, k: usize) -> Expression {
             for t in i..=k {
                 let mut pre = Vec::new();
                 for u in i..t { pre.push(unroll_at(phi, u, k)); }
-                let lhs = big_and(pre); // empty -> True
                 let rhs = unroll_at(psi, t, k);
-                sum.push(And(Box::new(lhs), Box::new(rhs)));
+                if pre.is_empty() {
+                    sum.push(rhs);
+                } else {
+                    let lhs = big_and(pre);
+                    sum.push(And(Box::new(lhs), Box::new(rhs)));
+                }
             }
             big_or(sum)
         }
@@ -157,8 +161,12 @@ fn unroll_at(formula: &Expression, i: usize, k: usize) -> Expression {
                 let mut any = Vec::new();
                 for u in i..t { any.push(unroll_at(phi, u, k)); }
                 let lhs = unroll_at(psi, t, k);
-                let rhs = big_or(any); // empty -> False
-                prod.push(Or(Box::new(lhs), Box::new(rhs)));
+                if any.is_empty() {
+                    prod.push(lhs);
+                } else {
+                    let rhs = big_or(any);
+                    prod.push(Or(Box::new(lhs), Box::new(rhs)));
+                }
             }
             big_and(prod)
         }

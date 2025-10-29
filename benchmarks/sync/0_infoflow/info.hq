@@ -1,4 +1,4 @@
 Forall A . Forall B .
-F(
-    (PC_line[A] = PC_line[B])   
+(
+    (PC_line[A] = 0) U (halt[B])   
 )

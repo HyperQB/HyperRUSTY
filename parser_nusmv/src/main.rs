@@ -1038,7 +1038,7 @@ pub fn build_dyn_node<'ctx>(
             } else if let Some(pred_fn) = smv_env.predicates.get(s) {
                 Dynamic::from(pred_fn(smv_env, ctx, state))
             } else {
-                panic!("Unknown variable or predicate '{}'", s);
+                panic!("Unknown variable or predicate '{}', please make sure all variables are declared in INIT section.", s);
             }
         }
 

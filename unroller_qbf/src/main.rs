@@ -21,11 +21,8 @@ use expressions::exprparser::{parse_hyperltl, parse_ahltl};
 use expressions::Literal::{Atom, NegAtom};
 use expressions::{Literal as Lit, Variable, Quant};
 use expressions::Expression::*;
-// use fsm::LowerError;
-// mod flag;
 use flags::flags::parse_flags;
 
-/// Map key: "pred[path][t]"  →  instantiated body Expression at that time/path
 pub type PredMap = HashMap<String, Expression>;
 
 pub fn gen_qcir<'env, 'ctx>(
@@ -40,17 +37,16 @@ pub fn gen_qcir<'env, 'ctx>(
     let mut expr_vec: Vec<Box<Expression>> = vec![];
     let mut complete_bit_map : HashMap<String, usize> = HashMap::new();
     let mut init_map: HashMap<String, Vec<String>> = HashMap::new();
-    // init_map_vec structure -- [(filename, init_map),...]
-    let mut init_map_vec: Vec<(String, HashMap<String, Vec<String>>)> = Vec::new(); 
+    let mut init_map_vec: Vec<(String, HashMap<String, Vec<String>>)> = Vec::new(); //[(filename, init_map),...]
     let mut models: Vec<(String,String)> = Vec::new(); // all init maps in a vec
     let mut models_expr: Vec<(Expression,Expression)> = Vec::new(); // all init maps in a vec
 
+    // START: iterate through each SMVEnv, build the 
     for (i, (env, file)) in envs.iter().zip(files.iter()).enumerate() {
-
         let mut max_bit_map: HashMap<String, usize> = HashMap::new();
         let variables = env.get_variables(); // returns &HashMap<String, Variable>
 
-        // Build bit map: var name -> minimum bitwidth
+        // AUX: Build bit map: var name -> minimum bitwidth (for later bit-blasting)
         for (var_name, v) in variables {
             // println!("var: {:?}, {:?}", var_name, v);
             if let VarType::Int { upper: Some(max_val), .. } = v.sort {
@@ -59,7 +55,7 @@ pub fn gen_qcir<'env, 'ctx>(
             }
         }
 
-        // Build initial conditions
+        // BUILD: initial conditions
         let pred_names: HashSet<String> = env
             .get_predicates()
             .keys()
@@ -68,11 +64,10 @@ pub fn gen_qcir<'env, 'ctx>(
         let (states, _path_constraint) = env.generate_symbolic_path(1, Some("init"));
         let z3_constraints = env.generate_initial_constraints(&states);
         let mut init_exprs = Vec::new();
-
         for c in z3_constraints {
             let dyn_node = Dynamic::from_ast(&c);
+            // println!("DEBUG dyn_node: {dyn_node}");
             let raw_expr = dyn_to_expr("(init)", &dyn_node, /*is_primed=*/false, &max_bit_map);
-            // println!("raw: {:?}", raw_expr);
             let init_expr = simplify_trivial_iff(&raw_expr);
 
             // Skip if this clause refers to any predicate atom
@@ -85,20 +80,33 @@ pub fn gen_qcir<'env, 'ctx>(
         let full_init_expr = if init_exprs.is_empty() {
             Expression::True
         } else {
-            Expression::MAnd(init_exprs)
+            Expression::MAnd(init_exprs.clone())
         };
         
-
         // Build transition conditions 
         let dummy_state = env.make_dummy_state(env.get_context());
         for (var_name, transitions_vec) in env.get_transitions() {
-            // guards we've seen (as Expressions), to be use in TRUE cases
-            let mut covered: Vec<Expression> = Vec::new(); 
-            
+            // let var_name = *var_name;
+            // if transitions_vec.is_empty() {
+            //     if let Some(var) = variables.get(var_name) {
+            //         if let Some(expr) = full_nondet_update_expr(var_name, var, &max_bit_map) {
+            //             expr_vec.push(Box::new(expr));
+            //         } else {
+            //             expr_vec.push(Box::new(Expression::True));
+            //         }
+            //     }
+            //     continue;
+            // }
+
+            let mut covered: Vec<Expression> = Vec::new(); // to be use in TRUE cases
             for (i, (guard_fn, update_fn)) in transitions_vec.iter().enumerate() {
+
                 // 1) Evaluate once
                 let guard_ret  = guard_fn(env, env.get_context(), &dummy_state);
                 let update_ret = update_fn(env, env.get_context(), &dummy_state);
+
+                // DEBUG: dynamic nodes
+                // println!(">>> Dyn nodes: ");
                 // println!("Guard:  {:?}", guard_ret);
                 // println!("Update: {:?}\n", update_ret);
 
@@ -148,12 +156,10 @@ pub fn gen_qcir<'env, 'ctx>(
                         if curr_guard == Expression::True {
                                 if let Some(i_ast) = update_node.as_int() {
                                     if update_node.children().len() == 0 {
-                                        // println!("Here??? ");
-                                        // if let Some(i) = i_ast.as_i64() {
                                         let key: &str = *var_name;
                                         let bw = *max_bit_map.get(key).expect("missing bitwidth");
                                         next_expr = build_bitblasted_self_eq(key, bw);
-                                        // };
+
                                     }   
                                 }
 
@@ -223,8 +229,15 @@ pub fn gen_qcir<'env, 'ctx>(
                 }
             }
         }
-        // DEBUG: transitions
 
+        // DEBUG: initial conditions
+        // println!(">>> INITIAL CONDITIONS: ");
+        // for (idx, expr) in init_exprs.iter().enumerate() {
+        //     println!("  [{}] {}", idx, expression_to_string(&*expr));
+        // }
+        
+
+        //// DEBUG: transitions
         // println!(">>> TRANSITIONS: ");
         // for (i, e) in expr_vec.iter().enumerate() {
         //     println!("  [{}] {}", i, expression_to_string(&*e));
@@ -232,7 +245,6 @@ pub fn gen_qcir<'env, 'ctx>(
 
         let full_trans_expr = Expression::MAnd(expr_vec.clone());
         expr_vec.clear();
-        
         complete_bit_map.extend(
             max_bit_map.iter().map(|(k, v)| (k.clone(), *v as usize))
         );
@@ -242,12 +254,10 @@ pub fn gen_qcir<'env, 'ctx>(
 
 
     if (is_ahltl(formula)) {
-        // println!("Given formula is AHLTL");
         let mut quantifiers: Vec<(String, String)> = Vec::new();
         let parsed = parse_ahltl(formula, &complete_bit_map, bound).expect("AHLTL parse failed");
         let quants = parsed.prefix;
         let form = parsed.ahltl_expr;
-        // let pos = parsed.pos_prefix;
         let all_phi_pos = parsed.all_phi_pos;
 
 
@@ -327,7 +337,8 @@ pub fn gen_qcir<'env, 'ctx>(
         // let formula_expr = parse_inner_ltl(&form);
         let formula_unrolled = unroll_ltl(&form, bound);
         let final_formula = subst_predicates_fixpoint(&formula_unrolled, &predicates_map);
-        // println!("final_formula: {:?}", expression_to_string(&final_formula));
+        // println!("LTL formula: {:?}", expression_to_string(&form));
+        // println!("final unrolled formula: {:?}", expression_to_string(&final_formula));
 
         // Now the types line up:
         let qcir = to_qcir_unrolled(&models_expr, &predicates_map, &quants, &final_formula, bound)
@@ -345,10 +356,6 @@ pub fn gen_qcir<'env, 'ctx>(
             eprintln!("[gen_qcir_to_file] wrote {}", out_path.display());
         }
     }
-    // Rust genqbf
-    // let logger = Logger::new(false, 2);
-    // fsm::legacy_unwrap(models, &form, bound, &logger, &quants, &semantics.to_string());
-    // fsm::unwrap(models, &form, bound, &logger, &quantifiers, &semantics);
     
 }
 
@@ -751,7 +758,20 @@ pub fn dyn_bool_to_expression(node: &Dynamic, is_primed: bool) -> Expression {
         // Pure-boolean equality → IFF
         "=" => {
             assert!(args.len() == 2, "= expects 2 args, got {}", args.len());
-            Expression::Iff(Box::new(args[0].clone()), Box::new(args[1].clone()))
+            let lhs = args[0].clone();
+            let rhs = args[1].clone();
+
+            if lhs == Expression::True {
+                rhs
+            } else if rhs == Expression::True {
+                lhs
+            } else if lhs == Expression::False {
+                negate_expr(rhs)
+            } else if rhs == Expression::False {
+                negate_expr(lhs)
+            } else {
+                Expression::Iff(Box::new(lhs), Box::new(rhs))
+            }
         }
 
         // Conditional forms
@@ -2051,5 +2071,3 @@ pub fn replace_last_occurrence(atom: &str, target: &str, replacement: &str) -> S
 
 //     return (form, quantifiers);
 // }
-
-

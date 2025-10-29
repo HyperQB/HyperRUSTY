@@ -1,5 +1,10 @@
---MULTI-THREADED PROGRAM
---(adopted from: Geoffrey Smith and Dennis M. Volpano. Secure information flow in a multithreaded imperative language. In Proc. of the 25th ACM Symposium on Principles of Programming Languages (POPL’98))
+-- MULTI-THREADED PROGRAM: an incorrect version where PIN is less than 2times+1 of MASK
+-- NuSMV model adapted from: 
+--     Geoffrey Smith and Dennis M. Volpano
+--     "Secure information flow in a multithreaded imperative language" 
+--     In Proc. of the 25th ACM Symposium on Principles of Programming Languages (POPL’98)
+-- 
+-- [Pseudocode explanation]
 -- //// TRIGGER 0
 -- // 0   trigger0 loops if (mask != 0) else go to line25
 -- // 1        - while (trigger0 == 0) do nothing
@@ -60,18 +65,24 @@ ASSIGN
 		TRUE: halt;
 	esac;
 	-- when PIN is arbitrary, small PINs such as 001, is leaking information
-	init(PIN_2) := {1,0}; init(PIN_1) := {1,0}; init(PIN_0) := {1,0};
-	init(MASK_2) := 1; init(MASK_1) := 0; init(MASK_0) := 0;
+	init(PIN_2) := {1,0}; 
+	init(PIN_1) := {1,0}; 
+	init(PIN_0) := {1,0};
+	init(MASK_2) := 1; 
+	init(MASK_1) := 0; 
+	init(MASK_0) := 0;
 	-- the lines of each process
 	init(alpha_line) := 0;
-	init(beta_line) := 0;
+	init(beta_line)  := 0;
 	init(theta_line) := 0;
 
-	init(RESULT_0) := 0; init(RESULT_1) := 0; init(RESULT_2) := 0;
+	init(RESULT_0) := 0; 
+	init(RESULT_1) := 0; 
+	init(RESULT_2) := 0;
 
-	init(main_trigger) := 0;
-	init(trigger_alpha) := FALSE;
-	init(trigger_beta) := FALSE;
+	init(main_trigger)  := 0;
+	init(trigger_alpha) := {TRUE,FALSE};
+	init(trigger_beta)  := FALSE;
 
 	next(PIN_2) := PIN_2;
 	next(PIN_1) := PIN_1;
@@ -97,10 +108,10 @@ ASSIGN
 
 	next(RESULT_0) :=
 		case
-			((alpha_line = 2) & ((RESULT_0 = 1) | (MASK_0 = 1))) : 1;
+			((alpha_line = 2) &  ((RESULT_0 = 1) | (MASK_0 = 1))) : 1;
 			((alpha_line = 2) & !((RESULT_0 = 1) | (MASK_0 = 1))) : 0;
-			((beta_line = 2) & ((RESULT_0 = 1) & (MASK_0 = 0))) : 1;
-			((beta_line = 2) & !((RESULT_0 = 1) & (MASK_0 = 0))) : 0;
+			((beta_line = 2)  &  ((RESULT_0 = 1) & (MASK_0 = 0))) : 1;
+			((beta_line = 2)  & !((RESULT_0 = 1) & (MASK_0 = 0))) : 0;
 			TRUE: RESULT_0;
 		esac;
 
@@ -190,5 +201,3 @@ ASSIGN
 			((theta_line = 5) & (main_trigger = 2)) : {6}; -- proceed
 			(theta_line = 6) : {0}; -- mask = mask / 2
 		esac;
--- DEFINE
--- 		halt := ((theta_line=0) & (MASK_2=0) & (MASK_1=0) & (MASK_0=0));

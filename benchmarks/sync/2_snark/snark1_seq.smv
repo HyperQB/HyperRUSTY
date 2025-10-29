@@ -1,3 +1,9 @@
+-- SNARK ALGORITHM SEQ: a sequential version of the SNARK algorithm 
+-- NuSMV model adapted from: 
+--      Doherty, Simon, David L. Detlefs, Lindsay Groves, Christine H. Flood, 
+--		Victor Luchangco, Paul A. Martin, Mark Moir, Nir Shavit, and Guy L. Steele Jr. 
+--     "DCAS is not a silver bullet for nonblocking algorithm design." 
+--		In Proceedings of the sixteenth annual ACM symposium on Parallelism in algorithms and architectures, pp. 216-224. 2004
 --
 -- // SNARK structure (with some accelerations):
 -- // 0   ------- STAND BY: could go to line:1/ line:10/ line:19

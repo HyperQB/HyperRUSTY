@@ -93,6 +93,13 @@ time_run() {
 
     # execution finished.  
     # Append one row to CSV (simple real time)
+    if [[ "$variant" =~ ^([Ss][Mm][Tt])$ ]]; then
+        local line_count=0
+        line_count=$(wc -l < "$CSV" 2>/dev/null || echo 0)
+        if (( line_count > 1 )); then
+            printf "%s\n" "-----,-----,-----,-----,-----" >> "$CSV"
+        fi
+    fi
     printf "%s,%s,%s,%s,%s\n" \
         "$case_name" "$variant" "$status" "${real_s:-0.0}" "$log_file" >> "$CSV"
         

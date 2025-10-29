@@ -4,7 +4,8 @@
 /AutoHyper
 
 Cargo.lock
-.DS_Store
+*.DS_Store
+*/*.DS_Store
 
 *.txt
 *.smt2

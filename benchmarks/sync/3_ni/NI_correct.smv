@@ -86,26 +86,26 @@ ASSIGN
 	next(RESULT_2) :=
 		case
 			((alpha_line=2) &  ((RESULT_2=1) | (MASK_2=1))) : 1;
-			((alpha_line=2) & !((RESULT_2=1) | (MASK_2=1))) : 0;
+			((alpha_line=2) & (!((RESULT_2=1) | (MASK_2=1)))) : 0;
 			((beta_line=2)  &  ((RESULT_2=1) & (MASK_2=0))) : 1;
-			((beta_line=2)  & !((RESULT_2=1) & (MASK_2=0))) : 0;
+			((beta_line=2)  & (!((RESULT_2=1) & (MASK_2=0)))) : 0;
 			TRUE: RESULT_2;
 		esac;
 
 	next(RESULT_1) :=
 		case
 			((alpha_line=2) &  ((RESULT_1=1) | (MASK_1=1))) : 1;
-			((alpha_line=2) & !((RESULT_1=1) | (MASK_1=1))) : 0;
+			((alpha_line=2) & (!((RESULT_1=1) | (MASK_1=1)))) : 0;
 			((beta_line=2)  &  ((RESULT_1=1) & (MASK_1=0))) : 1;
-			((beta_line=2)  & !((RESULT_1=1) & (MASK_1=0))) : 0;
+			((beta_line=2)  & (!((RESULT_1=1) & (MASK_1=0)))) : 0;
 			TRUE: RESULT_1;
 		esac;
 	next(RESULT_0) :=
 		case
 			((alpha_line=2) &  ((RESULT_0=1) | (MASK_0=1))) : 1;
-			((alpha_line=2) & !((RESULT_0=1) | (MASK_0=1))) : 0;
+			((alpha_line=2) & (!((RESULT_0=1) | (MASK_0=1)))) : 0;
 			((beta_line=2)  &  ((RESULT_0=1) & (MASK_0=0))) : 1;
-			((beta_line=2)  & !((RESULT_0=1) & (MASK_0=0))) : 0;
+			((beta_line=2)  & (!((RESULT_0=1) & (MASK_0=0)))) : 0;
 			TRUE: RESULT_0;
 		esac;
 
@@ -160,8 +160,8 @@ ASSIGN
 		case
 			((alpha_line=0) & ((MASK_2=0) & (MASK_1=0) & (MASK_0=0))) : {0}; -- END
 			((alpha_line=0) & !((MASK_2=0) & (MASK_1=0) & (MASK_0=0))) : {1};
-			((alpha_line=1) & (trigger_alpha = FALSE)) : {1};
-			((alpha_line=1) & (trigger_alpha = TRUE)) : {2};
+			((alpha_line=1) & !(trigger_alpha)) : {1};
+			((alpha_line=1) & (trigger_alpha)) : {2};
 			(alpha_line=2) : {3}; -- result = result OR mask
 			(alpha_line=3) : {4}; -- trigger0 = 0
 			(alpha_line=4) : {5}; -- maintrigger = matrigger + 1
@@ -173,8 +173,8 @@ ASSIGN
 		case
 			((beta_line=0) & ((MASK_2=0) & (MASK_1=0) & (MASK_0=0))) : {0}; --END
 			((beta_line=0) & !((MASK_2=0) & (MASK_1=0) & (MASK_0=0))) : {1};
-			((beta_line=1) & (trigger_beta = FALSE)) : {1};
-			((beta_line=1) & (trigger_beta = TRUE)) : {2};
+			((beta_line=1) & !(trigger_beta)) : {1};
+			((beta_line=1) & (trigger_beta)) : {2};
 			(beta_line=2) : {3}; -- result = result AND compliment(mask)
 			(beta_line=3) : {4}; -- trigger1 = 0
 			(beta_line=4) : {5}; -- maintrigger = maintriger + 1
@@ -187,12 +187,14 @@ ASSIGN
 			((theta_line=0) &  (MASK_2=0 & MASK_1=0 & MASK_0=0)) : {0};
 			((theta_line=0) &  !(MASK_2=0 & MASK_1=0 & MASK_0=0)) : {1};
 			(theta_line=1) : {2}; -- maintrigger = 0
-			(theta_line=2 & ((PIN_2 = MASK_2) & (PIN_1 = MASK_1) & (PIN_0 = MASK_0))) : {3}; -- if (PIN & Mask = 0)
+			(theta_line=2 & ((PIN_2 = MASK_2) & (PIN_1 = MASK_1) & (PIN_0 = MASK_0))) : {3}; 
+			-- if (PIN & Mask = 0)
 			(theta_line=3) : {5}; -- trigger_alpha = 1
-			(theta_line=2 & !((PIN_2 = MASK_2) & (PIN_1 = MASK_1) & (PIN_0 = MASK_0))) : {4}; -- if !(PIN & Mask = 0)
+			(theta_line=2 & (!((PIN_2 = MASK_2) & (PIN_1 = MASK_1) & (PIN_0 = MASK_0)))) : {4}; 
+			-- if !(PIN & Mask = 0)
 			(theta_line=4) : {5}; -- trigger_beta=1
-			(theta_line=5 & !(main_trigger=2)) : {5}; -- while (maintrigger != 2) loop
-			(theta_line=5 & (main_trigger=2)) : {6}; -- proceed
+			((theta_line=5) & (!(main_trigger=2))) : {5}; -- while (maintrigger != 2) loop
+			((theta_line=5) & (main_trigger=2)) : {6}; -- proceed
 			(theta_line=6) : {0}; --mask = mask / 2
 		esac;
 		

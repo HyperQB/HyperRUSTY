@@ -97,13 +97,16 @@ pub fn gen_qcir<'env, 'ctx>(
             //     }
             //     continue;
             // }
-            // guards we've seen (as Expressions), to be use in TRUE cases
-            let mut covered: Vec<Expression> = Vec::new(); 
-            
+
+            let mut covered: Vec<Expression> = Vec::new(); // to be use in TRUE cases
             for (i, (guard_fn, update_fn)) in transitions_vec.iter().enumerate() {
+
                 // 1) Evaluate once
                 let guard_ret  = guard_fn(env, env.get_context(), &dummy_state);
                 let update_ret = update_fn(env, env.get_context(), &dummy_state);
+
+                // DEBUG: dynamic nodes
+                // println!(">>> Dyn nodes: ");
                 // println!("Guard:  {:?}", guard_ret);
                 // println!("Update: {:?}\n", update_ret);
 
@@ -227,8 +230,6 @@ pub fn gen_qcir<'env, 'ctx>(
             }
         }
 
-
-
         // DEBUG: initial conditions
         // println!(">>> INITIAL CONDITIONS: ");
         // for (idx, expr) in init_exprs.iter().enumerate() {
@@ -253,12 +254,10 @@ pub fn gen_qcir<'env, 'ctx>(
 
 
     if (is_ahltl(formula)) {
-        // println!("Given formula is AHLTL");
         let mut quantifiers: Vec<(String, String)> = Vec::new();
         let parsed = parse_ahltl(formula, &complete_bit_map, bound).expect("AHLTL parse failed");
         let quants = parsed.prefix;
         let form = parsed.ahltl_expr;
-        // let pos = parsed.pos_prefix;
         let all_phi_pos = parsed.all_phi_pos;
 
 
@@ -338,8 +337,8 @@ pub fn gen_qcir<'env, 'ctx>(
         // let formula_expr = parse_inner_ltl(&form);
         let formula_unrolled = unroll_ltl(&form, bound);
         let final_formula = subst_predicates_fixpoint(&formula_unrolled, &predicates_map);
-        println!("LTL formula: {:?}", expression_to_string(&form));
-        println!("final unrolled formula: {:?}", expression_to_string(&final_formula));
+        // println!("LTL formula: {:?}", expression_to_string(&form));
+        // println!("final unrolled formula: {:?}", expression_to_string(&final_formula));
 
         // Now the types line up:
         let qcir = to_qcir_unrolled(&models_expr, &predicates_map, &quants, &final_formula, bound)

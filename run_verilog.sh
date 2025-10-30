@@ -168,7 +168,7 @@ case_led_EA() {
               ${FOLDER}LED/build_ea.ys \
               ${FOLDER}LED/build_ea.ys \
               -t led_fsm -o model.smt2 \
-              -f ${FOLDER}LED/formula_ea.hq -k 101 -s pes"
+              -f ${FOLDER}LED/formula_ea.hq -k 101 -s pes -c"
             ;;
 
         *)
@@ -190,7 +190,7 @@ case_led_AE() {
               ${FOLDER}LED/build_ae.ys \
               ${FOLDER}LED/build_ae.ys \
               -t led_fsm -o model.smt2 \
-              -f ${FOLDER}LED/formula_ae.hq -k 10 -s pes"
+              -f ${FOLDER}LED/formula_ae.hq -k 10 -s pes -c"
             ;;
 
         *)

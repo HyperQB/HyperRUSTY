@@ -337,6 +337,13 @@ fn main() {
                     println!("result: unknown.");
                 }
             };
+            // grab the statistics of the solver
+            let stats = solver.get_statistics();
+            let val_str = match stats.value("time").unwrap() {
+                StatisticsValue::UInt(u)   => u.to_string(),
+                StatisticsValue::Double(d) => d.to_string(),
+            };
+            println!("Solve Time: {}", val_str);
         }
     } else {
         // Verilog Path

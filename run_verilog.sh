@@ -168,7 +168,7 @@ case_led_EA() {
               ${FOLDER}LED/build_ea.ys \
               ${FOLDER}LED/build_ea.ys \
               -t led_fsm -o model.smt2 \
-              -f ${FOLDER}LED/formula_ea.hq -k 101 -s pes -c"
+              -f ${FOLDER}LED/formula_ea.hq -k 101 -s pes"
             ;;
 
         *)

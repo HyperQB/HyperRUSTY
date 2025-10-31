@@ -1,7 +1,7 @@
 # HyperQB-2.0
 
 
-## TACAS 2026 arfifact evaluation requirements
+## TACAS 2026 artifact evaluation requirements
 
 
 
@@ -12,7 +12,7 @@ TBD!!!!!!
 ### "Additional requriements and installation" 
 > "Additional requirements for the artifact, such as installation of proprietary software or particular hardware resources"
 
-- Install [Docker](https://www.docker.com/) (instructions can be found [here](https://docs.docker.com/get-docker/)) (tested with version 25.0.3) and **start the Docker demon**. 
+- Install [Docker](https://www.docker.com/) (instructions can be found [here](https://docs.docker.com/get-docker/)) (tested with version 25.0.3) and **start the Docker daemon**. 
 
 
 TBD!!!!!!
@@ -21,7 +21,7 @@ TBD!!!!!!
 ### "Detailed instructions for smoke test"
 > "Detailed instruction for an early smoke test review that allows reviewers to: (1) verify that the artifact can properly run; and (2) perform a short evaluation of the artifact before the full evaluation and detect any difficulties (see Rebuttal)"
 
-We prepare several easy-to-use shell script for smoke test. The purpose is to have the reviewers quickly test each scripts that aims at reproducing the empirical results in out paper. We write one script per table: 
+We prepare several easy-to-use shell scripts for a smoke test. The purpose is to have the reviewers quickly test each script that aims at reproducing the empirical results in our paper. We write one script per table: 
 1) `run_hltl_1.sh`      : Reproducing Table 4 "HyperLTL benchmarks from citation 22"
 
 First, ensure that all light cases with SMT run smoothly:
@@ -36,7 +36,7 @@ Next, ensure that all light cases with QBF run smoothly:
 If any error shows up for the above case, please check the previous section `setup.sh` again.
 
 
-Finally, make sure AutoHyper (the baseline tool we compared with) execute smoothly:
+Finally, make sure AutoHyper (the baseline tool we compared with) executes smoothly:
 ```bash
 ./run_hltl_1.sh -light ah
 ```
@@ -96,4 +96,4 @@ And, make sure they can output witnesses:
 
 #### Verilog 
 
-While preparing the artifact on the Verilog case studies we discovered that using the `-c` option even on sat results results in much better solver performance for Z3.
+While preparing the artifact on certain Verilog case studies we discovered that using the `-c` option even on sat results results in much better solver performance for Z3.

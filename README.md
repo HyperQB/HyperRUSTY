@@ -1,12 +1,15 @@
 # HyperQB 2.0
 
 **Artifact ID:** `97`  
-**Paper Title:** `HyperQB 2.0: A Bounded Model Checker for
-Hyperproperties`
+**Paper Title:** `HyperQB 2.0: A Bounded Model Checker for Hyperproperties`  
+**Zenodo DOI:** `10.5281/zenodo.17490665`  
+**Zenodo Record:** `https://zenodo.org/records/17490665`
 
 This artifact provides a **Docker image** (distributed via **Docker Hub**) that contains our full experimental environment and the **shell scripts** needed to reproduce the tables reported in the paper. The AEC only needs to (1) install Docker, (2) pull our image from Docker Hub, (3) load it into Docker, and (4) run the provided scripts inside the container to regenerate the results.
 
-- <mark>**Expected outputs:** CSV/Markdown/LaTeX tables in `./results/tables/` on the host</mark>
+**Our artifact is available on both Zenodo and Docker Hub. For simplicity, the instructions below use the Docker Hub version.**
+
+**Expected outputs:** Printed in Console and logged in `_outfiles` directory.
 
 ---
 
@@ -36,8 +39,6 @@ This artifact provides a **Docker image** (distributed via **Docker Hub**) that 
 - **Disk:** ≥ 20 GB free space
 - **Internet:** required once to pull the artifact from Docker Hub
 - **GPU:** _not required_ (all experiments run on CPU)
-
-> <mark>**x86_64 / amd64 hosts (Intel/AMD PCs, Intel Macs):** If the image is published for `linux/amd64`, it runs **natively**—no flags required. If the image is **`linux/arm64`‑only**, either use our multi‑arch/amd64 build **or** run under emulation with `--platform=linux/arm64`. Docker Desktop includes QEMU emulation by default; on native Linux you may need `binfmt`/`qemu-user-static`. Emulation works but is slower.</mark>
 
 ---
 
@@ -119,7 +120,7 @@ Please ensure you have an active internet connection and Docker is running.
 mkdir -p ~/tacas-ae && cd ~/tacas-ae
 
 # Pull the latest image from Docker Hub
-docker pull yourorg/hyperqb2.0:latest
+docker pull rogaleke/hyperqb2.0:latest
 
 ```
 
@@ -131,7 +132,7 @@ New-Item -ItemType Directory -Force -Path "$HOME\tacas-ae" | Out-Null
 Set-Location "$HOME\tacas-ae"
 
 # Pull the latest image from Docker Hub
-docker pull yourorg/hyperqb-docker:latest
+docker pull rogaleke/hyperqb2.0:latest
 ```
 
 > **File size note:** The tarball can be several GB. Ensure sufficient disk space and a stable network connection.
@@ -146,27 +147,19 @@ Start the container with sensible defaults. **Copy exactly one** of the followin
 
 ```bash
 # Basic run
-docker run --rm -it hyperqb-docker:latest
+docker run --rm -it hyperqb2.0:latest
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-# Ensure you run this from the folder that contains .\data and .\results
-docker run --rm -it `
-  --name ae-container `
-  -v "${PWD}\data:/data" `
-  -v "${PWD}\results:/results" `
-  REPO/IMAGE:TAG `
-  /bin/bash
+docker run --rm -it hyperqb2.0:latest
 ```
 
 > **What this does:**
 >
 > - `--rm` cleans up when you exit.
 > - `-it` gives you an interactive shell.
-> - `-v host:container` mounts folders so outputs persist on your machine.
-> - `/bin/bash` drops you inside the container.
 
 You should now see a shell prompt **inside** the container, typically like:  
 `root@<container-id>:/workspace#`

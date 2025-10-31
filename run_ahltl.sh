@@ -810,6 +810,14 @@ EOF
   exit 1
 }
 
+LIGHT_CASES=()
+for case_fn in "${CASES[@]}"; do
+  case "$case_fn" in
+    acdb|concleak|specexec_v1|specexec_v2) ;;
+    *) LIGHT_CASES+=("$case_fn");;
+  esac
+done
+
 list_cases() {
   printf "Available cases:\n"
   for c in "${CASES[@]}"; do echo "  $c"; done
@@ -840,6 +848,27 @@ run_single_case_matrix() {
     list_cases
     exit 1
   fi
+}
+
+
+
+run_light_mode() {
+  local mode="${1:-}"
+  shift
+  local extra_args=("$@")
+  for c in "${LIGHT_CASES[@]}"; do
+    local fn="case_${c}"
+    if ! declare -f "$fn" >/dev/null 2>&1; then
+      echo "(!) Missing case function: $fn"
+      exit 1
+    fi
+    if (( ${#extra_args[@]} )); then
+      "$fn" "$mode" "${extra_args[@]}"
+    else
+      "$fn" "$mode"
+    fi
+  done
+  render_tables
 }
 
 case "${1:-}" in
@@ -874,26 +903,21 @@ case "${1:-}" in
 
   -light)
     shift
-    if [[ -z "${1:-}" ]]; then
-      echo "(!) The '-light' option requires an argument."
-      echo "   Usage: $0 -light [smt|qbf]"
-      exit 1
-    local_subset=(
-      acdb
-      concleak
-      specexec_v1
-      specexec_v4
-    )
-    elif [[ "$1" == "smt" ]]; then
-      for c in "${local_subset[@]}"; do
-        local fn="case_${c}"
-        "$fn" smt
-      done
+    mode_raw="${1:-}"
+    [[ -z "$mode_raw" ]] && usage
+    mode="$(printf '%s' "$mode_raw" | tr '[:upper:]' '[:lower:]')"
+    case "$mode" in
+      smt|qbf) ;;
+      *)
+        echo "(!) Unknown mode for -light: $mode_raw"
+        exit 1
+        ;;
+    esac
+    shift
+    if (( $# )); then
+      run_light_mode "$mode" "$@"
     else
-      for c in "${local_subset[@]}"; do
-        local fn="case_${c}"
-        "$fn" qbf
-      done
+      run_light_mode "$mode"
     fi
     render_tables
     ;;

@@ -21,6 +21,7 @@ This artifact provides a **Docker image** (distributed via **Docker Hub**) that 
 7. [Run the Container (Interactive Shell)](#run-the-container-interactive-shell)
 8. [Inside the Container: Reproduce Experiments](#inside-the-container-reproduce-experiments)
 9. [Collecting Outputs](#collecting-outputs)
+10. [Notices](#notices)
 
 ---
 
@@ -299,6 +300,10 @@ All outputs are printed to the screen during execution and simultaneously logged
 
 ---
 
-**While preparing the artifact for the Verilog case studies, we discovered that using the `-c` option, even on satisfiable (SAT) results, significantly improves Z3’s solver performance.**
+## Notices
+
+### Notice 1: During the preparation of the artifact, we discovered that the first two cases in the Loop Peeling benchmarks (`LP` and `LP_ndet`) contained a minor bug in the model. After correcting it, the QBF timings differed from those originally reported in the paper.
+
+### Notice 2: While preparing the artifact for the Verilog case studies, we discovered that using the `-c` option, even on satisfiable (SAT) results, significantly improves Z3's solver performance.
 
 We thank the Artifact Evaluation Committee for their time and feedback.

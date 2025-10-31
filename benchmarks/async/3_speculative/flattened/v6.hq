@@ -40,7 +40,7 @@ G(
         ((var_size[A][t] = 4) & (var_size[B][t] = 4))
     )
 )    
-->  G(obs_eq[B][t])
+& G(obs_eq[B][t])
 
 
 

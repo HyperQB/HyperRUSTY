@@ -478,7 +478,7 @@ case_ksafety() {
          -n ${FOLDER}11_ksafety/doubleSquare.smv \
          ${FOLDER}11_ksafety/doubleSquare.smv \
          -f ${FOLDER}11_ksafety/doubleSquare.hq \
-         -k 50 -s hpes -c -q"
+         -k 200 -s hpes -c -q"
       ;;
     *) echo "Usage: case_ksafety <1|2|3> or <smt|ah|qbf>"; return 1 ;;
   esac
@@ -1407,9 +1407,9 @@ case_simple_queue() {
       printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
       time_run "$case_name" "QBF" \
         "${CARGO_BIN} \
-         -n ${FOLDER}21_queue/concurrent.smv \
-         ${FOLDER}21_queue/atomic.smv \
-         -f ${FOLDER}21_queue/lin.hq \
+         -n ${FOLDER}21_queue/atomic.smv \
+         ${FOLDER}21_queue/concurrent.smv \
+         -f ${FOLDER}21_queue/lin2.hq \
          -k 10 -s hpes -q"
       ;;
     *) echo "Usage: case_simple_queue <1|2|3> or <smt|ah|qbf>"; return 1 ;;

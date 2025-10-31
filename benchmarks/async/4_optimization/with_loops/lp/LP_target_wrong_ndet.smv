@@ -87,11 +87,13 @@
   init(obs_public_out) := 0;
   next(obs_public_out) :=
     case
-      ((step=4)& !(int_k=0)): in_int_x mod int_k;
-      ((step=10)& !(int_k=0)): in_int_x mod int_k;
+      ((step=4)& (!(int_k=0))): in_int_x;
+      ((step=10)& (!(int_k=0))): in_int_x;
+      -- ((step=4)& (!(int_k=0))): in_int_x mod int_k;
+      -- ((step=10)& (!(int_k=0))): in_int_x mod int_k;
       TRUE: obs_public_out;
     esac;
 
 
   DEFINE
-  halt := (step=11);
+    halt := (step=11);

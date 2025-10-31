@@ -33,7 +33,7 @@ MODULE main
 		init(counter):= 0;
 		next(counter):=
 			case
-				(proc2_PC=9 & (counter!=0)): counter - 1;
+				(proc2_PC=9 & (counter!=0)): (counter - 1);
 				(proc1_PC=3): 4;
 				TRUE: counter;
 			esac;
@@ -44,14 +44,14 @@ MODULE main
 		init(wait_n):= 3;
 		next(wait_n):=
 			case
-				((proc2_PC=7) & !(wait_n=0)): wait_n - 1;
+				((proc2_PC=7) & !(wait_n=0)): (wait_n - 1);
 				TRUE: wait_n;
 			esac;
 
 		init(wait_mn):= 7;
 		next(wait_mn):=
 			case
-				((proc3_PC=14) & !(wait_mn=0)): wait_mn - 1;
+				((proc3_PC=14) & !(wait_mn=0)): (wait_mn - 1);
 				TRUE: wait_mn;
 			esac;
 
@@ -77,10 +77,9 @@ MODULE main
 				(proc1_PC = 2 & !(in_LOW = in_HIGH))    : 4;
 				(proc1_PC = 3)                          : 3;
 				(proc1_PC = 4)                          : 4;
-
 				-- program2
 				(proc1_PC = 6)                          : 7;
-				(proc1_PC = 7 & wait_n != 0)            : 7;
+				(proc1_PC = 7 & (wait_n != 0))          : 7;
 				(proc1_PC = 7 & wait_n  = 0)            : 8;
 				(proc1_PC = 8 & counter != 0)           : 9;
 				(proc1_PC = 8 & counter  = 0)           : 10;
@@ -88,14 +87,12 @@ MODULE main
 				(proc1_PC = 9 & counter   = 0)          : 10;
 				(proc1_PC = 10)                         : 11;
 				(proc1_PC = 11)                         : 11;
-
 				-- program3
 				(proc1_PC = 13)                         : 14;
 				(proc1_PC = 14 & wait_mn != 0)          : 14;
 				(proc1_PC = 14 & wait_mn  = 0)          : 15;
 				(proc1_PC = 15)                         : 16;
 				(proc1_PC = 16)                         : 16;
-
 				TRUE : proc1_PC;
 			esac;
 
@@ -108,10 +105,9 @@ MODULE main
 				-- program1
 				(proc2_PC = 1)                          : 2;
 				(proc2_PC = 2 &  (in_LOW = in_HIGH))    : 3;
-				(proc2_PC = 2 & !(in_LOW = in_HIGH))    : 4;
+				(proc2_PC = 2 & (!(in_LOW = in_HIGH)))    : 4;
 				(proc2_PC = 3)                          : 3;
 				(proc2_PC = 4)                          : 4;
-
 				-- program2
 				(proc2_PC = 6)                          : 7;
 				(proc2_PC = 7 & wait_n != 0)            : 7;
@@ -122,14 +118,12 @@ MODULE main
 				(proc2_PC = 9 & counter   = 0)          : 10;
 				(proc2_PC = 10)                         : 11;
 				(proc2_PC = 11)                         : 11;
-
 				-- program3
 				(proc2_PC = 13)                         : 14;
 				(proc2_PC = 14 & wait_mn != 0)          : 14;
 				(proc2_PC = 14 & wait_mn  = 0)          : 15;
 				(proc2_PC = 15)                         : 16;
 				(proc2_PC = 16)                         : 16;
-
 				TRUE : proc2_PC;
 			esac;
 
@@ -145,7 +139,6 @@ MODULE main
 				(proc3_PC = 2 & !(in_LOW = in_HIGH))    : 4;
 				(proc3_PC = 3)                          : 3;
 				(proc3_PC = 4)                          : 4;
-
 				-- program2
 				(proc3_PC = 6)                          : 7;
 				(proc3_PC = 7 & wait_n != 0)            : 7;
@@ -156,20 +149,18 @@ MODULE main
 				(proc3_PC = 9 & counter   = 0)          : 10;
 				(proc3_PC = 10)                         : 11;
 				(proc3_PC = 11)                         : 11;
-
 				-- program3
 				(proc3_PC = 13)                         : 14;
 				(proc3_PC = 14 & wait_mn != 0)          : 14;
 				(proc3_PC = 14 & wait_mn  = 0)          : 15;
 				(proc3_PC = 15)                         : 16;
 				(proc3_PC = 16)                         : 16;
-
 				TRUE : proc3_PC;
 			esac;
 
 
 	DEFINE
 		-- halt := (proc1.loop_count=1 & proc2.loop_count=1 & proc3.loop_count=1);
-		halt           := (proc2_PC = 11 & proc3_PC = 16);
+		halt           := ((proc2_PC = 11) & (proc3_PC = 16));
 		obs_PRINT_ONE  := (proc2_PC = 11);
 		obs_PRINT_ZERO := (proc3_PC = 16);

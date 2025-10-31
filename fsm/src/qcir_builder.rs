@@ -736,39 +736,11 @@ pub fn to_qcir_unrolled_ahltl(
 
         traj_prefixes.push((q, vars));
     }
-
-
     let final_formula = conjunct_formula_with_all_phi_pos(&formula_expr, &all_phi_pos);
 
     // Emit a single QCIR: headers at the top; body = AND of all unrolled clauses
     to_async_qcir_string(&init_clauses, &body_clauses, &final_formula, &header_blocks, &traj_prefixes)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 pub fn subst_predicates_fixpoint(e: &Expression, predmap: &std::collections::HashMap<String, Expression>) -> Expression {
     const MAX_ROUNDS: usize = 64; // safety cap for accidental cycles

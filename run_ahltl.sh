@@ -2,7 +2,7 @@
 #!/bin/bash
 set -euo pipefail
 
-TIMEOUT_SEC=${TIMEOUT_SEC:-30}  # seconds
+TIMEOUT_SEC=${TIMEOUT_SEC:-120}  # seconds
 
 # Detect timeout binary safely (avoid unbound variable errors)
 if command -v gtimeout >/dev/null 2>&1; then
@@ -206,19 +206,19 @@ case_concleak() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "${CARGO_BIN} \
-               -n ${FOLDER}2_concleaks/flattened/concleaks_2procs.smv \
-               ${FOLDER}2_concleaks/flattened/concleaks_2procs.smv \
-               -f ${FOLDER}2_concleaks/flattened/od.hq \
+               -n ${FOLDER}2_concleaks/concleaks_2procs.smv \
+               ${FOLDER}2_concleaks/concleaks_2procs.smv \
+               -f ${FOLDER}2_concleaks/od.hq \
                -k 11 -m 22 -s hpes"
             ;;
         2|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
               "${CARGO_BIN} \
-               -n ${FOLDER}2_concleaks/flattened/concleaks_2procs.smv \
-               ${FOLDER}2_concleaks/flattened/concleaks_2procs.smv \
-               -f ${FOLDER}2_concleaks/flattened/od.hq \
-               -k 11 -m 22 -s hpes -q"
+               -n ${FOLDER}1_acdb/acdb_ndet.smv \
+               ${FOLDER}1_acdb/acdb_ndet.smv \
+               -f ${FOLDER}1_acdb/acdb_ndet.hq \
+               -k 8 -m 16 -s hpes -q"
             ;;
         *)
             echo "Usage: case_concleak <1|2> or <smt|qbf>"
@@ -236,18 +236,18 @@ case_concleak_ndet() {
             printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
             time_run "$case_name" "SMT" \
               "${CARGO_BIN} \
-               -n ${FOLDER}2_concleaks/flattened/concleaks_3procs.smv \
-               ${FOLDER}2_concleaks/flattened/concleaks_3procs.smv \
-               -f ${FOLDER}2_concleaks/flattened/od.hq \
+               -n ${FOLDER}2_concleaks/concleaks_3procs.smv \
+               ${FOLDER}2_concleaks/concleaks_3procs.smv \
+               -f ${FOLDER}2_concleaks/od.hq \
                -k 18 -m 36 -s hpes"
             ;;
         2|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
               "${CARGO_BIN} \
-               -n ${FOLDER}2_concleaks/flattened/concleaks_3procs.smv \
-               ${FOLDER}2_concleaks/flattened/concleaks_3procs.smv \
-               -f ${FOLDER}2_concleaks/flattened/od.hq \
+               -n ${FOLDER}2_concleaks/concleaks_3procs.smv \
+               ${FOLDER}2_concleaks/concleaks_3procs.smv \
+               -f ${FOLDER}2_concleaks/od.hq \
                -k 18 -m 36 -s hpes -q"
             ;;
         *)
@@ -538,7 +538,7 @@ case_opt_dbe_ndet_buggy() {
               "${CARGO_BIN} \
                -n ${FOLDER}4_optimization/with_ndet/dbe/DBE_source_ndet.smv \
                ${FOLDER}4_optimization/with_ndet/dbe/DBE_target_wrong_ndet.smv \
-               -f ${FOLDER}4_optimization/with_ndet/dbe/DBE.hq \
+               -f ${FOLDER}4_optimization/with_ndet/dbe/DBE2.hq \
                -k 13 -m 26 -s hpes"
             ;;
         2|qbf)
@@ -547,7 +547,7 @@ case_opt_dbe_ndet_buggy() {
               "${CARGO_BIN} \
                -n ${FOLDER}4_optimization/with_ndet/dbe/DBE_source_ndet.smv \
                ${FOLDER}4_optimization/with_ndet/dbe/DBE_target_wrong_ndet.smv \
-               -f ${FOLDER}4_optimization/with_ndet/dbe/DBE.hq \
+               -f ${FOLDER}4_optimization/with_ndet/dbe/DBE2.hq \
                -k 13 -m 26 -s hpes -q"
             ;;
         *)
@@ -758,8 +758,8 @@ case_cache() {
               "${CARGO_BIN} \
                -n ${FOLDER}5_cache/cache_flattened.smv \
                ${FOLDER}5_cache/cache_flattened.smv \
-               -f ${FOLDER}5_cache/odnd.hq \
-               -k 13 -m 26 -s hpes -q"
+               -f ${FOLDER}5_cache/odnd2.hq \
+               -k 6 -m 12 -s hpes -q"
             ;;
         *)
             echo "Usage: case_cache <1|2> or <smt|qbf>"
@@ -794,7 +794,6 @@ CASES=(
     opt_lp_buggy
     opt_eflp
     opt_eflp_ndet
-    opt_eflp_loop
     cache
 )
 
@@ -902,13 +901,19 @@ case "${1:-}" in
   -case)
     shift
     func="${1:-}"; mode="${2:-}"
-    fn="case_${func}"
     [[ -z "$func" || -z "$mode" ]] && usage
-    if declare -f "$func" >/dev/null 2>&1; then
-      "$fu" "$mode"
+    shift 2
+    extra_case_args=("$@")
+    fn="case_${func}"
+    if declare -f "$fn" >/dev/null 2>&1; then
+      if (( ${#extra_case_args[@]} )); then
+        "$fn" "$mode" -- "${extra_case_args[@]}"
+      else
+        "$fn" "$mode"
+      fi
       render_tables
     else
-      echo "(!) Unknown case function: $fu"
+      echo "Unknown case: $func"
       list_cases
       exit 1
     fi

@@ -124,8 +124,9 @@ You should see **“Hello from Docker!”** If this works, Docker is correctly i
 
 We are fully aware of the internet access restrictions during the TACAS artifact evaluation. Therefore, we provide two alternative options:
 
-[OPTION 1]: Pull the HyperQB image from Docker Hub
-[OPTION 2]: Download the HyperQB image from Zenodo
+**[OPTION 1]**: Pull the HyperQB image from Docker Hub
+
+**[OPTION 2]**: Download the HyperQB image from Zenodo
 
 We recommend using [OPTION 1]. However, if pulling directly from Docker Hub is not possible, the image is also available for download from our permanent online repository on Zenodo. This serves as a flexible alternative in case one of the options does not work on the reviewer’s machine.
 
@@ -222,11 +223,11 @@ You are now in a ready-to-go environment to run HyperQB! Yay!
 We provide easy-to-use shell scripts tailored for the early light review. To facilitate quick testing, we set a small `TIMEOUT` value in these scripts, allowing reviewers to run through all cases efficiently.
 
 To ensure that all tables are reproducible and ready for further evaluation, please execute the following command:
-`./run_hltl_1.sh -compare all`
-`./run_hltl_2.sh -compare all`
-`./run_ahltl -all`
-`./run_loopcond.sh -all`
-`./run_verilog -all`
+- `./run_hltl_1.sh -compare all`
+- `./run_hltl_2.sh -compare all`
+- `./run_ahltl -all`
+- `./run_loopcond.sh -all`
+- `./run_verilog -all`
 
 If no errors are reported, the smoke test is successful!
 
@@ -234,7 +235,7 @@ If no errors are reported, the smoke test is successful!
 
 ## Inside the Container, stage 2: Reproduce Experiments
 
-We now describe in detail how to reproduce the results presented in the paper. To ensure correct execution, <mark>please adjust the `TIMEOUT` parameter defined at the top (line 5) of each shell script according to your machine’s setup.<mark/> We leave this value for reviewers to determine based on their computing environment.
+We now describe in detail how to reproduce the complete results presented in the paper. To ensure correct execution, <mark>please adjust the `TIMEOUT` parameter defined at the top (line 5) of each shell script according to your machine’s setup.<mark/> We leave this value for reviewers to determine based on their computing environment.
 
 
 ### Reproducing Tables 4 & 5 (HLTL)
@@ -270,14 +271,14 @@ We now describe in detail how to reproduce the results presented in the paper. T
 | -------------- | ------------------------------------------------------------ |
 | `give_witness` | Extends SMT/AH runs with witness generation (when supported) |
 
-To Reproduce **Tables 4 & 5 (HLTL)**, Run:
+To Reproduce **Tables 4 & 5 (HLTL)**, after adjusting `TIMEOUT` to a large enough number, run:
 
 ```bash
 ./run_hltl_1.sh -compare all
 ./run_hltl_2.sh -compare all
 ```
 
-### Reproducing Table 5 (AHLTL)
+### Reproducing Table 6 (AHLTL)
 
 `run_ahltl.sh` runs benchmark suites using either **Z3** (SMT) or **QuAbs** (qbf) as the solver.
 
@@ -298,7 +299,7 @@ To Reproduce **Tables 4 & 5 (HLTL)**, Run:
 | `-compare <case_name>`              |     Compare a specific case across all modes      |
 | `-case <case_name> <mode> [extras]` |  Run a case with one of the modes (`smt`, `qbf`)  |
 
-To Reproduce **Table 5 (AHLTL)**, Run:
+To Reproduce **Table 6 (AHLTL)**, Run:
 
 ```bash
 ./run_ahltl.sh -compare all
@@ -364,8 +365,8 @@ All outputs are printed to the screen during execution and simultaneously logged
 
 ## Notices
 
-### Notice 1: During the preparation of the artifact, we discovered that the first two cases in the Loop Peeling benchmarks (`LP` and `LP_ndet`) contained a minor bug in the model. After correcting it, the QBF timings differed from those originally reported in the paper. Furthermore, the first ELFP entry is UNSAT (which the paper has in this case with a checkmark, which is a typo). 
+### Notice 1: During the preparation of the artifact, we discovered that the first two cases in the Loop Peeling benchmarks (`LP` and `LP_ndet`) contained a minor bug in the model. After correcting it, the QBF timings differed from those originally reported in the paper. Furthermore, the first ELFP entry is UNSAT; the checkmark shown in the paper is a typo.
 
 ### Notice 2: While preparing the artifact for the Verilog case studies, we discovered that using the `-c` option, even on satisfiable (SAT) results, significantly improves Z3's solver performance.
 
-We thank the Artifact Evaluation Committee for their time and feedback.
+We sincerely thank the Artifact Evaluation Committee for their time and feedback.

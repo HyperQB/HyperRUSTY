@@ -605,10 +605,10 @@ case_opt_lp_ndet() {
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
             time_run "$case_name" "QBF" \
               "${CARGO_BIN} \
-               -n ${FOLDER}4_optimization/with_ndet/lp/LP_source_ndet.smv \
-               ${FOLDER}4_optimization/with_ndet/lp/LP_target_ndet.smv \
-               -f ${FOLDER}4_optimization/with_ndet/lp/LP.hq \
-               -k 17 -m 34 -s hpes -q"
+               -n ${FOLDER}4_optimization/original/lp/LP_source.smv \
+               ${FOLDER}4_optimization/original/lp/LP_target.smv \
+               -f ${FOLDER}4_optimization/original/lp/LP.hq \
+               -k 23 -m 45 -s hpes -q"
             ;;
         *)
             echo "Usage: case_opt_lp_ndet <1|2> or <smt|qbf>"

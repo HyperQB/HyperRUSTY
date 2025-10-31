@@ -63,7 +63,10 @@ time_run() {
             real_s="NA"
         fi
     fi
-
+    real_s=${real_s:-0.0}
+    case "$real_s" in
+        ''|*[!0-9.-]*) real_s=0.0 ;;
+    esac
     printf "%s,%s,%s,%s,%s\n" \
         "$case_name" "$variant" "$status" "${real_s:-0.0}" "$log_file" >> "$CSV"
 }

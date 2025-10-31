@@ -83,6 +83,10 @@ time_run() {
 
     # execution finished.  
     # Append one row to CSV (simple real time)
+    real_s=${real_s:-0.0}
+    case "$real_s" in
+        ''|*[!0-9.-]*) real_s=0.0 ;;
+    esac
     printf "%s,%s,%.3f,%s\n" \
         "$case_name" "$status" "${real_s:-0.0}" "$log_file" >> "$CSV"
     # Append one row to CSV (full info)

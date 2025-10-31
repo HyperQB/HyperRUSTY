@@ -24,12 +24,6 @@ This artifact provides a **Docker image** (distributed via **Zenodo**) that cont
 8. [Run the Container (Interactive Shell)](#run-the-container-interactive-shell)
 9. [Inside the Container: Reproduce Experiments](#inside-the-container-reproduce-experiments)
 10. [Collecting Outputs](#collecting-outputs)
-11. [One-Command Convenience (Optional)](#one-command-convenience-optional)
-12. [Troubleshooting](#troubleshooting)
-13. [FAQ](#faq)
-14. [Citation & Acknowledgments](#citation--acknowledgments)
-15. [Final Checklist (for the AEC)](#final-checklist-for-the-aec)
-16. [Placeholders to Replace Before Release](#placeholders-to-replace-before-release)
 
 ---
 

@@ -3,7 +3,6 @@
 
 
 ## Build HyperQB 2.0 from Source Code
----
 
 ### Rust
 
@@ -16,7 +15,7 @@ rustc --version
 
 To check if HyperQB 2.0 compiled without error, execute: 
 ```bash
-cargp build --release
+cargo build --release
 ``` 
 
 ### A first example
@@ -30,13 +29,13 @@ which should return `result: sat`
 
 ### Additional Dependencies for QBF solving and Verilog inputs
 
+For quick trials we ship a release binary tested on `macOS M1` of `quabs` (that is, if you are on MacOS, you are ready to run QBF unrolling with `-q` flag, see "A second example"). 
+
 - **Yosys:** required when using Verilog inputs via `-v`. Install Yosys (e.g., from your package manager or YosysHQ builds) and ensure the `yosys` binary is on `PATH`, because HyperQB invokes it to produce SMT from the Verilog build scripts.
 - **NuSMV:** required when enabling QBF solving with `-q`. Install NuSMV and add its executable to `PATH` so HyperQB can parse NuSMV models and hand them to the QBF backend.
 - **QuAbs:** the QBF mode expects the `quabs` binary (https://github.com/ltentrup/quabs) to live in the repository root. Build QuAbs per its instructions and copy the executable to the project’s top-level directory so `cargo run … -q` can invoke it directly.
   
-- **Precompiled binary:** for quick trials we ship a release binary tested on macOS M1 of `quabs`. 
   
-
 ### A second example
 
 To test if HyperQB (QBF unrolling with `quabs`) can successfully run: 
@@ -45,6 +44,9 @@ To test if HyperQB (QBF unrolling with `quabs`) can successfully run:
 cargo run --release -- -n benchmarks/sync/0_infoflow/info.smv benchmarks/sync/0_infoflow/info.smv -f benchmarks/sync/0_infoflow/info.hq -k 10 -s hpes -q
 ```
 which should return `SAT`
+
+
+### A third example
 
 To test if HyoerQB (with verilog input using `yosys`) can successfully run:
 ```bash
@@ -60,9 +62,9 @@ Some helper scripts can compare against AutoHyper. To enable those options, inst
 
 
 
----
+
 ## HyperQB 2.0 CLI Usage
----
+
 
 ### Synopsis
 
@@ -91,9 +93,9 @@ Try the following example, which model check `linearizability (lin.hq)` on `SNAR
 ```bash
 cargo run --release -- -n benchmarks/2_snark/snark1_conc.smv benchmarks/2_snark/snark1_seq.smv -f benchmarks/2_snark/lin.hq -k 18 -s hpes -c
 ```
----
+
 ## Grammar of HyperLTL Specification
----
+
 
 Formulas use the following grammar (identifiers: `pid` for paths, `tid` for trajectories):
 
@@ -117,9 +119,9 @@ number ::= [0-9]+ | "#b"(0|1)+
 `inner_HLTL` covers standard HyperLTL fragments (only path quantifiers), while `inner_AHLTL` extends them with trajectory quantifiers. Use binary/unary temporal operators as usual; atoms reference propositions indexed by path and (optionally) trajectory identifiers.
 
 
----
+
 ## One-click shell scripts for running all benchmarks  
----
+
 
 We provide one-click scripts to reproduce every table reported in our tool paper. 
 
@@ -240,10 +242,10 @@ To Reproduce **Table 8**, with SMT unrolling, run:
 ./run_verilog.sh -all
 ```
 
----
+
 
 ## Collecting Outputs
 
 All outputs are printed to the screen during execution and simultaneously logged in the `_outfiles` directory.
 
----
+

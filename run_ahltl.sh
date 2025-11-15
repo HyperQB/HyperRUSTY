@@ -813,7 +813,7 @@ EOF
 LIGHT_CASES=()
 for case_fn in "${CASES[@]}"; do
   case "$case_fn" in
-    acdb|concleak|specexec_v1|specexec_v2) ;;
+    opt_lp|opt_lp_ndet|opt_lp_loop|opt_lp_buggy|opt_eflp|opt_eflp_ndet|cache) ;;
     *) LIGHT_CASES+=("$case_fn");;
   esac
 done

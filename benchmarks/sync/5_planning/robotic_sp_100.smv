@@ -11,13 +11,14 @@
     TOKEN: 0..1;
 
     gOAL: boolean;
+
     LEFT : boolean;
     RIGHT: boolean;
     UP   : boolean;
     DOWN : boolean;
 
 ASSIGN
-    init(TOKEN):= 0;
+    init(TOKEN):= {1};
     next(TOKEN):= {0,1};
 
     init(x_axis) := 0;
@@ -90,10 +91,6 @@ ASSIGN
             ((TOKEN=0) & (y_axis=9) & (!UP) & DOWN) : {8};
             TRUE: y_axis;
         esac;
-
-
-
-
 
 
     init(gOAL) := FALSE;

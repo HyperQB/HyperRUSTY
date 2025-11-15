@@ -14,7 +14,7 @@ ASSIGN
     init(mutation) := {TRUE, FALSE};
     next(mutation) := {TRUE, FALSE};
 
-    init(action) := 0;
+    init(action) := {0,1,2};
     next(action) := {0,1,2};
 
     init(beverage) := 0;
@@ -24,7 +24,7 @@ ASSIGN
             TRUE : beverage;
         esac;
 
-    init(water) := 2;
+    init(water) := 3;
     next(water) :=
         case
             ((action = 1) & !(water = 0)) : (water - 1); -- make beverage

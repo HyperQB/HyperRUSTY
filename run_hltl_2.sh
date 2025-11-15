@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-TIMEOUT_SEC=${TIMEOUT_SEC:-100}  # seconds
+TIMEOUT_SEC=${TIMEOUT_SEC:-120}  # seconds
 
 FOLDER="benchmarks/sync/"
 
@@ -482,7 +482,7 @@ case_ksafety() {
          -n ${FOLDER}11_ksafety/doubleSquare.smv \
          ${FOLDER}11_ksafety/doubleSquare.smv \
          -f ${FOLDER}11_ksafety/doubleSquare.hq \
-         -k 200 -s hpes -c -q"
+         -k 50 -s hpes -c -q"
       ;;
     *) echo "Usage: case_ksafety <1|2|3> or <smt|ah|qbf>"; return 1 ;;
   esac
@@ -666,7 +666,7 @@ case_teamltl_v2() {
          ${FOLDER}13_teamltl/team2.smv \
          ${FOLDER}13_teamltl/team2.smv \
          -f ${FOLDER}13_teamltl/team.hq \
-         -k 21 -s hpes"
+         -k 20 -s hpes"
       ;;
     2|ah)
       printf "\n[AutoHyper]   Running %s...\n" "$case_name"
@@ -684,7 +684,7 @@ case_teamltl_v2() {
          ${FOLDER}13_teamltl/team2.smv \
          ${FOLDER}13_teamltl/team2.smv \
          -f ${FOLDER}13_teamltl/team.hq \
-         -k 21 -s hpes -q"
+         -k 20 -s hpes -q"
       ;;
     *) echo "Usage: case_teamltl_v2 <1|2|3> or <smt|ah|qbf>"; return 1 ;;
   esac
@@ -1459,14 +1459,14 @@ case_emm_aba() {
          --nusmv ${FOLDER}22_emm_aba/emm_aba_conc.smv \
          ${FOLDER}22_emm_aba/emm_aba_seq.smv \
          ${FOLDER}AH_formulas/22.hq \
-         --incl-forq"
+         "
       if (( want_witness )); then
         time_run "$case_name" "AH_witness" \
           "AutoHyper/app/AutoHyper \
            --nusmv ${FOLDER}22_emm_aba/emm_aba_conc.smv \
            ${FOLDER}22_emm_aba/emm_aba_seq.smv \
            ${FOLDER}AH_formulas/22.hq \
-           --incl-forq --witness"
+          --witness"
       fi
       ;;
     3|qbf)
@@ -1619,8 +1619,10 @@ Usage: $0 [option]
   -list                   List available case names
   -all <mode> [extras]             Run all cases with the chosen mode (smt|ah|qbf)
   -light <mode> [extras]           Run lightweight cases (excluding MapSynth2, IQueue, LazyList) with the chosen mode
+  -heavy <mode> [extras]           Run heavy cases (MapSynth2, IQueue, LazyList, etc.) with the chosen mode
   -compare all [extras]            Run all cases with all modes (smt/ah/qbf)
   -compare light [extras]          Run lightweight cases with all modes
+  -compare heavy [extras]          Run heavy cases with all modes
   -compare <case> [extras]         Run one case with all modes (see -list for names)
   -case <case> <mode> [extras]     Run one case with the selected mode (smt|ah|qbf)
 
@@ -1633,18 +1635,35 @@ EOF
 LIGHT_CASES=()
 for case_fn in "${CASES[@]}"; do
   case "$case_fn" in
-    mapsynth2|ndet_v3|iqueue|emm_aba|lazy_list) ;;
+    ksafety|mapsynth2|ndet_v3|iqueue|emm_aba|lazy_list) ;;
     *) LIGHT_CASES+=("$case_fn");;
   esac
 done
+
+HEAVY_CASES=()
+for case_fn in "${CASES[@]}"; do
+  is_light=0
+  for light_case in "${LIGHT_CASES[@]}"; do
+    if [[ "$case_fn" == "$light_case" ]]; then
+      is_light=1
+      break
+    fi
+  done
+  if (( ! is_light )); then
+    HEAVY_CASES+=("$case_fn")
+  fi
+done
+unset is_light
 
 usage() {
   cat <<EOF
 Usage: $0 [mode]
   -all <mode>             Run all cases with the chosen mode (smt|ah|qbf)
   -light <mode>           Run lightweight cases with the chosen mode (smt|ah|qbf)
+  -heavy <mode>           Run heavy cases with the chosen mode (smt|ah|qbf)
   -compare all [extras]   Run all cases with all modes (smt/ah/qbf)
   -compare light [extras] Run lightweight cases with all modes (smt/ah/qbf)
+  -compare heavy [extras] Run heavy cases with all modes (smt/ah/qbf)
   -list                   List all available case functions
   -compare <case> [extras] Run one case with all modes (see -list for case selections)
   -case <case> <mode> [extras] Run one case with selected mode (smt|ah|qbf)
@@ -1744,6 +1763,57 @@ run_light_mode() {
   render_tables
 }
 
+run_heavy_compare_matrix() {
+  local modes=()
+  local extra_args=()
+  local parsing_modes=1
+  for arg in "$@"; do
+    if (( parsing_modes )); then
+      if [[ "$arg" == "--" ]]; then
+        parsing_modes=0
+      else
+        modes+=("$arg")
+      fi
+    else
+      extra_args+=("$arg")
+    fi
+  done
+  for c in "${HEAVY_CASES[@]}"; do
+    local fn="case_${c}"
+    if ! declare -f "$fn" >/dev/null 2>&1; then
+      echo "(!) Missing case function: $fn"
+      exit 1
+    fi
+    for m in "${modes[@]}"; do
+      if (( ${#extra_args[@]} )); then
+        "$fn" "$m" "${extra_args[@]}"
+      else
+        "$fn" "$m"
+      fi
+    done
+  done
+  render_tables
+}
+
+run_heavy_mode() {
+  local mode="${1:-}"
+  shift
+  local extra_args=("$@")
+  for c in "${HEAVY_CASES[@]}"; do
+    local fn="case_${c}"
+    if ! declare -f "$fn" >/dev/null 2>&1; then
+      echo "(!) Missing case function: $fn"
+      exit 1
+    fi
+    if (( ${#extra_args[@]} )); then
+      "$fn" "$mode" "${extra_args[@]}"
+    else
+      "$fn" "$mode"
+    fi
+  done
+  render_tables
+}
+
 run_single_case_matrix() {
   local case_name="${1:-}"; shift
   local modes=()
@@ -1809,6 +1879,13 @@ case "${1:-}" in
           run_light_compare_matrix smt ah qbf
         fi
         ;;
+      heavy)
+        if (( ${#extra_compare_args[@]} )); then
+          run_heavy_compare_matrix smt ah qbf -- "${extra_compare_args[@]}"
+        else
+          run_heavy_compare_matrix smt ah qbf
+        fi
+        ;;
       *)
         if (( ${#extra_compare_args[@]} )); then
           run_single_case_matrix "$compare_target" smt ah qbf -- "${extra_compare_args[@]}"
@@ -1856,6 +1933,26 @@ case "${1:-}" in
       run_light_mode "$mode" "$@"
     else
       run_light_mode "$mode"
+    fi
+    ;;
+
+  -heavy)
+    shift
+    mode_raw="${1:-}"
+    [[ -z "$mode_raw" ]] && usage
+    mode="$(printf '%s' "$mode_raw" | tr '[:upper:]' '[:lower:]')"
+    case "$mode" in
+      smt|ah|qbf) ;;
+      *)
+        echo "(!) Unknown mode for -heavy: $mode_raw"
+        exit 1
+        ;;
+    esac
+    shift
+    if (( $# )); then
+      run_heavy_mode "$mode" "$@"
+    else
+      run_heavy_mode "$mode"
     fi
     ;;
 

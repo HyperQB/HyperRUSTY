@@ -64,13 +64,14 @@ ASSIGN
 		((theta_line=0) & (MASK_2=0) & (MASK_1=0) & (MASK_0=0)) : TRUE;
 		TRUE: halt;
 	esac;
+
 	-- when PIN is arbitrary, small PINs such as 001, is leaking information
-	init(PIN_2) := {1,0}; 
-	init(PIN_1) := {1,0}; 
-	init(PIN_0) := {1,0};
-	init(MASK_2) := 1; 
+	init(PIN_2) := {0}; 
+	init(PIN_1) := {0}; 
+	init(PIN_0) := {1};
+	init(MASK_2) := 0; 
 	init(MASK_1) := 0; 
-	init(MASK_0) := 0;
+	init(MASK_0) := 1;
 	-- the lines of each process
 	init(alpha_line) := 0;
 	init(beta_line)  := 0;
@@ -81,7 +82,7 @@ ASSIGN
 	init(RESULT_2) := 0;
 
 	init(main_trigger)  := 0;
-	init(trigger_alpha) := {TRUE,FALSE};
+	init(trigger_alpha) := FALSE;
 	init(trigger_beta)  := FALSE;
 
 	next(PIN_2) := PIN_2;

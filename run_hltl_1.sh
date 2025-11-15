@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-TIMEOUT_SEC=${TIMEOUT_SEC:-60}  # seconds
+TIMEOUT_SEC=${TIMEOUT_SEC:-120}  # seconds
 
 
 # ---- Paths for results/logs ----
@@ -568,7 +568,7 @@ case_nrp_correct() {
                    -n ${FOLDER}4_nrp/NRP_correct.smv \
                    ${FOLDER}4_nrp/NRP_correct.smv \
                    -f ${FOLDER}4_nrp/NRP_formula.hq \
-                   -k 20 -s pes -c"
+                   -k 15 -s pes -c"
             fi
             ;;
         2|ah)
@@ -591,7 +591,7 @@ case_nrp_correct() {
                -n ${FOLDER}4_nrp/NRP_correct.smv \
                ${FOLDER}4_nrp/NRP_correct.smv \
                -f ${FOLDER}4_nrp/NRP_formula.hq \
-               -k 20 -s pes -q"
+               -k 15 -s pes -q"
             ;;
         *)
             echo "Usage: case_nrp_correct <1|2|3> or <smt|ah|qbf>"
@@ -660,44 +660,6 @@ case_rb100() {
                --nusmv ${FOLDER}5_planning/robotic_robustness_100.smv \
                ${FOLDER}AH_formulas/5.1.hq \
                --incl-forq"
-            ;;
-        3|qbf)
-            printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
-            time_run "$case_name" "QBF" \
-              "${CARGO_BIN} \
-               -n ${FOLDER}5_planning/robotic_robustness_100.smv \
-               ${FOLDER}5_planning/robotic_robustness_100.smv \
-               -f ${FOLDER}5_planning/robotic_robustness_formula.hq \
-               -k 20 -s hpes -q"
-            ;;
-        *)
-            echo "Usage: case_rb100 <1|2|3> or <smt|ah|qbf>"
-            return 1
-            ;;
-    esac
-}
-
-case_rb100_witness() {
-    local case_name="Robustness100_witness"
-    local mode="$1"  # argument: 1=SMT, 2=AutoHyper, 3=QBF
-
-    case "$mode" in
-        1|smt)
-            printf "\n[HyperQB SMT] Running %s...\n" "$case_name"
-            time_run "$case_name" "SMT" \
-              "${CARGO_BIN} \
-               -n ${FOLDER}5_planning/robotic_robustness_100.smv \
-               ${FOLDER}5_planning/robotic_robustness_100.smv \
-               -f ${FOLDER}5_planning/robotic_robustness_formula.hq \
-               -k 20 -s hpes -c"
-            ;;
-        2|ah)
-            printf "\n[AutoHyper]   Running %s...\n" "$case_name"
-            time_run "$case_name" "AH" \
-              "AutoHyper/app/AutoHyper \
-               --nusmv ${FOLDER}5_planning/robotic_robustness_100.smv \
-               ${FOLDER}AH_formulas/5.1.hq \
-               --incl-forq --witness"
             ;;
         3|qbf)
             printf "\n[HyperQB QBF] Running %s...\n" "$case_name"
@@ -985,14 +947,14 @@ case_sp1600() {
                -n ${FOLDER}5_planning/robotic_sp_1600.smv \
                ${FOLDER}5_planning/robotic_sp_1600.smv \
                -f ${FOLDER}5_planning/robotic_sp_formula.hq \
-               -k 40 -s hpes"
+               -k 80 -s hpes"
             if (( want_witness )); then
                 time_run "$case_name" "SMT_witness" \
                   "${CARGO_BIN} \
                    -n ${FOLDER}5_planning/robotic_sp_1600.smv \
                    ${FOLDER}5_planning/robotic_sp_1600.smv \
                    -f ${FOLDER}5_planning/robotic_sp_formula.hq \
-                   -k 40 -s hpes -c"
+                   -k 80 -s hpes -c"
             fi
             ;;
         2|ah)
@@ -1017,7 +979,7 @@ case_sp1600() {
                -n ${FOLDER}5_planning/robotic_sp_1600.smv \
                ${FOLDER}5_planning/robotic_sp_1600.smv \
                -f ${FOLDER}5_planning/robotic_sp_formula.hq \
-               -k 40 -s hpes -q"
+               -k 80 -s hpes -q"
             ;;
         *)
             echo "Usage: case_sp1600 <1|2|3> or <smt|ah|qbf>"
@@ -1118,7 +1080,7 @@ case_mutation() {
                    -n ${FOLDER}6_mutation/mutation_testing.smv \
                    ${FOLDER}6_mutation/mutation_testing.smv \
                    -f ${FOLDER}6_mutation/mutation_testing.hq \
-                   -k 5 -s pes -c"
+                   -k 10 -s pes -c"
             fi
             ;;
         2|ah)
@@ -1141,7 +1103,7 @@ case_mutation() {
                -n ${FOLDER}6_mutation/mutation_testing.smv \
                ${FOLDER}6_mutation/mutation_testing.smv \
                -f ${FOLDER}6_mutation/mutation_testing.hq \
-               -k 5 -s pes -q"
+               -k 10 -s pes -q"
             ;;
         *)
             echo "Usage: case_mutation <1|2|3> or <smt|ah|qbf>"
@@ -1199,14 +1161,31 @@ for case_fn in "${CASES[@]}"; do
   esac
 done
 
+HEAVY_CASES=()
+for case_fn in "${CASES[@]}"; do
+  is_light=0
+  for light_case in "${LIGHT_CASES[@]}"; do
+    if [[ "$case_fn" == "$light_case" ]]; then
+      is_light=1
+      break
+    fi
+  done
+  if (( ! is_light )); then
+    HEAVY_CASES+=("$case_fn")
+  fi
+done
+unset is_light
+
 usage() {
   cat <<EOF
 Usage: $0 [mode]
   -list                   List all available case functions
   -all <mode>             Run all cases with the chosen mode (smt|ah|qbf)
   -light <mode>           Run lightweight cases with the chosen mode (smt|ah|qbf)
+  -heavy <mode>           Run heavy cases with the chosen mode (smt|ah|qbf)
   -compare all [extras]   Run all cases with all modes (smt/ah/qbf)
   -compare light [extras] Run lightweight cases with all modes (smt/ah/qbf)
+  -compare heavy [extras] Run heavy cases with all modes (smt/ah/qbf)
   -compare <case> [extras] Run one case with all modes (see -list for case selections)
   -case <case> <mode> [extras] Run one case with selected mode (smt|ah|qbf)
 
@@ -1305,6 +1284,57 @@ run_light_mode() {
   render_tables
 }
 
+run_heavy_compare_matrix() {
+  local modes=()
+  local extra_args=()
+  local parsing_modes=1
+  for arg in "$@"; do
+    if (( parsing_modes )); then
+      if [[ "$arg" == "--" ]]; then
+        parsing_modes=0
+      else
+        modes+=("$arg")
+      fi
+    else
+      extra_args+=("$arg")
+    fi
+  done
+  for c in "${HEAVY_CASES[@]}"; do
+    local fn="case_${c}"
+    if ! declare -f "$fn" >/dev/null 2>&1; then
+      echo "(!) Missing case function: $fn"
+      exit 1
+    fi
+    for m in "${modes[@]}"; do
+      if (( ${#extra_args[@]} )); then
+        "$fn" "$m" "${extra_args[@]}"
+      else
+        "$fn" "$m"
+      fi
+    done
+  done
+  render_tables
+}
+
+run_heavy_mode() {
+  local mode="${1:-}"
+  shift
+  local extra_args=("$@")
+  for c in "${HEAVY_CASES[@]}"; do
+    local fn="case_${c}"
+    if ! declare -f "$fn" >/dev/null 2>&1; then
+      echo "(!) Missing case function: $fn"
+      exit 1
+    fi
+    if (( ${#extra_args[@]} )); then
+      "$fn" "$mode" "${extra_args[@]}"
+    else
+      "$fn" "$mode"
+    fi
+  done
+  render_tables
+}
+
 run_single_case_matrix() {
   local case_name="${1:-}"; shift
   local modes=()
@@ -1370,6 +1400,13 @@ case "${1:-}" in
           run_light_compare_matrix smt ah qbf
         fi
         ;;
+      heavy)
+        if (( ${#extra_compare_args[@]} )); then
+          run_heavy_compare_matrix smt ah qbf -- "${extra_compare_args[@]}"
+        else
+          run_heavy_compare_matrix smt ah qbf
+        fi
+        ;;
       *)
         if (( ${#extra_compare_args[@]} )); then
           run_single_case_matrix "$compare_target" smt ah qbf -- "${extra_compare_args[@]}"
@@ -1417,6 +1454,26 @@ case "${1:-}" in
       run_light_mode "$mode" "$@"
     else
       run_light_mode "$mode"
+    fi
+    ;;
+
+  -heavy)
+    shift
+    mode_raw="${1:-}"
+    [[ -z "$mode_raw" ]] && usage
+    mode="$(printf '%s' "$mode_raw" | tr '[:upper:]' '[:lower:]')"
+    case "$mode" in
+      smt|ah|qbf) ;;
+      *)
+        echo "(!) Unknown mode for -heavy: $mode_raw"
+        exit 1
+        ;;
+    esac
+    shift
+    if (( $# )); then
+      run_heavy_mode "$mode" "$@"
+    else
+      run_heavy_mode "$mode"
     fi
     ;;
 

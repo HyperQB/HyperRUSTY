@@ -1,7 +1,7 @@
 # HyperQB 2.0
 
 **Artifact ID:** `97`  
-**Paper Title:** `HyperQB 2.0: A Bounded Model Checker for Hyperproperties` (tool paper submission 0087)   
+**Paper Title:** `HyperQB 2.0: A Bounded Model Checker for Hyperproperties` (tool paper submission 0087)  
 **Zenodo DOI:** `10.5281/zenodo.17490665`  
 **Zenodo Record:** `https://zenodo.org/records/17490665`
 
@@ -12,24 +12,28 @@ This artifact provides a **Docker image** (distributed via **Docker Hub**) that 
 **Expected outputs:** Printed in Console and logged in `_outfiles` directory.
 
 ---
-## Hyperlink to the artifact: 
+
+## Hyperlink to the artifact:
+
+**Notice**: This file is the ARM64 Docker image. We suggest using the Docker Hub images for both ARM64 and AMD64.
 
 https://zenodo.org/records/17490665
 
 ---
+
 ## Badges we are applying for:
 
-We aim to apply for all 3 badges, following the TACAS 2026 artifact submission guidelines, including: 
-1) **Available**:   HyperQB 2.0 source code and its dependencies are publicly available on Zenodo with a permanent DOI (as a Docker image).
-2) **Functional**:  Our artifact can easily reproduce all key results from the submitted paper (see detailed instructions below).
-3) **Reusable**:    HyperQB 2.0 comes with a complete user manual (HyperQB_Manual.pdf) included in the artifact submission. Pages 7–8 provide detailed documentation of the command-line interface that can be easily adapted for future research. 
+We aim to apply for all 3 badges, following the TACAS 2026 artifact submission guidelines, including:
+
+1. **Available**: HyperQB 2.0 source code and its dependencies are publicly available on Zenodo with a permanent DOI (as a Docker image).
+2. **Functional**: Our artifact can easily reproduce all key results from the submitted paper (see detailed instructions below).
+3. **Reusable**: HyperQB 2.0 comes with a complete user manual (HyperQB_Manual.pdf) included in the artifact submission. Pages 7–8 provide detailed documentation of the command-line interface that can be easily adapted for future research.
 
 HyperQB 2.0 official website: https://hyperqb.github.io/index.html
 
 We would like to remark that, outside of this artifact, we offer a fully standalone **macOS application** (available for download from GitHub) with an **interactive GUI** (demonstrated on page 5 of the manual). Comprehensive information about the tool’s theoretical background, algorithms, case studies (including model descriptions), and an online version of the GUI is also accessible through our **official website**. Since these components are beyond the TACAS artifact evaluation scope, we provide here only the CLI binary for reviewers to interact with directly. However, HyperQB 2.0 is easy to adapt for future research to benefit the formal methods community.
 
 ---
- 
 
 ## Table of Contents
 
@@ -130,7 +134,7 @@ We are fully aware of the internet access restrictions during the TACAS artifact
 
 **[OPTION 1]**: Pull the HyperQB image from Docker Hub
 
-**[OPTION 2]**: Download the HyperQB image from Zenodo
+**[OPTION 2]**: Download the HyperQB image from Zenodo (**ARM64 Only**)
 
 We recommend using [OPTION 1]. However, if pulling directly from Docker Hub is not possible, the image is also available for download from our permanent online repository on Zenodo. This serves as a flexible alternative in case one of the options does not work on the reviewer’s machine.
 
@@ -142,83 +146,127 @@ The artifact is distributed as a public Docker image hosted on Docker Hub.
 
 Please ensure you have an active internet connection and Docker is running.
 
-### macOS / Linux (Terminal)
+### Choosing the Correct Docker Image
+
+Two architecture-specific images are available on Docker Hub:
+
+- `rogaleke/hyperqb2.0:amd64` – for Intel/AMD (x86_64) machines
+- `rogaleke/hyperqb2.0:arm64` – for Apple Silicon (M1/M2/M3) and other ARM64 machines
+
+#### macOS / Linux
+
+Check your CPU architecture:
 
 ```bash
-# Create a working directory
-mkdir -p ~/tacas-ae && cd ~/tacas-ae
-
-# Pull the latest image from Docker Hub
-docker pull rogaleke/hyperqb2.0:latest
-
+uname -m
 ```
 
-### Windows (PowerShell)
+If you see x86_64, use `rogaleke/hyperqb2.0:amd64`.
+
+If you see arm64 or aarch64, use `rogaleke/hyperqb2.0:arm64`.
+
+#### Windows
+
+Most Windows PCs use **AMD64**. If you’re using WSL2, run `uname -m` inside WSL to learn about your architecture.
+
+### Running the container
+
+Because the artifact runs inside a Docker container, any generated outputs and logs remain inside the container’s filesystem and are lost when the container exits. To preserve these files, you should mount a directory from your host machine into the container so that all generated outputs are written directly to your local filesystem.
+
+To begin, navigate to the directory from which you want to run the Docker image. Then create a new directory named `_outfiles` to store all output produced by HyperQB 2.0. You can create it with the following command:
+
+#### macOS / Linux (Terminal)
+
+```bash
+# Create a directory to store outputs
+mkdir -p _outfiles
+
+# run the image
+docker run --rm -it \
+  -v "$(pwd)/_outfiles:/build/HyperRUSTY/_outfiles" \
+  rogaleke/hyperqb2.0:[tag] \
+  bash
+```
+
+where `[tag]` is the architecture of your system identified earlier (replace with either **ARM64** or **AMD64**).
+
+#### Windows (PowerShell)
 
 ```powershell
-# Create a working directory (optional)
-New-Item -ItemType Directory -Force -Path "$HOME\tacas-ae" | Out-Null
-Set-Location "$HOME\tacas-ae"
+# Create a directory to store outputs
+mkdir _outfiles
 
-# Pull the latest image from Docker Hub
-docker pull rogaleke/hyperqb2.0:latest
+# Run the image
+docker run --rm -it \
+  -v "${PWD}/_outfiles:/build/HyperRusty/_outfiles" \
+  rogaleke/hyperqb2.0:[tag] \
+  bash
 ```
+
+where `[tag]` is the architecture of your system identified earlier (replace with either **ARM64** or **AMD64**).
+
+You are now inside the HyperQB2.0 Docker image.
 
 > **File size note:** The tarball can be several GB. Ensure sufficient disk space and a stable network connection.
 
 ---
 
-## Run the Container (Interactive Shell)
+## [OPTION2] Download Docker image from Zenodo
 
-Start the container with sensible defaults. **Copy exactly one** of the following run commands.
+**Notice**: This image is only for **ARM64** architecture. If you have an **AMD64** system, please follow Option 1 above.
 
-Troubleshoot: if any of the following commands failed with `Unable to find image...`, make sure to run `docker images` to check what exactly the name of the repository you pulled. 
+From our Zenodo link (https://zenodo.org/records/17490665), download the `.tar` that contains the Docker image, then run:
 
-### macOS/Linux (bash/zsh)
-
-```bash
-# Basic run
-docker run --rm -it rogaleke/hyperqb2.0:latest
-```
-
-### Windows (PowerShell)
-
-```powershell
-docker run --rm -it rogaleke/hyperqb2.0:latest
-```
-
-> **What this does:**
->
-> - `--rm` cleans up when you exit.
-> - `-it` gives you an interactive shell.
-
-You should now see a shell prompt **inside** the container, typically like: `root@<container-id>:/workspace#`
-
-You are now in a ready-to-go environment to run HyperQB! Yay!
-
----
-
-## [OPTION2] Download docker image from Zenodo 
-
-From our Zenodo link (https://zenodo.org/records/17490665), download the `.tar` that contains the docker image, then run:
 ```bash
 docker load -i hyperqb2.tar
 ```
+
 next, check if the image is loaded by running:
+
 ```bash
 docker images
 ```
-if the image is loaded correctly, you should be able to see the `hyperqb-docker` entry:
+
+If the image is loaded correctly, you should be able to see the `hyperqb-docker` entry:
+
 ```
 REPOSITORY            TAG       IMAGE ID       CREATED             SIZE
 hyperqb-docker        latest    41ea36748c37   18 minutes ago      7.87GB
-``` 
-finally, run this image:
-```bash
-docker run -it hyperqb-docker:latest
 ```
-You are now in a ready-to-go environment to run HyperQB! Yay!
 
+Finally, to run this image, follow the instructions below.
+
+Because the artifact runs inside a Docker container, any generated outputs and logs remain inside the container’s filesystem and are lost when the container exits. To preserve these files, you should mount a directory from your host machine into the container so that all generated outputs are written directly to your local filesystem.
+
+To begin, navigate to the directory from which you want to run the Docker image. Then create a new directory named `_outfiles` to store all output produced by HyperQB 2.0. You can create it with the following command:
+
+#### macOS / Linux (Terminal)
+
+```bash
+# Create a directory to store outputs
+mkdir -p _outfiles
+
+# run the image
+docker run --rm -it \
+  -v "$(pwd)/_outfiles:/build/HyperRUSTY/_outfiles" \
+  hyperqb-docker:latest \
+  bash
+```
+
+#### Windows (PowerShell)
+
+```powershell
+# Create a directory to store outputs
+mkdir _outfiles
+
+# Run the image
+docker run --rm -it \
+  -v "${PWD}/_outfiles:/build/HyperRusty/_outfiles" \
+  hyperqb-docker:latest \
+  bash
+```
+
+You are now inside the HyperQB2.0 Docker image.
 
 ---
 
@@ -227,6 +275,7 @@ You are now in a ready-to-go environment to run HyperQB! Yay!
 We provide easy-to-use shell scripts tailored for the early light review. To facilitate quick testing, we set a small `TIMEOUT` value in these scripts, allowing reviewers to run through all cases efficiently.
 
 To ensure that all tables are reproducible and ready for further evaluation, please execute the following command:
+
 - `./run_hltl_1.sh -compare all`
 - `./run_hltl_2.sh -compare all`
 - `./run_ahltl.sh -compare all`
@@ -240,7 +289,6 @@ If no errors are reported, the smoke test is successful!
 ## Inside the Container, stage 2: Reproduce Experiments
 
 We now describe in detail how to reproduce the complete results presented in the paper. To ensure correct execution, <mark>please adjust the `TIMEOUT` parameter defined at the top (line 5) of each shell script according to your machine’s setup.<mark/> We leave this value for reviewers to determine based on their computing environment.
-
 
 ### Reproducing Tables 4 & 5 (HLTL)
 
@@ -276,6 +324,7 @@ We now describe in detail how to reproduce the complete results presented in the
 | `give_witness` | Extends SMT/AH runs with witness generation (when supported) |
 
 To Reproduce **Tables 4 & 5 (HLTL)**, after adjusting `TIMEOUT` to a large enough number, run:
+
 ```bash
 ./run_hltl_1.sh -compare all
 ./run_hltl_2.sh -compare all

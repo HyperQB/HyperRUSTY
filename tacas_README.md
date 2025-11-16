@@ -222,7 +222,7 @@ You are now in a ready-to-go environment to run HyperQB! Yay!
 
 ---
 
-## Inside the Container, stage 1: Smoke Test
+## Inside the Docker Container, stage 1: Smoke Test
 
 We provide easy-to-use shell scripts tailored for the early light review. To facilitate quick testing, we set a small `TIMEOUT` value in these scripts, allowing reviewers to run through all cases efficiently.
 
@@ -276,7 +276,6 @@ We now describe in detail how to reproduce the complete results presented in the
 | `give_witness` | Extends SMT/AH runs with witness generation (when supported) |
 
 To Reproduce **Tables 4 & 5 (HLTL)**, after adjusting `TIMEOUT` to a large enough number, run:
-
 ```bash
 ./run_hltl_1.sh -compare all
 ./run_hltl_2.sh -compare all

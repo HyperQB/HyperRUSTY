@@ -2,7 +2,7 @@
 #!/bin/bash
 set -euo pipefail
 
-TIMEOUT_SEC=${TIMEOUT_SEC:-240}  # seconds
+TIMEOUT_SEC=${TIMEOUT_SEC:-180}  # seconds
 
 # Detect timeout binary safely (avoid unbound variable errors)
 if command -v gtimeout >/dev/null 2>&1; then

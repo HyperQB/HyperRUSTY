@@ -26,7 +26,7 @@
 
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/1_bakery/bakery7.smv benchmarks/AH_formulas/1.7.hq --log --witness
 
-# cargo run --release -- -n benchmarks/1_bakery/bakery9.smv benchmarks/1_bakery/bakery9.smv -f benchmarks/1_bakery/symmetry9.hq -k 10 -s hpes -q
+# cargo run --release -- -n benchmarks/sync/1_bakery/bakery9.smv benchmarks/sync/1_bakery/bakery9.smv -f benchmarks/sync/1_bakery/symmetry9.hq -k 10 -s hpes -q
 
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/1_bakery/bakery9.smv benchmarks/AH_formulas/1.9.hq --log --witness
 

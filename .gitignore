@@ -4,6 +4,7 @@
 /AutoHyper
 
 Cargo.lock
+profile.json.gz
 *.DS_Store
 */*.DS_Store
 

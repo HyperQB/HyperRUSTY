@@ -16,7 +16,7 @@
 
 
 # echo "bakery 7"
-# time cargo run --release -- -n benchmarks/1_bakery/bakery7.smv benchmarks/1_bakery/bakery7.smv -f benchmarks/1_bakery/symmetry7.hq -k 10 -s hpes
+# time cargo run --release -- -n benchmarks/sync/1_bakery/bakery7.smv benchmarks/sync/1_bakery/bakery7.smv -f benchmarks/sync/1_bakery/symmetry7.hq -k 10 -s hpes
 
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/1_bakery/bakery7.smv benchmarks/AH_formulas/1.7.hq --log --witness
 
@@ -57,7 +57,7 @@
 #=== SNARK ===#
 
 # echo "snark 1"
-# time cargo run --release -- -n benchmarks/2_snark/snark1_conc.smv benchmarks/2_snark/snark1_seq.smv -f benchmarks/2_snark/lin.hq -k 18 -s hpes
+# time cargo run --release -- -n benchmarks/sync/2_snark/snark1_conc.smv benchmarks/sync/2_snark/snark1_seq.smv -f benchmarks/sync/2_snark/lin.hq -k 18 -s hpes
 
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/2_snark/snark1_conc.smv benchmarks/2_snark/snark1_seq.smv benchmarks/AH_formulas/2.1.hq
 
@@ -125,11 +125,11 @@
 
 
 #=== Shortest Path Planning ===#
-# time cargo run --release -- -n benchmarks/5_planning/robotic_sp_100.smv benchmarks/5_planning/robotic_sp_100.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 20 -s hpes 
+# time cargo run --release -- -n benchmarks/sync/5_planning/robotic_sp_100.smv benchmarks/sync/5_planning/robotic_sp_100.smv -f benchmarks/sync/5_planning/robotic_sp_formula.hq -k 20 -s hpes 
 
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_sp_100.smv benchmarks/AH_formulas/5.2.hq --witness
 
-# time cargo run --release -- -n benchmarks/5_planning/robotic_sp_400.smv benchmarks/5_planning/robotic_sp_400.smv -f benchmarks/5_planning/robotic_sp_formula.hq -k 40 -s hpes
+# time cargo run --release -- -n benchmarks/sync/5_planning/robotic_sp_400.smv benchmarks/sync/5_planning/robotic_sp_400.smv -f benchmarks/sync/5_planning/robotic_sp_formula.hq -k 40 -s hpes
 
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/5_planning/robotic_sp_400.smv benchmarks/AH_formulas/5.2.hq --log --witness
 
@@ -147,7 +147,7 @@
 
 #=== Mutation Testing ===#
 # echo "mutation"
-# cargo run --release -- -n benchmarks/6_mutation/mutation_testing.smv benchmarks/6_mutation/mutation_testing.smv -f benchmarks/6_mutation/mutation_testing.hq -k 10 -s pes
+# cargo run --release -- -n benchmarks/sync/6_mutation/mutation_testing.smv benchmarks/sync/6_mutation/mutation_testing.smv -f benchmarks/sync/6_mutation/mutation_testing.hq -k 10 -s pes
 
 # time AutoHyper/app/AutoHyper --nusmv benchmarks/6_mutation/mutation_testing.smv benchmarks/AH_formulas/6.hq
 

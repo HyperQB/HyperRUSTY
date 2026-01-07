@@ -179,6 +179,8 @@ fn main() {
         if *matches.get_one::<bool>("qbf_solver").unwrap() {
             let mut cfg = Config::new();
             cfg.set_model_generation(true);
+            cfg.set_param_value("parallel.enable", "false");
+            cfg.set_param_value("threads", "1");
             let ctx = Context::new(&cfg);
             let mut envs = Vec::new();
 
@@ -308,6 +310,19 @@ fn main() {
             // Create a new solver
             let solver = Solver::new(&ctx);
             solver.assert(&encoding);
+            let dump = solver.to_smt2();
+            let name = model_paths[0]
+                .rsplit('/')
+                .next()
+                .unwrap()
+                .split('.')
+                .next()
+                .unwrap();
+            let dump_path = format!("./{}_dump.smt2", name);
+            fs::write(dump_path, dump);
+            println!("Dumped SMT2 to ./{}_dump.smt2", name);
+
+            
             match solver.check() {
                 SatResult::Sat => {
                     // Is counterexample set?

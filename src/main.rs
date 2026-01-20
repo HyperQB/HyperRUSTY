@@ -20,7 +20,7 @@ use z3::{
         Ast, Dynamic, Int, Bool,
         BV,
     },
-    Config, Context, Solver, SatResult,
+    Config, Context, Params, Solver, SatResult,
     StatisticsValue,
 };
 use clap::{arg, value_parser, ArgGroup, Command};
@@ -179,8 +179,6 @@ fn main() {
         if *matches.get_one::<bool>("qbf_solver").unwrap() {
             let mut cfg = Config::new();
             cfg.set_model_generation(true);
-            cfg.set_param_value("parallel.enable", "false");
-            cfg.set_param_value("threads", "1");
             let ctx = Context::new(&cfg);
             let mut envs = Vec::new();
 
@@ -271,9 +269,6 @@ fn main() {
 
             let mut cfg = Config::new();
             cfg.set_model_generation(true);
-            cfg.set_model_generation(true);
-            cfg.set_param_value("parallel.enable", "false");
-            cfg.set_param_value("threads", "1");
             let ctx = Context::new(&cfg);
             let mut envs = Vec::new();
 
@@ -312,19 +307,12 @@ fn main() {
 
             // Create a new solver
             let solver = Solver::new(&ctx);
-            solver.assert(&encoding);
-            let dump = solver.to_smt2();
-            let name = model_paths[0]
-                .rsplit('/')
-                .next()
-                .unwrap()
-                .split('.')
-                .next()
-                .unwrap();
-            let dump_path = format!("./{}_dump.smt2", name);
-            fs::write(dump_path, dump);
-            println!("Dumped SMT2 to ./{}_dump.smt2", name);
+            let mut p = Params::new(&ctx);
+            p.set_u32("smt.threads", 1);
+            p.set_bool("parallel.enable", false);
+            p.set_u32("parallel.threads.max", 1);
 
+            solver.assert(&encoding);
             
             match solver.check() {
                 SatResult::Sat => {
@@ -451,6 +439,10 @@ fn main() {
 
         // Create a new solver
         let solver = Solver::new(&ctx);
+        let mut p = Params::new(&ctx);
+        p.set_u32("smt.threads", 1);
+        p.set_bool("parallel.enable", false);
+        p.set_u32("parallel.threads.max", 1);
         solver.assert(&encoding);
 
         match solver.check() {

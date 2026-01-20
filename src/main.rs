@@ -271,6 +271,9 @@ fn main() {
 
             let mut cfg = Config::new();
             cfg.set_model_generation(true);
+            cfg.set_model_generation(true);
+            cfg.set_param_value("parallel.enable", "false");
+            cfg.set_param_value("threads", "1");
             let ctx = Context::new(&cfg);
             let mut envs = Vec::new();
 
@@ -402,6 +405,9 @@ fn main() {
 
         let mut cfg = Config::new();
         cfg.set_model_generation(true);
+        cfg.set_model_generation(true);
+        cfg.set_param_value("parallel.enable", "false");
+        cfg.set_param_value("threads", "1");
         let ctx = Context::new(&cfg);
         let mut envs = Vec::new();
 

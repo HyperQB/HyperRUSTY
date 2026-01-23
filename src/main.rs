@@ -393,9 +393,6 @@ fn main() {
 
         let mut cfg = Config::new();
         cfg.set_model_generation(true);
-        cfg.set_model_generation(true);
-        cfg.set_param_value("parallel.enable", "false");
-        cfg.set_param_value("threads", "1");
         let ctx = Context::new(&cfg);
         let mut envs = Vec::new();
 
@@ -443,6 +440,7 @@ fn main() {
         p.set_u32("smt.threads", 1);
         p.set_bool("parallel.enable", false);
         p.set_u32("parallel.threads.max", 1);
+        
         solver.assert(&encoding);
 
         match solver.check() {

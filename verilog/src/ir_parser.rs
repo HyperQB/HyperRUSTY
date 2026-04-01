@@ -1625,10 +1625,14 @@ pub fn explode_all_ites_factored(e: &Expr) -> Vec<(Expr, Expr)> {
         // Choose the candidate seen in the most children (>= 2)
         let (best_key, best_count) = child_presence
         .iter()
-        .max_by_key(|(_, c)| *c)   
-        .map(|(k, c)| (*k, *c))?;  
+        .map(|(k, c)| (*k, *c))
+        .max_by(|(k1, c1), (k2, c2)| {
+            c1.cmp(c2).then_with(|| k2.cmp(k1)) // deterministic tie-break
+        })?;
 
-        if best_count < 2 { return None; }
+        if best_count < 2 {
+            return None;
+        }
 
         let rep = any_repr.get(&best_key)?.clone();
         Some((best_key, rep))

@@ -65,6 +65,16 @@ fmt_time() {
     esac
 }
 
+is_ge_timeout() {
+    local value="${1:-0}"
+    awk -v x="$value" -v t="$TIMEOUT_SEC" '
+      BEGIN {
+        if (x + 0 >= t + 0) exit 0
+        exit 1
+      }
+    '
+}
+
 set_table_mode_from_args() {
     WITNESS_TABLE=0
 
@@ -84,12 +94,12 @@ time_run() {
     # Only run/record variants needed for the selected table.
     if (( WITNESS_TABLE )); then
         case "$variant" in
-            SMT_witness|AH_witness|QBF) ;;
+            SMT_witness|QBF|AH_witness) ;;
             *) return 0 ;;
         esac
     else
         case "$variant" in
-            SMT|AH) ;;
+            SMT|QBF|AH) ;;
             *) return 0 ;;
         esac
     fi
@@ -121,51 +131,65 @@ time_run() {
     IFS=, read -r real_s user_s sys_s max_rss_kb < "$tmp" || true
     rm -f "$tmp"
 
-    # Determine status from log (prefer UNSAT if both appear)
-    local status="TIMEOUT"
+    # Determine status from log.
+    local status="ERROR"
+
+    real_s=${real_s:-0.0}
+    case "$real_s" in
+        ''|*[!0-9.eE+-]*) real_s=0.0 ;;
+    esac
+
     if [[ -n "${TIMEOUT_BIN:-}" && $exit_code -eq 124 ]]; then
-      echo "[TIMEOUT] $case_name ($variant) exceeded ${TIMEOUT_SEC}s." | tee -a "$log_file"
-      real_s="${TIMEOUT_SEC}"
-      status="TIMEOUT"
+        echo "[TIMEOUT] $case_name ($variant) exceeded ${TIMEOUT_SEC}s." | tee -a "$log_file"
+        real_s="${TIMEOUT_SEC}"
+        status="TIMEOUT"
+
+    elif grep -qi '\[TIMEOUT\]' "$log_file"; then
+        real_s="${TIMEOUT_SEC}"
+        status="TIMEOUT"
+
     elif [[ -n "${TIMEOUT_BIN:-}" && $exit_code -eq 137 ]]; then
         echo "[KILLED]  $case_name ($variant) was killed by SIGKILL (exit 137, likely out-of-memory)." | tee -a "$log_file"
-        real_s=0.0
         status="MEMOUT"
+
+    elif grep -qiE '\[KILLED\]|out-of-memory|out of memory|SIGKILL|exit 137|Killed' "$log_file"; then
+        status="MEMOUT"
+
+    elif is_ge_timeout "$real_s"; then
+        real_s="${TIMEOUT_SEC}"
+        status="TIMEOUT"
+
+    elif grep -qiE '(^|[ =])ERROR([ =]|$)|Unexpected exit code|=========== ERROR ===========' "$log_file"; then
+        status="ERROR"
+
     else
-        # Case-insensitive word match; -w avoids matching "saturated"
         if grep -qiwo 'UNSAT' "$log_file"; then
             status="UNSAT"
         elif grep -qiwo 'SAT' "$log_file"; then
             status="SAT"
         elif grep -qiwo 'UNKNOWN' "$log_file"; then
             status="UNKNOWN"
+        elif [[ $exit_code -ne 0 ]]; then
+            status="ERROR"
+        else
+            status="ERROR"
         fi
     fi
 
     # execution finished.
-
-
-        # execution finished.
     # Extract benchmark-reported timings from the log.
+    local model_creation_s encoding_time_s smt_solve_s qbf_solve_s
+    local encoding_s solving_s total_s forced_cell
 
-        real_s=${real_s:-0.0}
-    case "$real_s" in
-        ''|*[!0-9.eE+-]*) real_s=0.0 ;;
-    esac
-
-    local missing_cell total_s
-    missing_cell="NA"
+    forced_cell=""
 
     if [[ "$status" == "TIMEOUT" ]]; then
-        missing_cell="TO"
+        forced_cell="TO"
+    elif [[ "$status" == "ERROR" ]]; then
+        forced_cell="ERR"
     elif [[ "$status" == "MEMOUT" ]]; then
-        missing_cell="MO"
+        forced_cell="MO"
     fi
-
-    total_s="$(fmt_time "$real_s")"
-
-    local model_creation_s encoding_time_s smt_solve_s qbf_solve_s
-    local encoding_s solving_s
 
     model_creation_s="$(
       awk -F': *' '
@@ -198,48 +222,70 @@ time_run() {
       ' "$log_file"
     )"
 
-    case "$variant" in
-      SMT|SMT_witness)
-        if [[ -n "${model_creation_s:-}" && -n "${encoding_time_s:-}" ]]; then
-            encoding_s="$(
-              awk -v m="$model_creation_s" -v e="$encoding_time_s" \
-                'BEGIN { printf "%.3f", m + e }'
-            )"
-        else
-            encoding_s="$missing_cell"
-        fi
+    if [[ -n "$forced_cell" ]]; then
+        case "$variant" in
+          SMT|SMT_witness|QBF)
+            encoding_s="$forced_cell"
+            solving_s="$forced_cell"
+            total_s="$forced_cell"
+            ;;
+          AH|AH_witness)
+            encoding_s=""
+            solving_s=""
+            total_s="$forced_cell"
+            ;;
+          *)
+            encoding_s="$forced_cell"
+            solving_s="$forced_cell"
+            total_s="$forced_cell"
+            ;;
+        esac
+    else
+        total_s="$(fmt_time "$real_s")"
 
-        if [[ -n "${smt_solve_s:-}" ]]; then
-            solving_s="$(fmt_time "$smt_solve_s")"
-        else
-            solving_s="$missing_cell"
-        fi
-        ;;
+        case "$variant" in
+          SMT|SMT_witness)
+            if [[ -n "${model_creation_s:-}" && -n "${encoding_time_s:-}" ]]; then
+                encoding_s="$(
+                  awk -v m="$model_creation_s" -v e="$encoding_time_s" \
+                    'BEGIN { printf "%.3f", m + e }'
+                )"
+            else
+                encoding_s="NA"
+            fi
 
-      QBF)
-        if [[ -n "${model_creation_s:-}" ]]; then
-            encoding_s="$(fmt_time "$model_creation_s")"
-        else
-            encoding_s="$missing_cell"
-        fi
+            if [[ -n "${smt_solve_s:-}" ]]; then
+                solving_s="$(fmt_time "$smt_solve_s")"
+            else
+                solving_s="NA"
+            fi
+            ;;
 
-        if [[ -n "${qbf_solve_s:-}" ]]; then
-            solving_s="$(fmt_time "$qbf_solve_s")"
-        else
-            solving_s="$missing_cell"
-        fi
-        ;;
+          QBF)
+            if [[ -n "${model_creation_s:-}" ]]; then
+                encoding_s="$(fmt_time "$model_creation_s")"
+            else
+                encoding_s="NA"
+            fi
 
-      AH|AH_witness)
-        encoding_s=""
-        solving_s=""
-        ;;
+            if [[ -n "${qbf_solve_s:-}" ]]; then
+                solving_s="$(fmt_time "$qbf_solve_s")"
+            else
+                solving_s="NA"
+            fi
+            ;;
 
-      *)
-        encoding_s="$missing_cell"
-        solving_s="$missing_cell"
-        ;;
-    esac
+          AH|AH_witness)
+            encoding_s=""
+            solving_s=""
+            ;;
+
+          *)
+            encoding_s="NA"
+            solving_s="NA"
+            ;;
+        esac
+    fi
 
     printf "%s,%s,%s,%s,%s\n" \
         "$case_name" "$variant" "$encoding_s" "$solving_s" "$total_s" >> "$RAW_CSV"
@@ -336,11 +382,8 @@ EOF
         {
           printf "<tr>"
           for (i = 1; i <= NF; i++) {
-            if (i == 1) {
-              printf "<td>%s</td>", $i
-            } else {
-              printf "<td align=\"right\">%s</td>", $i
-            }
+            if (i == 1) printf "<td>%s</td>", $i
+            else        printf "<td align=\"right\">%s</td>", $i
           }
           printf "</tr>\n"
         }
@@ -358,6 +401,7 @@ EOF
         OFS = ","
         print "Benchmark", \
               "SMT_Enc","SMT_Solve","SMT_Total", \
+              "QBF_Enc","QBF_Solve","QBF_Total", \
               "AH_Total"
       }
 
@@ -376,6 +420,10 @@ EOF
           smt_enc[b] = $3
           smt_solve[b] = $4
           smt_total[b] = $5
+        } else if (v == "QBF") {
+          qbf_enc[b] = $3
+          qbf_solve[b] = $4
+          qbf_total[b] = $5
         } else if (v == "AH") {
           ah_total[b] = $5
         }
@@ -390,6 +438,7 @@ EOF
           b = order[i]
           print b, \
                 cell(smt_enc[b]), cell(smt_solve[b]), cell(smt_total[b]), \
+                cell(qbf_enc[b]), cell(qbf_solve[b]), cell(qbf_total[b]), \
                 cell(ah_total[b])
         }
       }
@@ -403,13 +452,17 @@ EOF
 <thead>
 <tr>
   <th rowspan="3">Benchmark</th>
-  <th colspan="4">Verification Only</th>
+  <th colspan="7">Verification Only</th>
 </tr>
 <tr>
   <th colspan="3">HQ2.0<sub>SMT</sub></th>
+  <th colspan="3">HQ2.0<sub>QBF</sub></th>
   <th>AH</th>
 </tr>
 <tr>
+  <th>Enc.</th>
+  <th>Solve</th>
+  <th>Total</th>
   <th>Enc.</th>
   <th>Solve</th>
   <th>Total</th>
@@ -423,11 +476,8 @@ EOF
         {
           printf "<tr>"
           for (i = 1; i <= NF; i++) {
-            if (i == 1) {
-              printf "<td>%s</td>", $i
-            } else {
-              printf "<td align=\"right\">%s</td>", $i
-            }
+            if (i == 1) printf "<td>%s</td>", $i
+            else        printf "<td align=\"right\">%s</td>", $i
           }
           printf "</tr>\n"
         }

@@ -41,6 +41,35 @@ fi
 echo "Benchmark,Encoding(SMT),Solve(SMT),Total(SMT),Encoding(QBF),Solve(QBF),Total(QBF)" > "$CSV"
 echo "Benchmark,Variant,Encoding,Solving,Total" > "$RAW_CSV"
 
+fmt_time() {
+    local v="${1:-NA}"
+
+    case "$v" in
+        "" )
+            printf "NA"
+            ;;
+        NA|TO|MO|ERR )
+            printf "%s" "$v"
+            ;;
+        *[!0-9.eE+-]* )
+            printf "%s" "$v"
+            ;;
+        * )
+            awk -v x="$v" 'BEGIN { printf "%.3f", x }'
+            ;;
+    esac
+}
+
+is_ge_timeout() {
+    local value="${1:-0}"
+    awk -v x="$value" -v t="$TIMEOUT_SEC" '
+      BEGIN {
+        if (x + 0 >= t + 0) exit 0
+        exit 1
+      }
+    '
+}
+
 # ---- Timing helper ----
 time_run() {
     local case_name="$1"; shift
@@ -79,58 +108,85 @@ time_run() {
     fi
     rm -f "$tmp"
 
-    # Determine status from log (prefer UNSAT if both appear)
-    local status="TIMEOUT"
+    # Determine status from log.
+    local status="ERROR"
+
+    real_s=${real_s:-0.0}
+    case "$real_s" in
+        ''|*[!0-9.eE+-]*) real_s=0.0 ;;
+    esac
+
     if [[ -n "${TIMEOUT_BIN:-}" && $exit_code -eq 124 ]]; then
         echo "[TIMEOUT] $case_name ($variant) exceeded ${TIMEOUT_SEC}s." | tee -a "$log_file"
-        real_s=0.0
+        real_s="${TIMEOUT_SEC}"
         status="TIMEOUT"
+
+    elif grep -qi '\[TIMEOUT\]' "$log_file"; then
+        real_s="${TIMEOUT_SEC}"
+        status="TIMEOUT"
+
     elif [[ -n "${TIMEOUT_BIN:-}" && $exit_code -eq 137 ]]; then
         echo "[KILLED]  $case_name ($variant) was killed by SIGKILL (exit 137, likely out-of-memory)." | tee -a "$log_file"
-        real_s=0.0
         status="MEMOUT"
+
+    elif grep -qiE '\[KILLED\]|out-of-memory|out of memory|SIGKILL|exit 137|Killed' "$log_file"; then
+        status="MEMOUT"
+
+    elif is_ge_timeout "$real_s"; then
+        real_s="${TIMEOUT_SEC}"
+        status="TIMEOUT"
+
+    elif grep -qiE '(^|[ =])ERROR([ =]|$)|Unexpected exit code|=========== ERROR ===========' "$log_file"; then
+        status="ERROR"
+
     else
-        # Case-insensitive word match; -w avoids matching "saturated"
         if grep -qiwo 'UNSAT' "$log_file"; then
             status="UNSAT"
         elif grep -qiwo 'SAT' "$log_file"; then
             status="SAT"
-        fi
-        if [[ $exit_code -ne 0 && "$status" == "NA" ]]; then
+        elif grep -qiwo 'UNKNOWN' "$log_file"; then
+            status="UNKNOWN"
+        elif [[ $exit_code -ne 0 ]]; then
             status="ERROR"
-            real_s="NA"
+        else
+            status="ERROR"
         fi
     fi
 
-
-        # execution finished.
+    # execution finished.
     # Extract benchmark-reported timing values from the log.
 
-    real_s=${real_s:-0.0}
-    case "$real_s" in
-        ''|*[!0-9.-]*) real_s=0.0 ;;
-    esac
+    local model_creation_s encoding_time_s smt_solve_s qbf_solve_s
+    local encoding_s solving_s total_s forced_cell
 
-    local model_creation_s encoding_time_s smt_solve_s qbf_solve_s encoding_s solving_s total_s
+    forced_cell=""
+
+    if [[ "$status" == "TIMEOUT" ]]; then
+        forced_cell="TO"
+    elif [[ "$status" == "MEMOUT" ]]; then
+        forced_cell="MO"
+    elif [[ "$status" == "ERROR" ]]; then
+        forced_cell="ERR"
+    fi
 
     model_creation_s="$(
       awk -F': *' '
         /^Model Creation Time:/ { v = $2 }
-        END { if (v != "") print v; else print 0.0 }
+        END { if (v != "") print v }
       ' "$log_file"
     )"
 
     encoding_time_s="$(
       awk -F': *' '
         /^Encoding Time:/ { v = $2 }
-        END { if (v != "") print v; else print 0.0 }
+        END { if (v != "") print v }
       ' "$log_file"
     )"
 
     smt_solve_s="$(
       awk -F': *' '
         /^Solve Time:/ { v = $2 }
-        END { if (v != "") print v; else print 0.0 }
+        END { if (v != "") print v }
       ' "$log_file"
     )"
 
@@ -140,31 +196,57 @@ time_run() {
           split($2, a, " ")
           v = a[1]
         }
-        END { if (v != "") print v; else print 0.0 }
+        END { if (v != "") print v }
       ' "$log_file"
     )"
 
-    case "$variant" in
-      SMT|smt)
-        encoding_s="$(
-          awk -v m="$model_creation_s" -v e="$encoding_time_s" \
-            'BEGIN { printf "%.3f", m + e }'
-        )"
-        solving_s="$smt_solve_s"
-        ;;
-      QBF|qbf)
-        encoding_s="$model_creation_s"
-        solving_s="$qbf_solve_s"
-        ;;
-      *)
-        encoding_s="0.0"
-        solving_s="0.0"
-        ;;
-    esac
+    if [[ -n "$forced_cell" ]]; then
+        encoding_s="$forced_cell"
+        solving_s="$forced_cell"
+        total_s="$forced_cell"
+    else
+        total_s="$(fmt_time "$real_s")"
 
-    total_s="$real_s"
+        case "$variant" in
+          SMT|smt)
+            if [[ -n "${model_creation_s:-}" && -n "${encoding_time_s:-}" ]]; then
+                encoding_s="$(
+                  awk -v m="$model_creation_s" -v e="$encoding_time_s" \
+                    'BEGIN { printf "%.3f", m + e }'
+                )"
+            else
+                encoding_s="NA"
+            fi
 
-    printf "%s,%s,%.3f,%.3f,%.3f\n" \
+            if [[ -n "${smt_solve_s:-}" ]]; then
+                solving_s="$(fmt_time "$smt_solve_s")"
+            else
+                solving_s="NA"
+            fi
+            ;;
+
+          QBF|qbf)
+            if [[ -n "${model_creation_s:-}" ]]; then
+                encoding_s="$(fmt_time "$model_creation_s")"
+            else
+                encoding_s="NA"
+            fi
+
+            if [[ -n "${qbf_solve_s:-}" ]]; then
+                solving_s="$(fmt_time "$qbf_solve_s")"
+            else
+                solving_s="NA"
+            fi
+            ;;
+
+          *)
+            encoding_s="NA"
+            solving_s="NA"
+            ;;
+        esac
+    fi
+
+    printf "%s,%s,%s,%s,%s\n" \
         "$case_name" "$variant" "$encoding_s" "$solving_s" "$total_s" >> "$RAW_CSV"
     # Append one row to CSV (full info)
     # printf "%s,%s,%s,%s,%s,%.3f,%.3f,%.3f,%s,%s\n" \

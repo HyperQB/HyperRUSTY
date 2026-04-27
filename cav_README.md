@@ -82,11 +82,11 @@ Inside the image, you will find:
 
 - All dependencies and toolchains
 - Ready-to-run shell scripts:
-  - `run_hltl_1.sh` – Reproducing Table 4
-  - `run_hltl_2.sh` – Reproducing Table 5 HLTL benchmarks
-  - `run_ahltl.sh` – Reproducing Table 6 A-HLTL benchmarks
-  - `run_loopcond.sh` – Reproducing Table 7
-  - `run_verilog.sh` – Reproducing Table 8
+  - `run_hltl_1.sh` – Reproducing Table 1
+  - `run_hltl_2.sh` – Reproducing Table 1 HLTL benchmarks
+  - `run_ahltl.sh` – Reproducing Table 2 A-HLTL benchmarks
+  - `run_loopcond.sh` – Reproducing Table 3
+  - `run_verilog.sh` – Reproducing Table 4
 
 
 ---
@@ -186,20 +186,22 @@ We now describe in detail how to reproduce the complete results presented in the
 
 
 
-### > Reproducing Tables 4 & 5 (HLTL)
+### > Reproducing Table 1 (HLTL)
 
-`run_hltl_1.sh` (Table 4) and `run_hltl_2.sh` (Table 5) run benchmark suites across multiple verification backends:
+`run_hltl_1.sh` and `run_hltl_2.sh` run benchmark suites across multiple verification backends:
 
 - **SMT** – Using Z3 as the SMT solver
 - **AH** – Using AutoHyper
 - **QBF** – Using QuAbs as the QBF solver
 
 
-To Reproduce **FULL Tables 4 & 5 (HLTL)**, after adjusting `TIMEOUT` (specified at the top of each shell script) to a large enough number, run:
+To Reproduce **FULL Table 1 (HLTL)**, after adjusting `TIMEOUT` (specified at the top of each shell script) to a large enough number, run:
 
 ```bash
 ./run_hltl_1.sh -compare all
+./run_hltl_1.sh -compare all give-witness
 ./run_hltl_2.sh -compare all
+./run_hltl_2.sh -compare all give-witness
 ```
 
 #### Additional Usage
@@ -231,11 +233,11 @@ To Reproduce **FULL Tables 4 & 5 (HLTL)**, after adjusting `TIMEOUT` (specified 
 
 
 
-### > Reproducing Table 6 (AHLTL)
+### > Reproducing Table 2 (AHLTL)
 
 `run_ahltl.sh` runs benchmark suites using either **Z3** (SMT) or **QuAbS** (qbf) as the solver.
 
-To Reproduce **Full Table 6 (AHLTL)**, after adjusting `TIMEOUT` (specified at the top of each shell script) to a large enough number, run:
+To Reproduce **Full Table 2 (AHLTL)**, after adjusting `TIMEOUT` (specified at the top of each shell script) to a large enough number, run:
 
 ```bash
 ./run_ahltl.sh -compare all
@@ -263,11 +265,11 @@ To Reproduce **Full Table 6 (AHLTL)**, after adjusting `TIMEOUT` (specified at t
 
 
 
-### > Reproducing Table 7 (Loop Condition)
+### > Reproducing Table 3 (Loop Condition)
 
 `run_loopcond.sh` runs benchmark suites using the **Z3** (SMT) solver.
 
-To Reproduce **FULl Table 7**, Run:
+To Reproduce **FULL Table 3**, Run:
 
 ```bash
 ./run_loopcond.sh -all
@@ -290,11 +292,11 @@ To Reproduce **FULl Table 7**, Run:
 
 
 
-### > Reproducing Table 8 (Verilog)
+### > Reproducing Table 4 (Verilog)
 
 `run_verilog.sh` runs benchmark suites for Verilog case studies using the **Z3** (SMT) solver.
 
-To Reproduce **FULL Table 8**, Run:
+To Reproduce **FULL Table 4**, Run:
 
 ```bash
 ./run_verilog.sh -all

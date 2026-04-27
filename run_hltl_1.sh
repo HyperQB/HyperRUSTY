@@ -10,7 +10,11 @@ RESULTS_DIR="_outfiles"
 LOG_DIR="${RESULTS_DIR}/logs"
 CSV="${RESULTS_DIR}/table4(hltl_tacas21)_runtimes.csv"
 MD="${RESULTS_DIR}/table4(hltl_tacas21)_runtimes.md"
+RAW_CSV="${RESULTS_DIR}/table4(hltl_tacas21)_runtimes_long.csv"
 
+# 0 = verification-only table
+# 1 = verification+witness table
+WITNESS_TABLE=0
 
 CARGO_BIN=${CARGO_BIN:-target/release/HyperRUSTY}
 if [[ ! -x "$CARGO_BIN" ]]; then
@@ -39,12 +43,56 @@ fi
 
 # Initialize CSV (once per script run)
 # echo "timestamp,case,variant,exit,real_s,user_s,sys_s,max_rss_kb,log" > "$CSV"
-echo "case,variant,result,real_s,log" > "$CSV"
+echo "Benchmark,Variant,Encoding,Solving,Total" > "$RAW_CSV"
+: > "$CSV"
+
+fmt_time() {
+    local v="${1:-NA}"
+
+    case "$v" in
+        "" )
+            printf "NA"
+            ;;
+        NA|TO|MO|ERR )
+            printf "%s" "$v"
+            ;;
+        *[!0-9.eE+-]* )
+            printf "%s" "$v"
+            ;;
+        * )
+            awk -v x="$v" 'BEGIN { printf "%.3f", x }'
+            ;;
+    esac
+}
+
+set_table_mode_from_args() {
+    WITNESS_TABLE=0
+
+    for arg in "$@"; do
+        if [[ "$arg" == "give_witness" ]]; then
+            WITNESS_TABLE=1
+            return
+        fi
+    done
+}
 
 # ---- Timing helper ----
 time_run() {
     local case_name="$1"; shift
     local variant="$1"; shift
+
+    # Only run/record variants needed for the selected table.
+    if (( WITNESS_TABLE )); then
+        case "$variant" in
+            SMT_witness|AH_witness|QBF) ;;
+            *) return 0 ;;
+        esac
+    else
+        case "$variant" in
+            SMT|AH) ;;
+            *) return 0 ;;
+        esac
+    fi
 
     local stamp log_base log_file tmp
     stamp="$(date -Iseconds)"
@@ -76,9 +124,9 @@ time_run() {
     # Determine status from log (prefer UNSAT if both appear)
     local status="TIMEOUT"
     if [[ -n "${TIMEOUT_BIN:-}" && $exit_code -eq 124 ]]; then
-        echo "[TIMEOUT] $case_name ($variant) exceeded ${TIMEOUT_SEC}s." | tee -a "$log_file"
-        real_s=0.0
-        status="TIMEOUT"
+      echo "[TIMEOUT] $case_name ($variant) exceeded ${TIMEOUT_SEC}s." | tee -a "$log_file"
+      real_s="${TIMEOUT_SEC}"
+      status="TIMEOUT"
     elif [[ -n "${TIMEOUT_BIN:-}" && $exit_code -eq 137 ]]; then
         echo "[KILLED]  $case_name ($variant) was killed by SIGKILL (exit 137, likely out-of-memory)." | tee -a "$log_file"
         real_s=0.0
@@ -89,25 +137,112 @@ time_run() {
             status="UNSAT"
         elif grep -qiwo 'SAT' "$log_file"; then
             status="SAT"
+        elif grep -qiwo 'UNKNOWN' "$log_file"; then
+            status="UNKNOWN"
         fi
     fi
 
+    # execution finished.
 
-    # execution finished.  
-    # Append one row to CSV (simple real time)
-    if [[ "$variant" =~ ^([Ss][Mm][Tt])$ ]]; then
-        local line_count=0
-        line_count=$(wc -l < "$CSV" 2>/dev/null || echo 0)
-        if (( line_count > 1 )); then
-            printf "%s\n" "-----,-----,-----,-----,-----" >> "$CSV"
-        fi
-    fi
-    real_s=${real_s:-0.0}
+
+        # execution finished.
+    # Extract benchmark-reported timings from the log.
+
+        real_s=${real_s:-0.0}
     case "$real_s" in
-        ''|*[!0-9.-]*) real_s=0.0 ;;
+        ''|*[!0-9.eE+-]*) real_s=0.0 ;;
     esac
-    printf "%s,%s,%s,%.3f,%s\n" \
-        "$case_name" "$variant" "$status" "${real_s:-0.0}" "$log_file" >> "$CSV"
+
+    local missing_cell total_s
+    missing_cell="NA"
+
+    if [[ "$status" == "TIMEOUT" ]]; then
+        missing_cell="TO"
+    elif [[ "$status" == "MEMOUT" ]]; then
+        missing_cell="MO"
+    fi
+
+    total_s="$(fmt_time "$real_s")"
+
+    local model_creation_s encoding_time_s smt_solve_s qbf_solve_s
+    local encoding_s solving_s
+
+    model_creation_s="$(
+      awk -F': *' '
+        /^Model Creation Time:/ { v = $2 }
+        END { if (v != "") print v }
+      ' "$log_file"
+    )"
+
+    encoding_time_s="$(
+      awk -F': *' '
+        /^Encoding Time:/ { v = $2 }
+        END { if (v != "") print v }
+      ' "$log_file"
+    )"
+
+    smt_solve_s="$(
+      awk -F': *' '
+        /^Solve Time:/ { v = $2 }
+        END { if (v != "") print v }
+      ' "$log_file"
+    )"
+
+    qbf_solve_s="$(
+      awk -F': *' '
+        /^QBF Build & Solving Time:/ {
+          split($2, a, " ")
+          v = a[1]
+        }
+        END { if (v != "") print v }
+      ' "$log_file"
+    )"
+
+    case "$variant" in
+      SMT|SMT_witness)
+        if [[ -n "${model_creation_s:-}" && -n "${encoding_time_s:-}" ]]; then
+            encoding_s="$(
+              awk -v m="$model_creation_s" -v e="$encoding_time_s" \
+                'BEGIN { printf "%.3f", m + e }'
+            )"
+        else
+            encoding_s="$missing_cell"
+        fi
+
+        if [[ -n "${smt_solve_s:-}" ]]; then
+            solving_s="$(fmt_time "$smt_solve_s")"
+        else
+            solving_s="$missing_cell"
+        fi
+        ;;
+
+      QBF)
+        if [[ -n "${model_creation_s:-}" ]]; then
+            encoding_s="$(fmt_time "$model_creation_s")"
+        else
+            encoding_s="$missing_cell"
+        fi
+
+        if [[ -n "${qbf_solve_s:-}" ]]; then
+            solving_s="$(fmt_time "$qbf_solve_s")"
+        else
+            solving_s="$missing_cell"
+        fi
+        ;;
+
+      AH|AH_witness)
+        encoding_s=""
+        solving_s=""
+        ;;
+
+      *)
+        encoding_s="$missing_cell"
+        solving_s="$missing_cell"
+        ;;
+    esac
+
+    printf "%s,%s,%s,%s,%s\n" \
+        "$case_name" "$variant" "$encoding_s" "$solving_s" "$total_s" >> "$RAW_CSV"
     # Append one row to CSV (full info)
     # printf "%s,%s,%s,%s,%s,%.3f,%.3f,%.3f,%s,%s\n" \
     # "$stamp" "$case_name" "$variant" "$status" "$exit_code" \
@@ -119,14 +254,192 @@ time_run() {
 render_tables() {
   echo
   echo "=== Table 4 runtimes (TACAS'21 cases) ==="
-  column -s, -t < "$CSV" | sed '1s/^/**/;1s/$/**/' | column -t
 
-  # Markdown table
-  {
-    echo "| Case | Variant | Result | Real (s) | Log |"
-    echo "|------|---------|--------|---------:|-----|"
-    tail -n +2 "$CSV" | awk -F, '{printf "| %s | %s | %s | %.3f | %s |\n",$1,$2,$3,$4,$5}'
-  } > "$MD"
+  if (( WITNESS_TABLE )); then
+    awk -F, '
+      BEGIN {
+        OFS = ","
+        print "Benchmark", \
+              "SMT_Enc","SMT_Solve","SMT_Total", \
+              "QBF_Enc","QBF_Solve","QBF_Total", \
+              "AH_Total"
+      }
+
+      NR == 1 { next }
+
+      {
+        b = $1
+        v = toupper($2)
+
+        if (!(b in seen)) {
+          seen[b] = 1
+          order[++n] = b
+        }
+
+        if (v == "SMT_WITNESS") {
+          smt_enc[b] = $3
+          smt_solve[b] = $4
+          smt_total[b] = $5
+        } else if (v == "QBF") {
+          qbf_enc[b] = $3
+          qbf_solve[b] = $4
+          qbf_total[b] = $5
+        } else if (v == "AH_WITNESS") {
+          ah_total[b] = $5
+        }
+      }
+
+      function cell(x) {
+        return x == "" ? "NA" : x
+      }
+
+      END {
+        for (i = 1; i <= n; i++) {
+          b = order[i]
+          print b, \
+                cell(smt_enc[b]), cell(smt_solve[b]), cell(smt_total[b]), \
+                cell(qbf_enc[b]), cell(qbf_solve[b]), cell(qbf_total[b]), \
+                cell(ah_total[b])
+        }
+      }
+    ' "$RAW_CSV" > "$CSV"
+
+    column -s, -t < "$CSV" | sed '1s/^/**/;1s/$/**/' | column -t
+
+    {
+      cat <<'EOF'
+<table>
+<thead>
+<tr>
+  <th rowspan="3">Benchmark</th>
+  <th colspan="7">Verification + Witness</th>
+</tr>
+<tr>
+  <th colspan="3">HQ2.0<sub>SMT</sub></th>
+  <th colspan="3">HQ2.0<sub>QBF</sub></th>
+  <th>AH</th>
+</tr>
+<tr>
+  <th>Enc.</th>
+  <th>Solve</th>
+  <th>Total</th>
+  <th>Enc.</th>
+  <th>Solve</th>
+  <th>Total</th>
+  <th>Total</th>
+</tr>
+</thead>
+<tbody>
+EOF
+
+      tail -n +2 "$CSV" | awk -F, '
+        {
+          printf "<tr>"
+          for (i = 1; i <= NF; i++) {
+            if (i == 1) {
+              printf "<td>%s</td>", $i
+            } else {
+              printf "<td align=\"right\">%s</td>", $i
+            }
+          }
+          printf "</tr>\n"
+        }
+      '
+
+      cat <<'EOF'
+</tbody>
+</table>
+EOF
+    } > "$MD"
+
+  else
+    awk -F, '
+      BEGIN {
+        OFS = ","
+        print "Benchmark", \
+              "SMT_Enc","SMT_Solve","SMT_Total", \
+              "AH_Total"
+      }
+
+      NR == 1 { next }
+
+      {
+        b = $1
+        v = toupper($2)
+
+        if (!(b in seen)) {
+          seen[b] = 1
+          order[++n] = b
+        }
+
+        if (v == "SMT") {
+          smt_enc[b] = $3
+          smt_solve[b] = $4
+          smt_total[b] = $5
+        } else if (v == "AH") {
+          ah_total[b] = $5
+        }
+      }
+
+      function cell(x) {
+        return x == "" ? "NA" : x
+      }
+
+      END {
+        for (i = 1; i <= n; i++) {
+          b = order[i]
+          print b, \
+                cell(smt_enc[b]), cell(smt_solve[b]), cell(smt_total[b]), \
+                cell(ah_total[b])
+        }
+      }
+    ' "$RAW_CSV" > "$CSV"
+
+    column -s, -t < "$CSV" | sed '1s/^/**/;1s/$/**/' | column -t
+
+    {
+      cat <<'EOF'
+<table>
+<thead>
+<tr>
+  <th rowspan="3">Benchmark</th>
+  <th colspan="4">Verification Only</th>
+</tr>
+<tr>
+  <th colspan="3">HQ2.0<sub>SMT</sub></th>
+  <th>AH</th>
+</tr>
+<tr>
+  <th>Enc.</th>
+  <th>Solve</th>
+  <th>Total</th>
+  <th>Total</th>
+</tr>
+</thead>
+<tbody>
+EOF
+
+      tail -n +2 "$CSV" | awk -F, '
+        {
+          printf "<tr>"
+          for (i = 1; i <= NF; i++) {
+            if (i == 1) {
+              printf "<td>%s</td>", $i
+            } else {
+              printf "<td align=\"right\">%s</td>", $i
+            }
+          }
+          printf "</tr>\n"
+        }
+      '
+
+      cat <<'EOF'
+</tbody>
+</table>
+EOF
+    } > "$MD"
+  fi
+
   printf "\nMarkdown table written to: $MD"
 }
 

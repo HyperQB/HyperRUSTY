@@ -37,7 +37,7 @@ fi
 
 # Initialize CSV (once per script run)
 # echo "timestamp,case,variant,exit,real_s,user_s,sys_s,max_rss_kb,log" > "$CSV"
-echo "case,result,real_s,log" > "$CSV"
+echo "Cases,Transitions,Encode,Solving,HyperQB" > "$CSV"
 
 # ---- Timing helper ----
 time_run() {
@@ -93,8 +93,57 @@ time_run() {
     case "$real_s" in
         ''|*[!0-9.-]*) real_s=0.0 ;;
     esac
-    printf "%s,%s,%.3f,%s\n" \
-        "$case_name" "$status" "${real_s:-0.0}" "$log_file" >> "$CSV"
+
+      # Extract benchmark-reported metrics from the log.
+    # The tool usually prints two identical transition lines because it builds two SMVEnv objects.
+    # Use the maximum transition count seen, not the sum.
+    local transitions model_creation_s encoding_s encode_s solving_s hyperqb_s
+
+    transitions="$(
+      awk '
+        /\[IR\] Built SMVEnv with [0-9]+ total transitions/ {
+          for (i = 1; i <= NF; i++) {
+            if ($i == "with") {
+              n = $(i + 1)
+              if (n > max) max = n
+            }
+          }
+        }
+        END { if (max != "") print max; else print 0 }
+      ' "$log_file"
+    )"
+
+    model_creation_s="$(
+      awk -F': *' '
+        /^Model Creation Time:/ { v = $2 }
+        END { if (v != "") print v; else print 0.0 }
+      ' "$log_file"
+    )"
+
+    encoding_s="$(
+      awk -F': *' '
+        /^Encoding Time:/ { v = $2 }
+        END { if (v != "") print v; else print 0.0 }
+      ' "$log_file"
+    )"
+
+    solving_s="$(
+      awk -F': *' '
+        /^Solve Time:/ { v = $2 }
+        END { if (v != "") print v; else print 0.0 }
+      ' "$log_file"
+    )"
+
+    encode_s="$(
+      awk -v m="$model_creation_s" -v e="$encoding_s" \
+        'BEGIN { printf "%.3f", m + e }'
+    )"
+
+    hyperqb_s="${real_s:-0.0}"
+
+
+    printf "%s,%s,%.3f,%.3f,%.3f\n" \
+      "$case_name" "$transitions" "$encode_s" "$solving_s" "$hyperqb_s" >> "$CSV"
     # Append one row to CSV (full info)
     # printf "%s,%s,%s,%s,%s,%.3f,%.3f,%.3f,%s,%s\n" \
     # "$stamp" "$case_name" "$variant" "$status" "$exit_code" \
@@ -110,9 +159,10 @@ render_tables() {
 
   # Markdown table
   {
-    echo "| Case | Result | Real (s) | Log |"
-    echo "|------|--------|---------:|-----|"
-    tail -n +2 "$CSV" | awk -F, '{printf "| %s | %s | %.3f | %s |\n",$1,$2,$3,$4}'
+    echo "| Cases | Transitions | Encode | Solving | HyperQB |"
+    echo "|-------|------------:|-------:|--------:|--------:|"
+    tail -n +2 "$CSV" | awk -F, \
+      '{printf "| %s | %s | %.3f | %.3f | %.3f |\n",$1,$2,$3,$4,$5}'
   } > "$MD"
   printf "\nMarkdown table written to: $MD"
 }

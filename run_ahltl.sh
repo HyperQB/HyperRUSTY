@@ -18,6 +18,7 @@ FOLDER="benchmarks/async/"
 RESULTS_DIR="_outfiles"
 LOG_DIR="${RESULTS_DIR}/logs"
 CSV="${RESULTS_DIR}/table6(ahltl)_runtimes.csv"
+RAW_CSV="${RESULTS_DIR}/table6(ahltl)_runtimes_long.csv"
 MD="${RESULTS_DIR}/table6(ahltl)_runtimes.md"
 
 CARGO_BIN=${CARGO_BIN:-target/release/HyperRUSTY}
@@ -37,7 +38,8 @@ fi
 
 # Initialize CSV (once per script run)
 # echo "timestamp,case,variant,exit,real_s,user_s,sys_s,max_rss_kb,log" > "$CSV"
-echo "case,variant,result,real_s,log" > "$CSV"
+echo "Benchmark,Encoding(SMT),Solve(SMT),Total(SMT),Encoding(QBF),Solve(QBF),Total(QBF)" > "$CSV"
+echo "Benchmark,Variant,Encoding,Solving,Total" > "$RAW_CSV"
 
 # ---- Timing helper ----
 time_run() {
@@ -101,18 +103,69 @@ time_run() {
     fi
 
 
-    # execution finished.  
-    # Append one row to CSV (simple real time)
-    if [[ "$variant" =~ ^([Ss][Mm][Tt])$ ]]; then
-        local line_count=0
-        line_count=$(wc -l < "$CSV" 2>/dev/null || echo 0)
-        if (( line_count > 1 )); then
-            printf "%s\n" "-----,-----,-----,-----,-----" >> "$CSV"
-        fi
-    fi
-    printf "%s,%s,%s,%s,%s\n" \
-        "$case_name" "$variant" "$status" "${real_s:-0.0}" "$log_file" >> "$CSV"
-        
+        # execution finished.
+    # Extract benchmark-reported timing values from the log.
+
+    real_s=${real_s:-0.0}
+    case "$real_s" in
+        ''|*[!0-9.-]*) real_s=0.0 ;;
+    esac
+
+    local model_creation_s encoding_time_s smt_solve_s qbf_solve_s encoding_s solving_s total_s
+
+    model_creation_s="$(
+      awk -F': *' '
+        /^Model Creation Time:/ { v = $2 }
+        END { if (v != "") print v; else print 0.0 }
+      ' "$log_file"
+    )"
+
+    encoding_time_s="$(
+      awk -F': *' '
+        /^Encoding Time:/ { v = $2 }
+        END { if (v != "") print v; else print 0.0 }
+      ' "$log_file"
+    )"
+
+    smt_solve_s="$(
+      awk -F': *' '
+        /^Solve Time:/ { v = $2 }
+        END { if (v != "") print v; else print 0.0 }
+      ' "$log_file"
+    )"
+
+    qbf_solve_s="$(
+      awk -F': *' '
+        /^QBF Build & Solving Time:/ {
+          split($2, a, " ")
+          v = a[1]
+        }
+        END { if (v != "") print v; else print 0.0 }
+      ' "$log_file"
+    )"
+
+    case "$variant" in
+      SMT|smt)
+        encoding_s="$(
+          awk -v m="$model_creation_s" -v e="$encoding_time_s" \
+            'BEGIN { printf "%.3f", m + e }'
+        )"
+        solving_s="$smt_solve_s"
+        ;;
+      QBF|qbf)
+        encoding_s="$model_creation_s"
+        solving_s="$qbf_solve_s"
+        ;;
+      *)
+        encoding_s="0.0"
+        solving_s="0.0"
+        ;;
+    esac
+
+    total_s="$real_s"
+
+    printf "%s,%s,%.3f,%.3f,%.3f\n" \
+        "$case_name" "$variant" "$encoding_s" "$solving_s" "$total_s" >> "$RAW_CSV"
     # Append one row to CSV (full info)
     # printf "%s,%s,%s,%s,%s,%.3f,%.3f,%.3f,%s,%s\n" \
     # "$stamp" "$case_name" "$variant" "$status" "$exit_code" \
@@ -124,14 +177,59 @@ time_run() {
 render_tables() {
   echo
   echo "=== Table 6 runtimes (A-HLTL cases) ==="
+
+  awk -F, '
+    BEGIN {
+      OFS = ","
+      print "Benchmark","Encoding(SMT)","Solve(SMT)","Total(SMT)","Encoding(QBF)","Solve(QBF)","Total(QBF)"
+    }
+
+    NR == 1 { next }
+
+    {
+      benchmark = $1
+      variant = toupper($2)
+
+      if (!(benchmark in seen)) {
+        seen[benchmark] = 1
+        order[++n] = benchmark
+      }
+
+      if (variant == "SMT") {
+        enc_smt[benchmark] = $3
+        solve_smt[benchmark] = $4
+        total_smt[benchmark] = $5
+      } else if (variant == "QBF") {
+        enc_qbf[benchmark] = $3
+        solve_qbf[benchmark] = $4
+        total_qbf[benchmark] = $5
+      }
+    }
+
+    END {
+      for (i = 1; i <= n; i++) {
+        b = order[i]
+
+        print b, \
+          (enc_smt[b]   == "" ? "NA" : enc_smt[b]), \
+          (solve_smt[b] == "" ? "NA" : solve_smt[b]), \
+          (total_smt[b] == "" ? "NA" : total_smt[b]), \
+          (enc_qbf[b]   == "" ? "NA" : enc_qbf[b]), \
+          (solve_qbf[b] == "" ? "NA" : solve_qbf[b]), \
+          (total_qbf[b] == "" ? "NA" : total_qbf[b])
+      }
+    }
+  ' "$RAW_CSV" > "$CSV"
+
   column -s, -t < "$CSV" | sed '1s/^/**/;1s/$/**/' | column -t
 
-  # Markdown table
   {
-    echo "| Case | Variant | Result | Real (s) | Log |"
-    echo "|------|---------|--------|---------:|-----|"
-    tail -n +2 "$CSV" | awk -F, '{printf "| %s | %s | %s | %s | %s |\n",$1,$2,$3,$4,$5}'
+    echo "| Benchmark | Encoding(SMT) | Solve(SMT) | Total(SMT) | Encoding(QBF) | Solve(QBF) | Total(QBF) |"
+    echo "|-----------|--------------:|-----------:|-----------:|--------------:|-----------:|-----------:|"
+    tail -n +2 "$CSV" | awk -F, \
+      '{printf "| %s | %s | %s | %s | %s | %s | %s |\n",$1,$2,$3,$4,$5,$6,$7}'
   } > "$MD"
+
   printf "\nMarkdown table written to: $MD"
 }
 

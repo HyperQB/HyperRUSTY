@@ -1,46 +1,54 @@
-# HyperQB 2.0
+# HyperQB 2.0 (for CAV 2026 Artifact Evaluation)
 
-**Artifact ID:** `210`  
+**CAV Paper Submission ID:** `paper210`  
+
 **Paper Title:** `HyperQB 2.0: A Bounded Model Checker for Hyperproperties`
-**Zenodo DOI:** -
-**Zenodo Record:** -
 
-This artifact provides a **Docker image** (distributed via **Docker Hub** and **Zenodo**) that contains the complete experimental environment along with the **shell scripts** required to reproduce all tables reported in the paper. To regenerate the results, the AEC only needs to: (1) install Docker, (2) pull our image from Docker Hub, (3) start the container, and (4) run the provided scripts inside it.
+**Zenodo DOI:** `XXX`
 
-**For consistency with the Docker environment, we recommend using the Docker Hub image described in [Option 1](#option1) as the primary method.**
+**Zenodo Record:** `XXX`
 
-Instructions for obtaining the artifact via Zenodo are provided in [Option 2](#option2).
+This artifact provides a **Docker image** (distributed via **Docker Hub** and **Zenodo**) that contains the complete experimental environment along with the **shell scripts** required to reproduce all tables reported in the paper. To regenerate the results, the AEC only needs to: 
 
-**Expected outputs:** Printed in Console and logged in `_outfiles` directory.
+(1) install Docker, 
 
----
+(2) pull our image from Docker Hub, 
 
-### Remarks on Dependencies of the Docker Artifact
+(3) start the container, and 
+
+(4) run the provided scripts inside it.
+
+**For consistency with the Docker environment, we recommend using the Docker Hub image described in [Option 1](#option1) as the primary method.** Instructions for obtaining the artifact via Zenodo are provided in [Option 2](#option2).
+
+**Expected outputs:** All results are printed in the console and logged in `_outfiles` directory after running our shell script.
+
+
+## Remarks on Dependencies of the Docker Artifact
 
 1. **SPOT errors from AutoHyper:**
-   Our artifact includes comparisons with the external model checker `AutoHyper`, which depends on `SPOT`. During testing of the image, we found that SPOT occasionally produces errors on certain inputs. These issues originate within SPOT and are outside the scope of our tool. Unfortunately, we do not have sufficient insight into `SPOT`’s internals to debug these errors reliably.
+   Our artifact includes comparisons with the external model checker `AutoHyper`, which depends on `SPOT`. During testing of the image, we found that SPOT occasionally produces errors on certain inputs. These issues originate within SPOT, and are outside the scope of our tool. Unfortunately, we do not have sufficient insight into `SPOT`’s internals to reliably debug these errors.
 
 2. **Out-of-memory from QuAbS:**
    Depending on the hardware and Docker resource limits on the reviewer’s machine, some large instances may also encounter _out-of-memory_ termination (i.e., _command terminated by signal 9_ messages in the terminal), and we flag those cases as `MEMOUT` when displaying the results. Such behavior is due to performance and resource limitations of the underlying solvers (e.g., `QuAbS`) when run inside Docker, and should not be interpreted as a limitation of the HyperQB 2.0 tool itself.
 
+3. **Completed details on Our Official Website:**
+   HyperQB 2.0 has an official website: https://hyperqb.github.io/index.html, where reviewers can find detailed descriptions of the models and formulas for each case, an overview of the tool’s architecture, and a fully functional online playground. We invite reviewers to visit the site and interact with the GUI we developed, which provides the same functionality as this artifact.  
+
 Our primary goal in this artifact submission is to provide a _fully reproducible Docker image_ that allows reviewers to run the complete set of experiments described in the paper.
----
 
 ## Hyperlink to the artifact:
 
--
+XXX
 
----
+
 
 ## Badges we are applying for:
 
-We aim to apply for all 3 badges, following the TACAS 2026 artifact submission guidelines, including:
+We aim to apply for all 3 badges, following the CAV 2026 artifact submission guidelines, including:
 
-1. **Available**: HyperQB 2.0 source code and its dependencies are publicly available on Zenodo with a permanent DOI (as a Docker image).
+1. **Available**: HyperQB 2.0 source code and its dependencies are publicly available on Zenodo with a permanent DOI (as a Docker image). A license is also included to allow running/examining our artifact within and outside of CAV 26 AE. 
 2. **Functional**: Our artifact can easily reproduce all key results from the submitted paper (see detailed instructions below).
 3. **Reusable**: HyperQB 2.0 comes with a complete user manual (HyperQB_Manual.pdf) included in the artifact submission. Pages 7–8 provide detailed documentation of the command-line interface that can be easily adapted for future research.
-
-HyperQB 2.0 official website: https://hyperqb.github.io/index.html
 
 ## Table of Contents
 
@@ -51,23 +59,23 @@ HyperQB 2.0 official website: https://hyperqb.github.io/index.html
 1. [Reproduce Experiments](#experiments)
 1. [Collecting Outputs](#outputs)
 1. [Reusability](#reuse)
-1. [Notices](#notices)
+1. [Final Remarks](#notices)
 
 ---
 
-## <a name="sysreq"></a> System Requirements
+### <a name="sysreq"></a> System Requirements
 
-- **Operating Systems:**
-  - macOS 12+ (Apple Silicon)
+- **Operating Systems:** macOS 12+ (Apple Silicon)
 - **CPU:** 2+ cores recommended
 - **RAM:** ≥ 8 GB recommended (≥ 16 GB ideal for the largest experiments)
 - **Disk:** ≥ 20 GB free space
 - **Internet:** required once to pull the artifact from Docker Hub
 - **GPU:** _not required_ (all experiments run on CPU)
 
+
 ---
 
-## <a name="download"></a> What You Will Download
+### <a name="download"></a> What You Will Download
 
 We present our artifact as a Docker image.
 Inside the image, you will find:
@@ -80,16 +88,16 @@ Inside the image, you will find:
   - `run_loopcond.sh` – Reproducing Table 7
   - `run_verilog.sh` – Reproducing Table 8
 
+
 ---
+### <a name="docker"></a> Install Docker
 
-## <a name="docker"></a> Install Docker
-
-### macOS (Apple Silicon)
+#### macOS (Apple Silicon)
 
 1. Install **Docker Desktop for Mac**.
 2. After installation, launch Docker Desktop and wait until it says **“Docker is running.”**
 
-### Verify Docker Works
+#### Verify Docker Works
 
 Open a terminal and run:
 
@@ -101,23 +109,14 @@ docker run --rm hello-world
 You should see **“Hello from Docker!”** If this works, Docker is correctly installed.
 
 ---
-
-## <a name="artifact"></a> Obtaining the Artifact
+### <a name="artifact"></a> Obtaining the Artifact
 
 The artifact is provided as a public Docker image available on Docker Hub and Zenodo. Instructions for both download methods are provided below.
 
-### <a name="option1"></a> Option 1: Docker Hub (preffered)
 
-Please ensure you have an active internet connection and Docker is running.
+#### <a name="option1"></a> Option 1: Docker Hub (prefered)
 
-
-#### macOS
-
-For arm64 use `rogaleke/hyperqb2.0:arm64`.
-
-### Running the container
-
-Because the artifact runs inside a Docker container, any generated outputs and logs remain inside the container’s filesystem and are lost when the container exits. To preserve these files, you should mount a directory from your host machine into the container so that all generated outputs are written directly to your local filesystem.
+Please ensure you have an active internet connection and Docker is running. Because the artifact runs inside a Docker container, any generated outputs and logs remain inside the container’s filesystem and are lost when the container exits. To preserve these files, you should mount a directory from your host machine into the container so that all generated outputs are written directly to your local filesystem.
 
 To begin, navigate to the directory from which you want to run the Docker image. Then create a new directory named `_outfiles` to store all output produced by HyperQB 2.0. You can create it with the following command:
 
@@ -134,9 +133,8 @@ docker run --rm -it \
   bash
 ```
 
-### <a name="option2"></a> Option 2: Zenodo
 
-**Notice**: This image is only for **ARM64** architecture.
+#### <a name="option2"></a> Option 2: Zenodo (**Notice**: This image is only for **ARM64 (Applie Silicon)** architecture)
 
 From our [Zenodo record](https://zenodo.org/records/17654609), download the `.tar` containing the Docker image. Then, navigate to the directory where it was downloaded and run:
 
@@ -144,7 +142,7 @@ From our [Zenodo record](https://zenodo.org/records/17654609), download the `.ta
 docker load -i hyperqb2.tar
 ```
 
-next, check if the image is loaded by running:
+Next, check if the image is loaded by running:
 
 ```bash
 docker images
@@ -186,7 +184,9 @@ You are now inside the HyperQB2.0 Docker image.
 
 We now describe in detail how to reproduce the complete results presented in the paper. To ensure correct execution, please adjust the `TIMEOUT` parameter defined at the top (line 5) of each shell script according to your machine’s setup. Currently, the default value is **60 seconds**. We leave this value for reviewers to determine based on their computing environment.
 
-### Reproducing Tables 4 & 5 (HLTL)
+
+
+### > Reproducing Tables 4 & 5 (HLTL)
 
 `run_hltl_1.sh` (Table 4) and `run_hltl_2.sh` (Table 5) run benchmark suites across multiple verification backends:
 
@@ -194,14 +194,22 @@ We now describe in detail how to reproduce the complete results presented in the
 - **AH** – Using AutoHyper
 - **QBF** – Using QuAbs as the QBF solver
 
-#### Usage
+
+To Reproduce **FULL Tables 4 & 5 (HLTL)**, after adjusting `TIMEOUT` (specified at the top of each shell script) to a large enough number, run:
+
+```bash
+./run_hltl_1.sh -compare all
+./run_hltl_2.sh -compare all
+```
+
+#### Additional Usage
 
 ```bash
 ./run_hltl_1.sh [option]
 ./run_hltl_2.sh [option]
 ```
 
-#### Main Options
+**Options**
 
 | Option                         |                       Description                       |
 | ------------------------------ | :-----------------------------------------------------: |
@@ -215,30 +223,31 @@ We now describe in detail how to reproduce the complete results presented in the
 | `-compare <case> [extras]`     |        Compare a specific case across all modes         |
 | `-case <case> <mode> [extras]` |            Run one case under a single mode             |
 
-#### Extra Option
+**Extra Option**
 
 | Option         | Description                                                  |
 | -------------- | ------------------------------------------------------------ |
 | `give_witness` | Extends SMT/AH runs with witness generation (when supported) |
 
-To Reproduce **Tables 4 & 5 (HLTL)**, after adjusting `TIMEOUT` (specified at the top of each shell script) to a large enough number, run:
 
-```bash
-./run_hltl_1.sh -compare all
-./run_hltl_2.sh -compare all
-```
 
-### Reproducing Table 6 (AHLTL)
+### > Reproducing Table 6 (AHLTL)
 
 `run_ahltl.sh` runs benchmark suites using either **Z3** (SMT) or **QuAbS** (qbf) as the solver.
 
-#### Usage
+To Reproduce **Full Table 6 (AHLTL)**, after adjusting `TIMEOUT` (specified at the top of each shell script) to a large enough number, run:
+
+```bash
+./run_ahltl.sh -compare all
+```
+
+#### Additional Usage
 
 ```bash
 ./run_ahltl.sh [option]
 ```
 
-#### Options
+**Options**
 
 | Option                              |                    Description                    |
 | ----------------------------------- | :-----------------------------------------------: |
@@ -252,48 +261,25 @@ To Reproduce **Tables 4 & 5 (HLTL)**, after adjusting `TIMEOUT` (specified at th
 | `-compare <case_name>`              |     Compare a specific case across all modes      |
 | `-case <case_name> <mode>         ` |  Run a case with one of the modes (`smt`, `qbf`)  |
 
-To Reproduce **Table 6 (AHLTL)**, after adjusting `TIMEOUT` (specified at the top of each shell script) to a large enough number, run:
 
-```bash
-./run_ahltl.sh -compare all
-```
 
-### Reproducing Table 7 (Loop Condition)
+### > Reproducing Table 7 (Loop Condition)
 
 `run_loopcond.sh` runs benchmark suites using the **Z3** (SMT) solver.
 
-#### Usage
-
-```bash
-./run_loopcond.sh [option]
-```
-
-#### Options
-
-| Option              |                  Description                  |
-| ------------------- | :-------------------------------------------: |
-| `-all`              |             Runs all case studies             |
-| `-light`            | Runs a lightweight subset (for quick testing) |
-| `-case <case_name>` |          Runs a specific case study           |
-| `-list`             |       Lists all available case studies        |
-
-To Reproduce **Table 7**, Run:
+To Reproduce **FULl Table 7**, Run:
 
 ```bash
 ./run_loopcond.sh -all
 ```
 
-### Reproducing Table 8 (Verilog)
-
-`run_verilog.sh` runs benchmark suites for Verilog case studies using the **Z3** (SMT) solver.
-
-#### Usage
+#### Additional Usage
 
 ```bash
-./run_verilog.sh [option]
+./run_loopcond.sh [option]
 ```
 
-#### Options
+**Options**
 
 | Option              |                  Description                  |
 | ------------------- | :-------------------------------------------: |
@@ -302,11 +288,33 @@ To Reproduce **Table 7**, Run:
 | `-case <case_name>` |          Runs a specific case study           |
 | `-list`             |       Lists all available case studies        |
 
-To Reproduce **Table 8**, Run:
+
+
+### > Reproducing Table 8 (Verilog)
+
+`run_verilog.sh` runs benchmark suites for Verilog case studies using the **Z3** (SMT) solver.
+
+To Reproduce **FULL Table 8**, Run:
 
 ```bash
 ./run_verilog.sh -all
 ```
+
+#### Additional Usage
+
+```bash
+./run_verilog.sh [option]
+```
+
+**Options**
+
+| Option              |                  Description                  |
+| ------------------- | :-------------------------------------------: |
+| `-all`              |             Runs all case studies             |
+| `-light`            | Runs a lightweight subset (for quick testing) |
+| `-case <case_name>` |          Runs a specific case study           |
+| `-list`             |       Lists all available case studies        |
+
 
 ---
 
@@ -326,7 +334,7 @@ cargo build --release
 
 The compiled binary can be found in `target/release/`.
 
-To test if HyperQB (SMT unrolling) can successfully compiled
+To test if HyperQB (SMT unrolling) can be successfully compiled
 
 ```bash
 cargo run --release -- -n benchmarks/sync/1_bakery/bakery3.smv benchmarks/sync/1_bakery/bakery3.smv -f benchmarks/sync/1_bakery/symmetry3.hq -k 10 -s hpes
@@ -342,7 +350,7 @@ cargo run --release -- -n benchmarks/sync/1_bakery/bakery3.smv benchmarks/sync/1
 
 which should return `UNSAT`
 
-To test if HyoerQB (with verilog input using `yosys`) can successfully run:
+To test if HyoerQB (with Verilog input using `yosys`) can successfully run:
 
 ```bash
 cargo run --release -- -v benchmarks/verilog/divider/divider.ys benchmarks/verilog/divider/divider.ys -t divider -o model.smt2 -f benchmarks/verilog/divider/formula.hq -k 8 -s pes
@@ -350,17 +358,17 @@ cargo run --release -- -v benchmarks/verilog/divider/divider.ys benchmarks/veril
 
 which should return `result:unsat`
 
-### HyperQB 2.0 CLI Usage
+### HyperQB 2.0 CLI Usage for Reusability
 
-We here provide detailed instruction to reuse HyperQB2.0
+We provide detailed instructions here to reuse HyperQB2.0
 
-### Synopsis
+#### Synopsis
 
 ```bash
 cargo run --release -- (-n|-v) <models> -f <formula> -k <int> -s <sem> [options]
 ```
 
-### Arguments
+#### Arguments
 
 **Required**
 
@@ -376,9 +384,9 @@ cargo run --release -- (-n|-v) <models> -f <formula> -k <int> -s <sem> [options]
 - `-c`: Emit counterexample when the formula is unsatisfied.
 - `-q`: Use the QuAbS QBF solver instead of Z3.
 
-### CLI Example
+#### Running Example
 
-Try the following example, which model check `linearizability (lin.hq)` on `SNARK algorithm (snark1_conc.smv, snark1_seq.smv)`:
+Try the following example, which model-checks `linearizability (lin.hq)` on `SNARK algorithm (snark1_conc.smv, snark1_seq.smv)`:
 
 ```bash
 cargo run --release -- -n benchmarks/sync/2_snark/snark1_conc.smv benchmarks/sync/2_snark/snark1_seq.smv -f benchmarks/sync/2_snark/lin.hq -k 18 -s hpes -c
@@ -388,8 +396,10 @@ which should return `UNSAT` with `counterexample` displayed in your terminal.
 
 ---
 
+## <a name="notices"></a> Final Remark
+
 We would like to remark that, outside of this artifact, we offer a fully standalone **macOS application** (available for download from GitHub) with an **interactive GUI** (demonstrated on page 5 of the manual). Comprehensive information about the tool’s theoretical background, algorithms, case studies (including model descriptions), and an online version of the GUI is also accessible through our **official website**. Since these components are beyond the TACAS artifact evaluation scope, we provide here only the CLI binary for reviewers to interact with directly. However, HyperQB 2.0 is easy to adapt for future research to benefit the formal methods community.
 
 ---
 
-We sincerely thank the Artifact Evaluation Committee for their time and feedback.
+We sincerely thank the CAV 2026 Artifact Evaluation Committee for their time and feedback.

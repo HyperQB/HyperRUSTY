@@ -10,7 +10,7 @@ RESULTS_DIR="_outfiles"
 LOG_DIR="${RESULTS_DIR}/logs"
 CSV="${RESULTS_DIR}/table1(hltl_1)_results.csv"
 MD="${RESULTS_DIR}/table1(hltl_1)_results.md"
-RAW_CSV="${RESULTS_DIR}/table1(hltl_cav26)_results_long.csv"
+RAW_CSV="${RESULTS_DIR}/table1(hltl_1)_results_long.csv"
 
 # 0 = verification-only table
 # 1 = verification+witness table

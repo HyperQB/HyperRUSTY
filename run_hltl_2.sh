@@ -8,9 +8,9 @@ TIMEOUT_SEC=${TIMEOUT_SEC:-1800}  # Please adjust this timeout value as needed f
 FOLDER="benchmarks/sync/"
 RESULTS_DIR="_outfiles"
 LOG_DIR="${RESULTS_DIR}/logs"
-CSV="${RESULTS_DIR}/table1(hltl_2)_runtimes.csv"
-MD="${RESULTS_DIR}/table1(hltl_2)_runtimes.md"
-RAW_CSV="${RESULTS_DIR}/table1(hltl_2)_runtimes_long.csv"
+CSV="${RESULTS_DIR}/table1(hltl_2)_results.csv"
+MD="${RESULTS_DIR}/table1(hltl_2)_results.md"
+RAW_CSV="${RESULTS_DIR}/table1(hltl_2)_results_long.csv"
 
 # 0 = verification-only table
 # 1 = verification+witness table

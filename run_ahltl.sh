@@ -17,9 +17,9 @@ fi
 FOLDER="benchmarks/async/"
 RESULTS_DIR="_outfiles"
 LOG_DIR="${RESULTS_DIR}/logs"
-CSV="${RESULTS_DIR}/table2(ahltl)_runtimes.csv"
-RAW_CSV="${RESULTS_DIR}/table2(ahltl)_runtimes_long.csv"
-MD="${RESULTS_DIR}/table2(ahltl)_runtimes.md"
+CSV="${RESULTS_DIR}/table2(ahltl)_results.csv"
+RAW_CSV="${RESULTS_DIR}/table2(ahltl)_results_long.csv"
+MD="${RESULTS_DIR}/table2(ahltl)_results.md"
 
 CARGO_BIN=${CARGO_BIN:-target/release/HyperRUSTY}
 if [[ ! -x "$CARGO_BIN" ]]; then

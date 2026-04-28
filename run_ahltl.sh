@@ -258,7 +258,7 @@ time_run() {
 # ---- Pretty-print table (plain + markdown) ----
 render_tables() {
   echo
-  echo "=== Table 3 runtimes (A-HLTL cases) ==="
+  echo "=== Table 2 runtimes (A-HLTL cases) ==="
 
   awk -F, '
     BEGIN {

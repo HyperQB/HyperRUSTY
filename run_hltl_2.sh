@@ -8,9 +8,9 @@ TIMEOUT_SEC=${TIMEOUT_SEC:-1800}  # Please adjust this timeout value as needed f
 FOLDER="benchmarks/sync/"
 RESULTS_DIR="_outfiles"
 LOG_DIR="${RESULTS_DIR}/logs"
-CSV="${RESULTS_DIR}/table4(hltl_tacas21)_runtimes.csv"
-MD="${RESULTS_DIR}/table4(hltl_tacas21)_runtimes.md"
-RAW_CSV="${RESULTS_DIR}/table4(hltl_tacas21)_runtimes_long.csv"
+CSV="${RESULTS_DIR}/table1(hltl_2)_runtimes.csv"
+MD="${RESULTS_DIR}/table1(hltl_2)_runtimes.md"
+RAW_CSV="${RESULTS_DIR}/table1(hltl_2)_runtimes_long.csv"
 
 # 0 = verification-only table
 # 1 = verification+witness table
@@ -299,7 +299,7 @@ time_run() {
 # ---- Pretty-print table (plain + markdown) ----
 render_tables() {
   echo
-  echo "=== Table 4 runtimes (TACAS'21 cases) ==="
+  echo "=== Table 1 runtimes (TACAS'21 cases) ==="
 
   if (( WITNESS_TABLE )); then
     awk -F, '

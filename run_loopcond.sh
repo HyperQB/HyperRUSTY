@@ -23,8 +23,8 @@ fi
 FOLDER="benchmarks/loop_conditions/"
 RESULTS_DIR="_outfiles"
 LOG_DIR="${RESULTS_DIR}/logs"
-CSV="${RESULTS_DIR}/table7(loop)_results.csv"
-MD="${RESULTS_DIR}/table7(loop)_results.md"
+CSV="${RESULTS_DIR}/table3(loop)_results.csv"
+MD="${RESULTS_DIR}/table3(loop)_results.md"
 
 # Fresh start: recreate logs dir and reset CSV/MD
 mkdir -p "$RESULTS_DIR"
@@ -138,7 +138,7 @@ time_run() {
 # ---- Pretty-print table (plain + markdown) ----
 render_tables() {
   echo
-  echo "=== Table 7 runtimes (loop condition cases) ==="
+  echo "=== Table 3 runtimes (loop condition cases) ==="
   column -s, -t < "$CSV" | sed '1s/^/**/;1s/$/**/' | column -t
 
   # Markdown table

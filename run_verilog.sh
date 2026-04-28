@@ -23,8 +23,8 @@ fi
 FOLDER="benchmarks/verilog/"
 RESULTS_DIR="_outfiles"
 LOG_DIR="${RESULTS_DIR}/logs"
-CSV="${RESULTS_DIR}/table8(verilog)_results.csv"
-MD="${RESULTS_DIR}/table1(verilog)_results.md"
+CSV="${RESULTS_DIR}/table4(verilog)_results.csv"
+MD="${RESULTS_DIR}/table4(verilog)_results.md"
 
 # Fresh start: recreate logs dir and reset CSV/MD
 mkdir -p "$RESULTS_DIR"
@@ -154,7 +154,7 @@ time_run() {
 # ---- Pretty-print table (plain + markdown) ----
 render_tables() {
   echo
-  echo "=== Table 8 runtimes (verilog cases) ==="
+  echo "=== Table 4 runtimes (verilog cases) ==="
   column -s, -t < "$CSV" | sed '1s/^/**/;1s/$/**/' | column -t
 
   # Markdown table

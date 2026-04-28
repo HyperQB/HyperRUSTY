@@ -299,7 +299,7 @@ time_run() {
 # ---- Pretty-print table (plain + markdown) ----
 render_tables() {
   echo
-  echo "=== Table 1 runtimes (TACAS'21 cases) ==="
+  echo "=== Table 1 runtimes ==="
 
   if (( WITNESS_TABLE )); then
     awk -F, '

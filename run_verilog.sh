@@ -367,7 +367,7 @@ case "${1:-}" in
 
 
   -light)
-    local_subset=(case_fpu2 case_spi case_led_EA case_led_AE case_led_EE)
+    local_subset=(case_fpu2 case_spi case_led_EA case_led_AE case_led_EE_true case_led_EE_false)
     for c in "${local_subset[@]}"; do
       "$c" smt
     done
